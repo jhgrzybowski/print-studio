@@ -9,7 +9,7 @@ const OFFICE_EXT = ["docx", "xlsx", "pptx", "odt", "ods", "odp"];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Warnings the backend emits for every mapped option; they add noise, not information.
-const NOISE = [/^Mapped .* through detected PPD/i, /^Ignored fit_to_page/i, /collate/i, /preserve the user-specified page order/i];
+const NOISE = [/^Mapped \S+ to detected /i, /^Mapped .* through detected PPD/i, /^Ignored fit_to_page/i, /collate/i, /preserve the user-specified page order/i];
 export const meaningfulWarnings = (list = []) => list.filter((w) => !NOISE.some((re) => re.test(w)));
 
 /**

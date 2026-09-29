@@ -100,7 +100,7 @@ export function DropZone({ dragging, onBrowse, doc, capabilities, onRetry }) {
           <>
             <h1 className="dropzone__title">{dragging ? "Drop it in" : "Drop a file to print"}</h1>
             <p className="dropzone__text">
-              PDF, photos and text{office ? ", plus Word, Excel and PowerPoint" : ""}. Up to {limit}.
+              PDF, photos and text{office ? ", plus Word, Excel and PowerPoint" : ""}. <span className="nowrap">Up to {limit}.</span>
             </p>
             <div className="dropzone__actions">
               <Key variant="raised" icon={FileUp} onClick={onBrowse}>

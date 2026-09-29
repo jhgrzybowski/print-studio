@@ -74,9 +74,10 @@ Verified:
 - Unit tests.
 - The container health check.
 - An API smoke test through the nginx proxy: signup, login, me, upload of PDF and TXT, preview pages, PDF download, validate, jobs, history, preferences, logout.
+- A quick check in Chrome: sign-in, empty compose, PDF preview with the page rail, live preview of copies, B&W and landscape, validation summary, settings in dark and light, and the drawer layout at 500 px.
 
 Not yet done:
-- **Visual and design check in a browser.** No browser was available on the build machine, so the UI hasn't been reviewed on screen yet: layout at desktop and phone widths, animation feel, and light/dark on each palette.
+- **A full design pass.** The browser check was quick. It didn't cover every palette in both themes, the history detail and reprint views, or a phone narrower than 500 px.
 - **A real printed page.** The print and job-tracking flow was exercised only up to validation, so no paper was used.
 - Code splitting. The JS bundle is about 170 kB gzipped.
 

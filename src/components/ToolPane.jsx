@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { CircleAlert, CircleCheck, RectangleHorizontal, RectangleVertical, RotateCcw, Save, TriangleAlert } from "lucide-react";
 import { Field, Key, Segmented, Select, Stepper, Switch } from "./controls.jsx";
-import { COLOR_LABELS, DUPLEX_LABELS, mediaLabel, paperGroups, paperName, QUALITY_LABELS } from "../lib/format.js";
+import { DUPLEX_LABELS, mediaLabel, paperGroups, paperName, QUALITY_LABELS } from "../lib/format.js";
 
 const ORDER = {
   color_mode: ["color", "monochrome", "auto"],
@@ -74,7 +74,7 @@ export function OptionControls({ settings, set, choices, disabled, idPrefix = "o
       )}
 
       {choices.color_mode?.length > 0 && (
-        <Field label="Color" hint={COLOR_LABELS[settings.color_mode]}>
+        <Field label="Color" hint={settings.color_mode === "auto" ? "Printer decides per page" : ""}>
           <Segmented
             label="Color"
             layoutKey={`${idPrefix}-color`}

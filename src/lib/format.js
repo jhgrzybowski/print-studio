@@ -4,7 +4,8 @@ export function formatBytes(n) {
   if (n == null) return "";
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(n < 10 * 1024 ? 1 : 0)} KB`;
-  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  const mb = n / 1024 / 1024;
+  return `${Number.isInteger(mb) ? mb : mb.toFixed(1)} MB`;
 }
 
 const timeFmt = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" });
