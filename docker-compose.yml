@@ -1,0 +1,12 @@
+services:
+  print-studio:
+    build: .
+    image: print-studio:latest
+    container_name: print-studio
+    restart: unless-stopped
+    ports:
+      # LAN only, like the API it fronts.
+      - "192.168.100.99:80:8080"
+    environment:
+      PRINTER_API_UPSTREAM: ${PRINTER_API_UPSTREAM:-http://192.168.100.99:8000}
+    mem_limit: 64m

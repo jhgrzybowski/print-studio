@@ -1,0 +1,10 @@
+node_modules
+dist
+.DS_Store
+*.log
+.impeccable/config.local.json
+.impeccable/review/
+.impeccable/live/
+.codex/
+handoff.md
+.claude/
