@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
-import { Key, Segmented } from "./controls.jsx";
-import { Wordmark } from "./Sidebar.jsx";
-import { Gauge, queueLabel } from "./PrinterGauge.jsx";
+import { Eye, EyeOff } from "lucide-react";
+import { Button, ease, tween } from "./controls.jsx";
+import { Mark } from "./glyphs.jsx";
+import { PrinterLine } from "./PrinterStatus.jsx";
 
 export function AuthScreen({ session, printer }) {
   const [mode, setMode] = useState("login");
@@ -12,6 +12,7 @@ export function AuthScreen({ session, printer }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const userRef = useRef(null);
+  const signup = mode === "signup";
 
   useEffect(() => {
     userRef.current?.focus();
@@ -22,26 +23,24 @@ export function AuthScreen({ session, printer }) {
     setError(null);
   };
 
-  const pwShort = mode === "signup" && form.password.length > 0 && form.password.length < 8;
-
   async function submit(e) {
     e.preventDefault();
     if (!form.username.trim() || !form.password) {
       setError("Enter a username and password.");
       return;
     }
-    if (mode === "signup" && form.password.length < 8) {
+    if (signup && form.password.length < 8) {
       setError("Use at least 8 characters for the password.");
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      if (mode === "login") await session.login(form.username.trim(), form.password);
-      else await session.signup(form.username.trim(), form.password, form.display_name.trim());
+      if (signup) await session.signup(form.username.trim(), form.password, form.display_name.trim());
+      else await session.login(form.username.trim(), form.password);
     } catch (err) {
-      if (err.status === 401) setError("That username and password don't match.");
-      else if (err.status === 409) setError("That username is taken. Pick another or sign in.");
+      if (err.status === 401) setError("Wrong username or password.");
+      else if (err.status === 409) setError("That username is taken.");
       else setError(err.message);
       setBusy(false);
     }
@@ -49,104 +48,81 @@ export function AuthScreen({ session, printer }) {
 
   return (
     <div className="auth">
-      <motion.div
-        className="auth__card card"
-        initial={{ opacity: 0, y: 14, scale: 0.985 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ type: "spring", stiffness: 220, damping: 26 }}
-      >
-        <Wordmark />
-        <div className="auth__intro">
-          <h1>{mode === "login" ? "Sign in to print" : "Create your account"}</h1>
-          <p>{mode === "login" ? "Your history and saved settings are waiting." : "One account per person keeps each history private."}</p>
-        </div>
-
-        <Segmented
-          label="Account"
-          layoutKey="auth-mode"
-          value={mode}
-          onChange={(m) => {
-            setMode(m);
-            setError(null);
-          }}
-          options={[
-            { value: "login", label: "Sign in" },
-            { value: "signup", label: "Create account" },
-          ]}
-        />
+      <motion.div className="auth__inner" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease }}>
+        <Mark size={44} />
+        <h1 className="auth__title">{signup ? "New account" : "Print Studio"}</h1>
 
         <form className="auth__form" onSubmit={submit} noValidate>
-          <label className="auth__field">
-            <span className="field__label">Username</span>
-            <input
-              ref={userRef}
-              className="input"
-              autoComplete="username"
-              autoCapitalize="none"
-              spellCheck={false}
-              value={form.username}
-              onChange={set("username")}
-            />
+          <label className="sr-only" htmlFor="auth-user">
+            Username
           </label>
+          <input
+            id="auth-user"
+            ref={userRef}
+            className="input input--lg"
+            placeholder="Username"
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            value={form.username}
+            onChange={set("username")}
+          />
 
           <AnimatePresence initial={false}>
-            {mode === "signup" && (
-              <motion.label
-                className="auth__field collapse"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <span className="collapse__inner auth__field">
-                  <span className="field__label">
-                    Display name <span className="field__hint">optional</span>
-                  </span>
-                  <input className="input" autoComplete="nickname" value={form.display_name} onChange={set("display_name")} />
-                </span>
-              </motion.label>
+            {signup && (
+              <motion.div className="collapse" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={tween}>
+                <label className="sr-only" htmlFor="auth-name">
+                  Display name, optional
+                </label>
+                <input id="auth-name" className="input input--lg" placeholder="Display name (optional)" autoComplete="nickname" value={form.display_name} onChange={set("display_name")} />
+              </motion.div>
             )}
           </AnimatePresence>
 
-          <label className="auth__field">
-            <span className="field__label">Password</span>
-            <span className="input-wrap">
-              <input
-                className="input"
-                type={show ? "text" : "password"}
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
-                value={form.password}
-                onChange={set("password")}
-                aria-invalid={pwShort || undefined}
-              />
-              <button type="button" className="input-wrap__btn" aria-label={show ? "Hide password" : "Show password"} onClick={() => setShow((s) => !s)}>
-                {show ? <EyeOff size={16} strokeWidth={1.8} /> : <Eye size={16} strokeWidth={1.8} />}
-              </button>
-            </span>
-            {mode === "signup" && <span className={`field__hint ${pwShort ? "is-error" : ""}`}>At least 8 characters</span>}
-          </label>
+          <div className="input-wrap">
+            <label className="sr-only" htmlFor="auth-pass">
+              Password
+            </label>
+            <input
+              id="auth-pass"
+              className="input input--lg"
+              type={show ? "text" : "password"}
+              placeholder={signup ? "Password, 8+ characters" : "Password"}
+              autoComplete={signup ? "new-password" : "current-password"}
+              value={form.password}
+              onChange={set("password")}
+            />
+            <button type="button" className="input-wrap__btn" aria-label={show ? "Hide password" : "Show password"} onClick={() => setShow((s) => !s)}>
+              {show ? <EyeOff size={16} strokeWidth={1.5} /> : <Eye size={16} strokeWidth={1.5} />}
+            </button>
+          </div>
 
           <AnimatePresence>
             {error && (
-              <motion.p className="field-error" role="alert" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <motion.p className="auth__error" role="alert" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={tween}>
                 {error}
               </motion.p>
             )}
           </AnimatePresence>
 
-          <Key type="submit" variant="accent" size="lg" className="auth__submit" busy={busy} disabled={busy}>
-            {busy ? (mode === "login" ? "Signing in" : "Creating account") : mode === "login" ? "Sign in" : "Create account"}
-            <ArrowRight size={17} strokeWidth={1.9} aria-hidden />
-          </Key>
+          <Button type="submit" variant="accent" className="auth__submit" busy={busy} disabled={busy}>
+            {busy ? (signup ? "Creating" : "Signing in") : signup ? "Create account" : "Sign in"}
+          </Button>
         </form>
+
+        <button
+          type="button"
+          className="auth__switch"
+          onClick={() => {
+            setMode(signup ? "login" : "signup");
+            setError(null);
+          }}
+        >
+          {signup ? "I have an account" : "Create an account"}
+        </button>
       </motion.div>
 
-      <p className={`auth__printer tone-${printer.info.tone}`}>
-        <Gauge tone={printer.info.tone} size={30} />
-        <span>
-          {queueLabel(printer.raw)}: {printer.info.label}
-        </span>
-      </p>
+      <PrinterLine printer={printer} className="auth__printer" />
     </div>
   );
 }

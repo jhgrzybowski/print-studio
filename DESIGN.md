@@ -1,21 +1,78 @@
 # Design
 
-## Direction
+## Direction: one quiet plane
 
-The app is a tools pane, not a page. Surfaces are neumorphic: soft paired shadows raise controls out of the ground, and inputs sit in inset wells. Chrome (a conic, slowly shifting liquid-metal gradient) is reserved for the few objects you actually press or read: the print key, the copies `+` key, and the printer gauge's bezel and hub. Everything else stays matte, so the chrome keeps its meaning.
+The whole app is one continuous plane. Nothing sits in a card, and no pane holds another pane.
+
+Depth is used for only two things:
+
+- **The paper.** The preview sheet floats above the plane, because it is the object being made.
+- **Things you press.** Keys are softly raised out of the plane. When pressed or selected, they sink into it.
+
+Everything else is flat type on the plane, grouped by spacing, alignment and the odd 1 px hairline.
+
+Liquid metal is reserved for one object, the print key. The print key has the same shape wherever a print can start: the dock and a history entry. So the chrome always means "send to the printer".
+
+## Layout
+
+```
+┌ sidebar ┐┌──────── canvas ────────┐┌ inspector ┐
+│ mark  + ││                        ││ Copies  - 1 + │
+│ search  ││      ┌──────────┐      ││ Pages   All   │
+│ history ││      │  sheet   │      ││ Paper   A4 ⌄  │
+│  ·      ││      └──────────┘      ││ …             │
+│ printer ││   ╭ dock ─────────── ◉╮ ││ ● 3 sheets    │
+│ avatar ⚙││   ╰──────────────────╯ ││               │
+└─────────┘└────────────────────────┘└───────────────┘
+```
+
+- **Sidebar (248 px).**
+  - It is a slightly deeper tone of the plane, with no border.
+  - History rows are one line each: a status dot, the file name, and the time.
+- **Canvas.**
+  - The sheet is centred, with page thumbnails in a slim column at its left and a small pager above it.
+  - The dock floats at the bottom centre. It is the only rounded container in the workspace: a 20 px radius rectangle, not a pill.
+- **Inspector (296 px).**
+  - A hairline separates it from the canvas, with no background change.
+  - Each row has a label on the left and a compact control on the right, with no hints.
+  - The dry-run result sits at its foot on one line.
+- **Settings.**
+  - A single 620 px column with the same row pattern.
+  - Section titles are plain text. There are no cards and no subtitles.
+- **Narrow screens.**
+  - Below 1080 px, the inspector moves under the canvas.
+  - Below 860 px, the sidebar becomes a drawer.
 
 ## Tokens (`src/styles/tokens.css`)
 
-- **Color.** All colors are OKLCH. The neutral hue (`--n-h`) follows the palette, so greys are tinted, never pure. Grounds are cool grey-blue, never cream or off-white. Accents come from `[data-palette]`: cobalt, iris, jade, ember, and graphite.
-- **Themes.** Dark is the default. Light comes from `[data-theme="light"]`, and the System setting follows `prefers-color-scheme`. Theme changes cross-fade over about 400 ms.
-- **Elevation.** `--raise-1/2/3` for raised surfaces, `--inset-1/2` for wells, and `--edge-top` for the lit upper edge.
-- **Radii.** 8 / 10 / 12 / 16 / 22 px. There are no pill buttons; round shapes are used only for true circles such as the avatar, LEDs, the gauge, and the chrome key.
-- **Type.** Geist Variable, with tabular numerals for counts. There are no italics, monospace labels, eyebrow labels, or numbered section labels.
-- **Motion.** Springs from Motion: a shared-layout segmented thumb, the gauge needle, the sheet's aspect ratio when the paper or orientation changes, and copies stacking behind the sheet. Easing is `--ease-out` (a quint curve) with no bounce. `MotionConfig reducedMotion="user"` respects the OS setting.
+- **Color.**
+  - All colors are OKLCH.
+  - The neutral hue follows the accent, so the greys are tinted cool.
+  - Light mode uses a blue-grey plane at L 0.94, never cream. Dark mode uses a graphite plane at L 0.19.
+  - Palettes: Cobalt, Iris, Jade, Ember and Graphite.
+- **Type.**
+  - Geist Variable, weights 450, 540 and 600.
+  - Sizes: 12, 13, 14, 15, 18 and 24 px. Numbers are tabular.
+  - Labels are sentence case at 13 px. There is no uppercase tracking, no monospace and no italics.
+- **Radii.**
+  - 8 px for small controls and 10 px for inputs and segments.
+  - 20 px for the dock and menus.
+  - Circles only for icon keys, avatar, dots and the print key.
+- **Elevation.**
+  - `--raise` for a key at rest and `--sunk` for a pressed or selected key.
+  - `--float` for the dock and menus, and `--paper` for the sheet.
+- **Icons.**
+  - lucide at 1.5 stroke, 18 px (16 px in dense rows).
+  - Custom glyphs for color mode, two-sided and quality, drawn on the same 24 px grid and stroke, live in `src/components/glyphs.jsx`.
+- **Motion.**
+  - Transitions run 160 to 240 ms on ease-out quart, with no bounce.
+  - The segmented thumb and the sheet's aspect ratio are the only shared-layout moves.
+  - Copies fan out behind the sheet.
+  - `MotionConfig reducedMotion="user"` is set.
 
-## Patterns
+## Copy
 
-- Loading uses skeletons, not spinners.
-- Feedback goes in a live status line in the composer and a short top-bar notice. There are no toasts.
-- The printer's state is always visible: a gauge and LED in the sidebar, and a line on the sign-in screen.
-- Destructive actions (cancel job) use the danger key. Clearing a finished job uses a ghost key.
+- Labels are one word where possible: Copies, Pages, Paper, Layout, Color, Sides, Quality, Media.
+- Status is a dot plus two or three words, such as "Ready", "Printing" or "Printer off".
+- Errors are one sentence that ends with what to do.
+- No em dashes.

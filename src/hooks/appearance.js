@@ -33,7 +33,7 @@ function apply({ theme, palette }) {
   root.dataset.theme = resolved;
   root.dataset.palette = palette;
   const meta = document.querySelector('meta[name="theme-color"]:not([media])');
-  if (meta) meta.content = resolved === "light" ? "#e3e6ec" : "#1b1c20";
+  if (meta) meta.content = resolved === "light" ? "#e9ebef" : "#111417";
 }
 
 /** Theme + palette. Stored locally for instant paint, mirrored to server preferences when signed in. */

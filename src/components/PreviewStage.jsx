@@ -3,9 +3,9 @@ import { AnimatePresence, motion } from "motion/react";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { api } from "../api/client.js";
 import { formatRange, selectedPages } from "../lib/pages.js";
-import { paperMM, paperName } from "../lib/format.js";
+import { paperMM } from "../lib/format.js";
 import { FileGlyph } from "./FileGlyph.jsx";
-import { IconKey } from "./controls.jsx";
+import { IconKey, ease } from "./controls.jsx";
 
 function PageImage({ fileId, page, className, eager }) {
   const src = api.previewPageUrl(fileId, page);
@@ -16,7 +16,7 @@ function PageImage({ fileId, page, className, eager }) {
     <>
       {state === "loading" && <span className="skel skel--fill" aria-hidden />}
       {state === "error" ? (
-        <span className="page-missing">Page {page} didn't render</span>
+        <span className="page-missing">Page {page} didn't load</span>
       ) : (
         <img
           className={`${className} ${state === "ready" ? "is-ready" : ""}`}
@@ -82,7 +82,7 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
   const hasPreview = pages.length > 0 && fileId;
 
   return (
-    <div className={`stage ${count > 1 ? "has-rail" : ""}`} onKeyDown={onKeyDown}>
+    <div className={`stage ${count > 1 && hasPreview ? "has-rail" : ""}`} onKeyDown={onKeyDown}>
       {count > 1 && hasPreview && (
         <div className="rail" ref={railRef} aria-label="Pages">
           {pages.map((p) => {
@@ -99,21 +99,23 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
                 >
                   <PageImage fileId={fileId} page={p.page} className={`thumb__img ${mono ? "is-mono" : ""}`} />
                 </button>
-                <span className="thumb__foot">
+                {readOnly ? (
                   <span className="thumb__num">{p.page}</span>
-                  {!readOnly && (
-                    <button
-                      type="button"
-                      role="checkbox"
-                      aria-checked={on}
-                      aria-label={`Print page ${p.page}`}
-                      className="thumb__check"
-                      onClick={() => toggle(p.page)}
-                    >
-                      {on && <Check size={11} strokeWidth={3} />}
-                    </button>
-                  )}
-                </span>
+                ) : (
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={on}
+                    aria-label={`Print page ${p.page}`}
+                    className="thumb__toggle"
+                    onClick={() => toggle(p.page)}
+                  >
+                    <span className="thumb__box" aria-hidden>
+                      {on && <Check size={10} strokeWidth={2.4} />}
+                    </span>
+                    <span className="thumb__num">{p.page}</span>
+                  </button>
+                )}
               </div>
             );
           })}
@@ -121,22 +123,27 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
       )}
 
       <div className="stage__main" tabIndex={-1}>
+        {count > 1 && hasPreview && (
+          <div className="pager">
+            <IconKey label="Previous page" icon={ChevronLeft} size="sm" onClick={() => go(-1)} disabled={current <= 1} />
+            <span className="pager__text" aria-live="polite">
+              {current} / {count}
+              {!included.has(current) && <span className="sr-only">, skipped</span>}
+            </span>
+            <IconKey label="Next page" icon={ChevronRight} size="sm" onClick={() => go(1)} disabled={current >= count} />
+          </div>
+        )}
         <div className="stage__paper-area">
-          <motion.div
-            className="sheet-stack"
-            initial={false}
-            animate={{ "--ar": ar }}
-            transition={{ type: "spring", stiffness: 220, damping: 28 }}
-          >
+          <motion.div className="sheet-stack" initial={false} animate={{ "--ar": ar }} transition={{ duration: 0.32, ease }}>
             <AnimatePresence>
               {Array.from({ length: extra }, (_, i) => (
                 <motion.span
                   key={`copy-${i}`}
                   className="sheet sheet--behind"
-                  initial={{ opacity: 0, x: 0, y: 0 }}
-                  animate={{ opacity: 1 - i * 0.22, x: (i + 1) * 7, y: (i + 1) * 7 }}
-                  exit={{ opacity: 0, x: 0, y: 0 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 26 }}
+                  initial={{ opacity: 0, x: 0, y: 0, rotate: 0 }}
+                  animate={{ opacity: 1 - i * 0.25, x: (i + 1) * 6, y: (i + 1) * 5, rotate: (i + 1) * 1.2 }}
+                  exit={{ opacity: 0, x: 0, y: 0, rotate: 0 }}
+                  transition={{ duration: 0.26, ease }}
                   style={{ zIndex: -1 - i }}
                   aria-hidden
                 />
@@ -159,29 +166,13 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
                 </AnimatePresence>
               ) : (
                 <div className="sheet__none">
-                  <FileGlyph kind={doc.kind} size={28} />
-                  <span>No preview for this file</span>
+                  <FileGlyph kind={doc.kind} size={26} />
+                  <span>No preview</span>
                 </div>
               )}
+              {hasPreview && !included.has(current) && <span className="sheet__skip">Skipped</span>}
             </div>
           </motion.div>
-        </div>
-
-        <div className="stage__bar">
-          <span className="stage__paper">
-            {paperName(settings.paper_size)}, {landscape ? "landscape" : "portrait"}
-            {mono ? ", black & white" : ""}
-          </span>
-          {count > 1 && (
-            <span className="pager">
-              <IconKey label="Previous page" icon={ChevronLeft} size="sm" onClick={() => go(-1)} disabled={current <= 1} />
-              <span className="pager__text" aria-live="polite">
-                Page {current} of {count}
-                {!included.has(current) && <span className="pager__skip">, skipped</span>}
-              </span>
-              <IconKey label="Next page" icon={ChevronRight} size="sm" onClick={() => go(1)} disabled={current >= count} />
-            </span>
-          )}
         </div>
       </div>
     </div>

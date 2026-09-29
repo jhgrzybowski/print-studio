@@ -11,11 +11,11 @@ import { AuthScreen } from "./components/AuthScreen.jsx";
 import { Sidebar, Wordmark } from "./components/Sidebar.jsx";
 import { DropZone } from "./components/DropZone.jsx";
 import { PreviewStage } from "./components/PreviewStage.jsx";
-import { ToolPane } from "./components/ToolPane.jsx";
-import { Composer, JobTracker } from "./components/Composer.jsx";
+import { Inspector } from "./components/Inspector.jsx";
+import { Dock, JobStrip } from "./components/Dock.jsx";
 import { HistoryDetail } from "./components/HistoryDetail.jsx";
 import { SettingsView } from "./components/SettingsView.jsx";
-import { IconKey, Key } from "./components/controls.jsx";
+import { Button, Dot, IconKey, ease, tween } from "./components/controls.jsx";
 
 const ACCEPT = ".pdf,.png,.jpg,.jpeg,.txt,.docx,.xlsx,.pptx,.odt,.ods,.odp,application/pdf,image/png,image/jpeg,text/plain";
 
@@ -59,13 +59,11 @@ function Splash() {
 function ServerDown({ onRetry, message }) {
   return (
     <div className="splash">
-      <div className="card server-down">
-        <WifiOff size={22} strokeWidth={1.6} aria-hidden />
+      <div className="notice-view">
+        <WifiOff size={22} strokeWidth={1.5} aria-hidden />
         <h1>Can't reach the print server</h1>
         <p>{message || "Check that this device is on the home network."}</p>
-        <Key variant="raised" icon={RefreshCw} onClick={onRetry}>
-          Try again
-        </Key>
+        <Button onClick={onRetry}>Try again</Button>
       </div>
     </div>
   );
@@ -82,7 +80,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
   const [cancelling, setCancelling] = useState(false);
   const [defaultsState, setDefaultsState] = useState("idle");
   const [notice, setNotice] = useState(null);
-  const narrow = useMedia("(max-width: 900px)");
+  const narrow = useMedia("(max-width: 860px)");
   const fileInput = useRef(null);
   const dragDepth = useRef(0);
 
@@ -97,6 +95,15 @@ function Shell({ session, printer, appearance, setAppearance }) {
     const t = setTimeout(() => setNotice(null), 4200);
     return () => clearTimeout(t);
   }, [notice]);
+  useEffect(() => {
+    if (!drawer) return;
+    const onKey = (e) => e.key === "Escape" && setDrawer(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [drawer]);
+  useEffect(() => {
+    if (!narrow) setDrawer(false);
+  }, [narrow]);
 
   const onPrinted = useCallback(
     async (r) => {
@@ -241,8 +248,6 @@ function Shell({ session, printer, appearance, setAppearance }) {
   }, [tracked, history.items, flow.doc?.name]);
 
   const loaded = flow.doc?.phase === "ready";
-  const title =
-    view.kind === "settings" ? "Settings" : view.kind === "history" ? "Print details" : flow.doc ? flow.doc.name : "New print";
 
   const sidebar = (
     <Sidebar
@@ -258,10 +263,6 @@ function Shell({ session, printer, appearance, setAppearance }) {
         setDrawer(false);
       }}
       onSettings={() => {
-        setView({ kind: "settings" });
-        setDrawer(false);
-      }}
-      onPrinter={() => {
         setView({ kind: "settings" });
         setDrawer(false);
       }}
@@ -283,7 +284,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
                 initial={{ x: "-104%" }}
                 animate={{ x: 0 }}
                 exit={{ x: "-104%" }}
-                transition={{ type: "spring", stiffness: 380, damping: 38 }}
+                transition={{ duration: 0.28, ease }}
               >
                 {sidebar}
               </motion.div>
@@ -295,9 +296,14 @@ function Shell({ session, printer, appearance, setAppearance }) {
       )}
 
       <main className={`main ${dragging ? "is-dragging" : ""}`}>
-        <header className="topbar">
-          {narrow && <IconKey label="Open sidebar" icon={Menu} onClick={() => setDrawer(true)} />}
-          <h1 className="topbar__title">{title}</h1>
+        {narrow && (
+          <header className="topbar">
+            <IconKey label="Open sidebar" icon={Menu} onClick={() => setDrawer(true)} tipSide="bottom" />
+            <Wordmark size={22} />
+          </header>
+        )}
+
+        <div className="notices" aria-live="polite">
           <AnimatePresence>
             {notice && (
               <motion.p
@@ -307,19 +313,20 @@ function Shell({ session, printer, appearance, setAppearance }) {
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.2 }}
+                transition={tween}
               >
-                <span className="led" aria-hidden />
+                <Dot tone={notice.tone} />
                 {notice.text}
               </motion.p>
             )}
           </AnimatePresence>
           {optionsError && (
-            <Key variant="ghost" size="sm" icon={RefreshCw} onClick={reloadOptions}>
-              Printer options didn't load
-            </Key>
+            <button type="button" className="notice tone-warn is-action" onClick={reloadOptions}>
+              <RefreshCw size={14} strokeWidth={1.5} aria-hidden />
+              Printer options didn't load. Retry
+            </button>
           )}
-        </header>
+        </div>
 
         <input
           ref={fileInput}
@@ -336,22 +343,22 @@ function Shell({ session, printer, appearance, setAppearance }) {
           {view.kind === "compose" && (
             <motion.div
               key={loaded ? "compose-loaded" : "compose-empty"}
-              className={`compose ${loaded ? "compose--loaded" : "compose--empty"}`}
-              initial={{ opacity: 0, scale: 0.99 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.99 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className={`workspace ${loaded ? "workspace--split" : ""}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={tween}
             >
-              <div className="compose__work">
+              <div className="canvas">
                 {loaded ? (
                   <PreviewStage doc={flow.doc} settings={flow.settings} pageCount={flow.pageCount} onPagesChange={(v) => flow.set("pages", v)} />
                 ) : (
-                  <DropZone dragging={dragging} onBrowse={browse} doc={flow.doc} capabilities={capabilities} onRetry={flow.doc?.phase === "error" ? flow.clear : null} />
+                  <DropZone dragging={dragging} onBrowse={browse} doc={flow.doc} capabilities={capabilities} />
                 )}
-                <div className="compose__dock">
+                <div className="dock-area">
                   <AnimatePresence>
                     {trackedEntry && (
-                      <JobTracker
+                      <JobStrip
                         key={trackedEntry.id}
                         entry={trackedEntry}
                         cancelling={cancelling}
@@ -361,11 +368,11 @@ function Shell({ session, printer, appearance, setAppearance }) {
                       />
                     )}
                   </AnimatePresence>
-                  <Composer flow={flow} printer={printer} canSend={canSend} onBrowse={browse} onPrint={print} />
+                  <Dock flow={flow} printer={printer} canSend={canSend} onBrowse={browse} onPrint={print} />
                 </div>
               </div>
               {loaded && (
-                <ToolPane
+                <Inspector
                   flow={flow}
                   choices={choices}
                   printerReady={canSend}
@@ -378,12 +385,12 @@ function Shell({ session, printer, appearance, setAppearance }) {
             </motion.div>
           )}
           {view.kind === "history" && (
-            <motion.div key={`h-${view.id}`} className="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+            <motion.div key={`h-${view.id}`} className="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={tween}>
               <HistoryDetail id={view.id} history={history} onReprint={reprint} onOpenCompose={newPrint} onStatusLine={flash} />
             </motion.div>
           )}
           {view.kind === "settings" && (
-            <motion.div key="settings" className="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+            <motion.div key="settings" className="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={tween}>
               <SettingsView
                 user={session.user}
                 appearance={appearance}

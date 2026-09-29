@@ -1,25 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Check, CircleCheck, LogOut, Monitor, Moon, RefreshCw, Save, Sun } from "lucide-react";
+import { Check, LogOut, Monitor, Moon, RefreshCw, RotateCcw, Sun } from "lucide-react";
 import { api } from "../api/client.js";
 import { PALETTES } from "../hooks/appearance.js";
 import { BASE_SETTINGS, pickDefaults, reconcile } from "../lib/settings.js";
 import { formatBytes, formatDate, initials } from "../lib/format.js";
-import { Field, Key, Segmented } from "./controls.jsx";
-import { OptionControls } from "./ToolPane.jsx";
-import { Gauge, queueLabel } from "./PrinterGauge.jsx";
+import { IconKey, Row, Segmented, Stepper, Tip, ease } from "./controls.jsx";
+import { OptionRows } from "./Inspector.jsx";
+import { PrinterLine } from "./PrinterStatus.jsx";
 
-const section = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0 },
-};
-
-function Section({ title, description, children, i = 0 }) {
+function Section({ title, tools, children, i = 0 }) {
   return (
-    <motion.section className="card settings__section" {...section} transition={{ duration: 0.28, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] }}>
-      <header className="settings__head">
+    <motion.section className="section" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.26, delay: i * 0.04, ease }}>
+      <header className="section__head">
         <h2>{title}</h2>
-        {description && <p>{description}</p>}
+        {tools && <div className="section__tools">{tools}</div>}
       </header>
       {children}
     </motion.section>
@@ -30,26 +25,26 @@ const EXT_NAMES = { "application/pdf": "PDF", "image/jpeg": "JPEG", "image/png":
 
 export function SettingsView({ user, appearance, setAppearance, choices, prefs, printer, capabilities, onLogout }) {
   const saved = prefs.prefs?.print_defaults;
-  const [draft, setDraft] = useState(() => reconcile({ ...BASE_SETTINGS, ...(saved || {}) }, choices));
+  const base = useMemo(() => reconcile({ ...BASE_SETTINGS, ...(saved || {}) }, choices), [saved, choices]);
+  const [draft, setDraft] = useState(base);
   const [state, setState] = useState("idle");
   const [health, setHealth] = useState(null);
 
-  useEffect(() => {
-    setDraft(reconcile({ ...BASE_SETTINGS, ...(saved || {}) }, choices));
-  }, [saved, choices]);
+  useEffect(() => setDraft(base), [base]);
 
   useEffect(() => {
     api.health().then(setHealth).catch(() => setHealth({ status: "unreachable" }));
   }, []);
 
-  const dirty = useMemo(() => JSON.stringify(pickDefaults(draft)) !== JSON.stringify(pickDefaults(reconcile({ ...BASE_SETTINGS, ...(saved || {}) }, choices))), [draft, saved, choices]);
+  const dirty = JSON.stringify(pickDefaults(draft)) !== JSON.stringify(pickDefaults(base));
+  const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
 
   async function saveDefaults() {
     setState("saving");
     try {
       await prefs.save({ print_defaults: pickDefaults(draft) });
       setState("saved");
-      setTimeout(() => setState("idle"), 1800);
+      setTimeout(() => setState("idle"), 1600);
     } catch {
       setState("error");
     }
@@ -61,16 +56,25 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
     ...(capabilities?.office?.available ? capabilities.office.formats.filter((f) => f.available).map((f) => f.extension.toUpperCase()) : []),
   ];
 
+  const facts = [
+    ["Server", health ? (health.status === "ok" ? "Online" : health.status) : "Checking"],
+    ["Address", raw?.network?.host],
+    ["Accepts", formats.join(", ")],
+    ["Max upload", capabilities && formatBytes(capabilities.max_upload_bytes)],
+    ["Office", capabilities && (capabilities.office?.available ? `Up to ${capabilities.office.max_pages} pages` : "Unavailable")],
+  ];
+
   return (
     <div className="settings">
       <div className="settings__inner">
-        <h1 className="view-title">Settings</h1>
+        <h1 className="settings__title">Settings</h1>
 
-        <Section title="Appearance" description="Saved in this browser, so each device can look its own way." i={0}>
-          <Field label="Theme">
+        <Section title="Appearance" i={0}>
+          <Row label="Theme">
             <Segmented
               label="Theme"
               layoutKey="settings-theme"
+              iconOnly
               value={appearance.theme}
               onChange={(v) => setAppearance({ theme: v })}
               options={[
@@ -79,88 +83,65 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
                 { value: "system", label: "System", icon: Monitor },
               ]}
             />
-          </Field>
-          <Field label="Accent">
-            <div className="swatches" role="radiogroup" aria-label="Accent color">
-              {PALETTES.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={appearance.palette === p.id}
-                  className={`swatch ${appearance.palette === p.id ? "is-active" : ""}`}
-                  data-palette={p.id}
-                  onClick={() => setAppearance({ palette: p.id })}
-                >
-                  <span className="swatch__dot" aria-hidden>
-                    {appearance.palette === p.id && <Check size={14} strokeWidth={2.6} />}
-                  </span>
-                  <span className="swatch__label">{p.label}</span>
-                </button>
-              ))}
+          </Row>
+          <Row label="Accent">
+            <div className="swatches" role="radiogroup" aria-label="Accent">
+              {PALETTES.map((p) => {
+                const on = appearance.palette === p.id;
+                return (
+                  <Tip key={p.id} label={p.label}>
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      aria-label={p.label}
+                      className={`swatch ${on ? "is-on" : ""}`}
+                      data-palette={p.id}
+                      onClick={() => setAppearance({ palette: p.id })}
+                    >
+                      {on && <Check size={12} strokeWidth={2.2} aria-hidden />}
+                    </button>
+                  </Tip>
+                );
+              })}
             </div>
-          </Field>
+          </Row>
         </Section>
 
-        <Section title="Print defaults" description="Every new print starts with these. They follow your account to any device." i={1}>
-          <div className="settings__grid">
-            <OptionControls settings={draft} set={(k, v) => setDraft((d) => ({ ...d, [k]: v }))} choices={choices} idPrefix="def" />
-          </div>
-          <div className="settings__actions">
-            {state === "error" && <span className="field-error">Couldn't save. Try again.</span>}
-            <Key variant="ghost" size="sm" onClick={() => setDraft(reconcile(BASE_SETTINGS, choices))}>
-              Reset to factory
-            </Key>
-            <Key variant="accent" size="sm" icon={state === "saved" ? CircleCheck : Save} onClick={saveDefaults} disabled={(!dirty && state !== "error") || state === "saving"}>
-              {state === "saved" ? "Saved" : "Save defaults"}
-            </Key>
-          </div>
+        <Section
+          title="Print defaults"
+          i={1}
+          tools={
+            <>
+              {state === "error" && <span className="section__note is-error">Not saved</span>}
+              <IconKey label="Factory settings" icon={RotateCcw} size="sm" onClick={() => setDraft(reconcile(BASE_SETTINGS, choices))} />
+              <IconKey
+                label={state === "saved" ? "Saved" : "Save defaults"}
+                icon={Check}
+                size="sm"
+                variant="accent"
+                onClick={saveDefaults}
+                disabled={(!dirty && state !== "error") || state === "saving"}
+              />
+            </>
+          }
+        >
+          <Row label="Copies">
+            <Stepper value={draft.copies} onChange={(v) => set("copies", v)} />
+          </Row>
+          <OptionRows settings={draft} set={set} choices={choices} idPrefix="def" />
         </Section>
 
-        <Section title="Printer" description="Status comes straight from the print server on this network." i={2}>
-          <div className="printer-panel">
-            <Gauge tone={printer.info.tone} size={64} />
-            <div className="printer-panel__text">
-              <p className="printer-panel__name">{queueLabel(raw)}</p>
-              <p className={`printer-panel__state tone-${printer.info.tone}`}>
-                <span className="led" aria-hidden />
-                {printer.info.label}
-              </p>
-              {printer.info.detail && <p className="printer-panel__detail">{printer.info.detail}</p>}
-            </div>
-            <Key variant="raised" size="sm" icon={RefreshCw} onClick={printer.refresh}>
-              Check now
-            </Key>
-          </div>
-          <dl className="facts facts--two">
-            <div className="facts__row">
-              <dt>Print server</dt>
-              <dd>{health ? (health.status === "ok" ? "Online" : health.status) : "Checking"}</dd>
-            </div>
-            <div className="facts__row">
-              <dt>Accepting jobs</dt>
-              <dd>{raw ? (raw.accepting_jobs ? "Yes" : "No") : "–"}</dd>
-            </div>
-            <div className="facts__row">
-              <dt>Address</dt>
-              <dd>{raw?.network?.host || "–"}</dd>
-            </div>
-            <div className="facts__row">
-              <dt>Queue</dt>
-              <dd>{raw?.queue_name || "–"}</dd>
-            </div>
-            <div className="facts__row facts__row--wide">
-              <dt>File types</dt>
-              <dd>{formats.length ? formats.join(", ") : "–"}</dd>
-            </div>
-            <div className="facts__row">
-              <dt>Largest upload</dt>
-              <dd>{capabilities ? formatBytes(capabilities.max_upload_bytes) : "–"}</dd>
-            </div>
-            <div className="facts__row">
-              <dt>Office conversion</dt>
-              <dd>{capabilities ? (capabilities.office?.available ? `Up to ${capabilities.office.max_pages} pages` : "Unavailable") : "–"}</dd>
-            </div>
+        <Section title="Printer" i={2} tools={<IconKey label="Check now" icon={RefreshCw} size="sm" onClick={printer.refresh} />}>
+          <PrinterLine printer={printer} className="settings__printer" />
+          {printer.info.detail && <p className="settings__detail">{printer.info.detail}</p>}
+          <dl className="facts">
+            {facts.map(([k, v]) => (
+              <div key={k} className="facts__row">
+                <dt>{k}</dt>
+                <dd>{v || "–"}</dd>
+              </div>
+            ))}
           </dl>
         </Section>
 
@@ -172,12 +153,10 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
             <div className="account__text">
               <p className="account__name">{user.display_name || user.username}</p>
               <p className="account__meta">
-                Signed in as {user.username}, member since {formatDate(user.created_at)}
+                {user.username} · since {formatDate(user.created_at)}
               </p>
             </div>
-            <Key variant="raised" size="sm" icon={LogOut} onClick={onLogout}>
-              Sign out
-            </Key>
+            <IconKey label="Sign out" icon={LogOut} size="sm" onClick={onLogout} />
           </div>
         </Section>
       </div>

@@ -1,159 +1,174 @@
-/* Print Studio design tokens.
-   Matte neumorphic body; liquid chrome only where the user acts or the machine reports. */
-
-@property --chrome-a {
-  syntax: "<angle>";
-  inherits: true;
-  initial-value: 0deg;
-}
+/* One quiet plane. Colours are OKLCH; the neutral hue follows the accent so greys never fight it. */
 
 :root {
-  /* Palette: one accent hue; neutrals stay cool so light mode never reads cream. */
-  --accent-l: 0.62;
-  --accent-c: 0.19;
-  --accent-h: 262;
-  --n-h: 262;
-  --n-c: 0.008;
+  --font: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
-  --font: "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-15: 15px;
+  --fs-18: 18px;
+  --fs-24: 24px;
 
-  --fs-11: 0.6875rem;
-  --fs-12: 0.75rem;
-  --fs-13: 0.8125rem;
-  --fs-14: 0.875rem;
-  --fs-16: 1rem;
-  --fs-19: 1.1875rem;
-  --fs-23: 1.4375rem;
-  --fs-28: 1.75rem;
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 20px;
 
-  --r-xs: 8px;
-  --r-sm: 10px;
-  --r-md: 12px;
-  --r-lg: 16px;
-  --r-xl: 22px;
-
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --t-fast: 140ms;
+  --ease: cubic-bezier(0.25, 1, 0.5, 1);
+  --t-fast: 150ms;
   --t-mid: 220ms;
-  --t-slow: 360ms;
+  --t-slow: 320ms;
 
-  --sidebar-w: 284px;
-  --pane-w: 344px;
+  --sidebar-w: 248px;
+  --inspector-w: 296px;
 
-  --chrome-stops:
-    #2a2c35 0deg, #8f95ad 26deg, #f4f5fb 48deg, #ffc18a 51deg, #7c95ff 54deg, #eef0fa 60deg,
-    #a9aec4 86deg, #3b3e4c 120deg, #16181f 152deg, #6d7390 186deg, #dfe2f2 214deg, #ffffff 228deg,
-    #b8bdd6 246deg, #555a70 280deg, #9aa0bf 300deg, #f6f7fd 316deg, #ffb07a 320deg, #6c88ff 324deg,
-    #c7cbe0 332deg, #2a2c35 360deg;
-  --chrome: conic-gradient(from var(--chrome-a), var(--chrome-stops));
+  /* Palette: hue and chroma of the accent. */
+  --a-h: 256;
+  --a-c: 0.15;
+  --n-h: var(--a-h);
 }
 
-/* ---------- Palettes ---------- */
-[data-palette="cobalt"] { --accent-h: 262; --accent-c: 0.19; --n-h: 262; }
-[data-palette="iris"] { --accent-h: 292; --accent-c: 0.18; --n-h: 285; }
-[data-palette="jade"] { --accent-h: 166; --accent-c: 0.13; --accent-l: 0.66; --n-h: 215; }
-[data-palette="ember"] { --accent-h: 42; --accent-c: 0.17; --accent-l: 0.67; --n-h: 250; }
-[data-palette="graphite"] { --accent-h: 260; --accent-c: 0.025; --accent-l: 0.74; --n-h: 260; --n-c: 0.004; }
-
-/* ---------- Dark (default) ---------- */
-:root,
-[data-theme="dark"] {
-  color-scheme: dark;
-  --ground: oklch(0.19 var(--n-c) var(--n-h));
-  --rail: oklch(0.165 var(--n-c) var(--n-h));
-  --surface: oklch(0.215 var(--n-c) var(--n-h));
-  --surface-2: oklch(0.245 calc(var(--n-c) * 1.2) var(--n-h));
-  --well: oklch(0.155 var(--n-c) var(--n-h));
-  --well-2: oklch(0.13 var(--n-c) var(--n-h));
-  --line: oklch(1 0 0 / 0.06);
-
-  --text: oklch(0.95 0.004 var(--n-h));
-  --text-2: oklch(0.76 0.01 var(--n-h));
-  --text-3: oklch(0.64 0.012 var(--n-h));
-  --icon: oklch(0.6 0.01 var(--n-h));
-
-  --accent: oklch(var(--accent-l) var(--accent-c) var(--accent-h));
-  --accent-text: oklch(0.78 calc(var(--accent-c) * 0.8) var(--accent-h));
-  --accent-soft: oklch(var(--accent-l) var(--accent-c) var(--accent-h) / 0.16);
-  --accent-glow: oklch(var(--accent-l) var(--accent-c) var(--accent-h) / 0.45);
-  --on-accent: oklch(0.99 0 0);
-
-  --ok: oklch(0.76 0.15 155);
-  --warn: oklch(0.8 0.14 80);
-  --error: oklch(0.7 0.18 25);
-  --ok-soft: oklch(0.76 0.15 155 / 0.14);
-  --warn-soft: oklch(0.8 0.14 80 / 0.14);
-  --error-soft: oklch(0.7 0.18 25 / 0.14);
-
-  --hi: oklch(1 0 0 / 0.055);
-  --hi-strong: oklch(1 0 0 / 0.09);
-  --lo: oklch(0 0 0 / 0.55);
-  --lo-soft: oklch(0 0 0 / 0.35);
-
-  --paper: oklch(0.985 0 0);
-  --paper-shadow: oklch(0 0 0 / 0.55);
-  --glass: oklch(0.32 0.01 var(--n-h) / 0.55);
-  --glass-edge: oklch(1 0 0 / 0.22);
-
-  --chrome-core: radial-gradient(120% 100% at 50% 0%, oklch(0.34 0.006 var(--n-h)) 0%, oklch(0.2 0.006 var(--n-h)) 45%, oklch(0.08 0 0) 100%);
-  --chrome-glyph: oklch(0.72 0.01 var(--n-h));
+[data-palette="cobalt"] {
+  --a-h: 256;
+  --a-c: 0.15;
+}
+[data-palette="iris"] {
+  --a-h: 292;
+  --a-c: 0.15;
+}
+[data-palette="jade"] {
+  --a-h: 166;
+  --a-c: 0.11;
+}
+[data-palette="ember"] {
+  --a-h: 42;
+  --a-c: 0.16;
+}
+[data-palette="graphite"] {
+  --a-h: 262;
+  --a-c: 0.018;
 }
 
 /* ---------- Light ---------- */
+:root,
 [data-theme="light"] {
   color-scheme: light;
-  --ground: oklch(0.925 calc(var(--n-c) + 0.002) var(--n-h));
-  --rail: oklch(0.905 calc(var(--n-c) + 0.003) var(--n-h));
-  --surface: oklch(0.935 calc(var(--n-c) + 0.002) var(--n-h));
-  --surface-2: oklch(0.955 var(--n-c) var(--n-h));
-  --well: oklch(0.9 calc(var(--n-c) + 0.004) var(--n-h));
-  --well-2: oklch(0.88 calc(var(--n-c) + 0.004) var(--n-h));
-  --line: oklch(0.3 0.02 var(--n-h) / 0.08);
 
-  --text: oklch(0.23 0.012 var(--n-h));
-  --text-2: oklch(0.42 0.014 var(--n-h));
-  --text-3: oklch(0.5 0.014 var(--n-h));
-  --icon: oklch(0.52 0.012 var(--n-h));
+  --plane: oklch(0.94 0.006 var(--n-h));
+  --side: oklch(0.918 0.007 var(--n-h));
+  --key: oklch(0.965 0.004 var(--n-h));
+  --well: oklch(0.912 0.007 var(--n-h));
+  --well-side: oklch(0.895 0.008 var(--n-h));
+  --menu-bg: oklch(0.975 0.003 var(--n-h));
+  --hover: oklch(0.3 0.02 var(--n-h) / 0.055);
+  --hair: oklch(0.3 0.02 var(--n-h) / 0.1);
+  --hair-strong: oklch(0.3 0.02 var(--n-h) / 0.16);
 
-  --accent: oklch(calc(var(--accent-l) - 0.06) var(--accent-c) var(--accent-h));
-  --accent-text: oklch(calc(var(--accent-l) - 0.16) var(--accent-c) var(--accent-h));
-  --accent-soft: oklch(var(--accent-l) var(--accent-c) var(--accent-h) / 0.14);
-  --accent-glow: oklch(var(--accent-l) var(--accent-c) var(--accent-h) / 0.35);
+  --text: oklch(0.24 0.012 var(--n-h));
+  --text-2: oklch(0.44 0.012 var(--n-h));
+  --text-3: oklch(0.57 0.01 var(--n-h));
 
-  --ok: oklch(0.55 0.14 155);
-  --warn: oklch(0.6 0.13 70);
-  --error: oklch(0.55 0.19 25);
-  --ok-soft: oklch(0.6 0.14 155 / 0.13);
-  --warn-soft: oklch(0.7 0.14 75 / 0.16);
-  --error-soft: oklch(0.6 0.19 25 / 0.12);
+  --hi: oklch(1 0 0 / 0.9);
+  --lo: oklch(0.42 0.03 var(--n-h) / 0.2);
+  --raise: -3px -3px 7px var(--hi), 3px 3px 8px var(--lo), inset 0 1px 0 oklch(1 0 0 / 0.6);
+  --raise-sm: -2px -2px 4px var(--hi), 2px 2px 5px var(--lo), inset 0 1px 0 oklch(1 0 0 / 0.6);
+  --raise-xs: 0 1px 2px oklch(0.4 0.03 var(--n-h) / 0.16), 0 0 0 0.5px var(--hair), inset 0 1px 0 oklch(1 0 0 / 0.7);
+  --sunk: inset 2px 2px 5px var(--lo), inset -2px -2px 5px var(--hi);
+  --sunk-sm: inset 1px 1px 2.5px oklch(0.42 0.03 var(--n-h) / 0.16), inset -1px -1px 2px var(--hi);
+  --float: inset 0 1px 0 oklch(1 0 0 / 0.75), 0 0 0 0.5px var(--hair), 0 4px 12px -6px oklch(0.3 0.03 var(--n-h) / 0.16),
+    0 22px 44px -18px oklch(0.3 0.03 var(--n-h) / 0.26);
 
-  --hi: oklch(1 0 0 / 0.95);
-  --hi-strong: oklch(1 0 0 / 1);
-  --lo: oklch(0.55 0.03 var(--n-h) / 0.34);
-  --lo-soft: oklch(0.55 0.03 var(--n-h) / 0.2);
+  --paper: oklch(0.995 0.001 var(--n-h));
+  --paper-shadow: oklch(0.3 0.03 var(--n-h) / 0.26);
 
-  --paper: oklch(1 0 0);
-  --paper-shadow: oklch(0.4 0.03 var(--n-h) / 0.28);
-  --glass: oklch(0.98 0.004 var(--n-h) / 0.6);
-  --glass-edge: oklch(1 0 0 / 0.9);
+  --accent: oklch(0.56 var(--a-c) var(--a-h));
+  --accent-text: oklch(0.5 var(--a-c) var(--a-h));
+  --accent-soft: oklch(0.56 var(--a-c) var(--a-h) / 0.13);
+  --on-accent: oklch(0.99 0 0);
 
-  --chrome-core: linear-gradient(160deg, oklch(0.99 0.002 var(--n-h)) 0%, oklch(0.9 0.006 var(--n-h)) 38%, oklch(0.97 0.004 var(--n-h)) 55%, oklch(0.8 0.01 var(--n-h)) 100%);
-  --chrome-glyph: oklch(0.5 0.012 var(--n-h));
+  --ok: oklch(0.63 0.13 152);
+  --warn: oklch(0.74 0.15 72);
+  --warn-text: oklch(0.52 0.12 62);
+  --error: oklch(0.57 0.19 26);
+  --error-soft: oklch(0.57 0.19 26 / 0.1);
+
+  --tip-bg: oklch(0.26 0.012 var(--n-h));
+  --tip-text: oklch(0.97 0.003 var(--n-h));
+  --scrim: oklch(0.2 0.02 var(--n-h) / 0.28);
+  --skel: oklch(0.3 0.02 var(--n-h) / 0.07);
+  --skel-hi: oklch(0.3 0.02 var(--n-h) / 0.12);
+
+  /* The metal of the print key. */
+  --metal-1: oklch(0.99 0.002 var(--n-h));
+  --metal-2: oklch(0.87 0.006 var(--n-h));
+  --metal-3: oklch(0.72 0.01 var(--n-h));
+  --metal-4: oklch(0.6 0.012 var(--n-h));
+  --metal-ink: oklch(0.27 0.012 var(--n-h));
 }
 
-/* Graphite accent is near-neutral; keep it legible on light. */
+/* ---------- Dark ---------- */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --plane: oklch(0.19 0.008 var(--n-h));
+  --side: oklch(0.166 0.008 var(--n-h));
+  --key: oklch(0.235 0.009 var(--n-h));
+  --well: oklch(0.158 0.008 var(--n-h));
+  --well-side: oklch(0.14 0.008 var(--n-h));
+  --menu-bg: oklch(0.24 0.009 var(--n-h));
+  --hover: oklch(1 0 0 / 0.05);
+  --hair: oklch(1 0 0 / 0.07);
+  --hair-strong: oklch(1 0 0 / 0.12);
+
+  --text: oklch(0.93 0.005 var(--n-h));
+  --text-2: oklch(0.75 0.008 var(--n-h));
+  --text-3: oklch(0.6 0.01 var(--n-h));
+
+  --hi: oklch(1 0 0 / 0.045);
+  --lo: oklch(0 0 0 / 0.45);
+  --raise: -2px -2px 6px var(--hi), 3px 3px 9px var(--lo), inset 0 1px 0 oklch(1 0 0 / 0.06);
+  --raise-sm: -1px -1px 4px var(--hi), 2px 2px 6px var(--lo), inset 0 1px 0 oklch(1 0 0 / 0.06);
+  --raise-xs: 0 1px 3px oklch(0 0 0 / 0.4), inset 0 1px 0 oklch(1 0 0 / 0.07);
+  --sunk: inset 2px 2px 5px oklch(0 0 0 / 0.45), inset -1px -1px 3px var(--hi);
+  --sunk-sm: inset 1px 1px 3px oklch(0 0 0 / 0.38), inset -1px -1px 1px oklch(1 0 0 / 0.035);
+  --float: inset 0 1px 0 oklch(1 0 0 / 0.06), 0 0 0 0.5px oklch(1 0 0 / 0.08), 0 4px 12px -6px oklch(0 0 0 / 0.5),
+    0 24px 48px -18px oklch(0 0 0 / 0.6);
+
+  --paper: oklch(0.965 0.002 var(--n-h));
+  --paper-shadow: oklch(0 0 0 / 0.55);
+
+  --accent: oklch(0.7 var(--a-c) var(--a-h));
+  --accent-text: oklch(0.78 calc(var(--a-c) * 0.85) var(--a-h));
+  --accent-soft: oklch(0.7 var(--a-c) var(--a-h) / 0.16);
+  --on-accent: oklch(0.18 0.02 var(--a-h));
+
+  --ok: oklch(0.72 0.14 152);
+  --warn: oklch(0.8 0.14 78);
+  --warn-text: oklch(0.82 0.12 78);
+  --error: oklch(0.7 0.17 26);
+  --error-soft: oklch(0.7 0.17 26 / 0.14);
+
+  --tip-bg: oklch(0.9 0.005 var(--n-h));
+  --tip-text: oklch(0.2 0.01 var(--n-h));
+  --scrim: oklch(0 0 0 / 0.45);
+  --skel: oklch(1 0 0 / 0.05);
+  --skel-hi: oklch(1 0 0 / 0.09);
+
+  --metal-1: oklch(0.97 0.003 var(--n-h));
+  --metal-2: oklch(0.82 0.006 var(--n-h));
+  --metal-3: oklch(0.64 0.01 var(--n-h));
+  --metal-4: oklch(0.5 0.012 var(--n-h));
+  --metal-ink: oklch(0.22 0.012 var(--n-h));
+}
+
+/* Graphite has almost no chroma, so it leans on contrast instead. */
 [data-theme="light"][data-palette="graphite"] {
-  --accent: oklch(0.38 0.02 260);
-  --accent-text: oklch(0.3 0.02 260);
+  --accent: oklch(0.32 0.014 var(--a-h));
+  --accent-text: oklch(0.3 0.014 var(--a-h));
+  --accent-soft: oklch(0.32 0.014 var(--a-h) / 0.1);
 }
-
-/* ---------- Elevation (neumorphic pairs) ---------- */
-:root {
-  --raise-1: -3px -3px 8px var(--hi), 4px 4px 10px var(--lo-soft);
-  --raise-2: -6px -6px 16px var(--hi), 8px 8px 20px var(--lo);
-  --raise-3: -10px -10px 28px var(--hi), 14px 14px 36px var(--lo);
-  --inset-1: inset 2px 2px 5px var(--lo-soft), inset -2px -2px 5px var(--hi);
-  --inset-2: inset 4px 4px 10px var(--lo), inset -4px -4px 10px var(--hi);
-  --edge-top: inset 0 1px 0 var(--hi-strong);
+[data-theme="dark"][data-palette="graphite"] {
+  --accent: oklch(0.88 0.008 var(--a-h));
+  --accent-text: oklch(0.9 0.008 var(--a-h));
+  --accent-soft: oklch(0.88 0.008 var(--a-h) / 0.12);
 }

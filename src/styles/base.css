@@ -12,23 +12,21 @@ body,
 
 body {
   margin: 0;
-  background: var(--ground);
+  background: var(--plane);
   color: var(--text);
   font-family: var(--font);
   font-size: var(--fs-14);
+  font-weight: 450;
   line-height: 1.45;
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
   overflow: hidden;
-  transition: background-color var(--t-slow) var(--ease-out), color var(--t-slow) var(--ease-out);
 }
 
 h1,
 h2,
 h3,
-h4,
 p {
   margin: 0;
 }
@@ -36,14 +34,13 @@ p {
 h1,
 h2,
 h3 {
-  font-weight: 620;
-  letter-spacing: -0.02em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
   text-wrap: balance;
 }
 
 button,
 input,
-select,
 textarea {
   font: inherit;
   color: inherit;
@@ -55,16 +52,11 @@ button {
   background: none;
   border: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button:disabled {
-  cursor: not-allowed;
-}
-
-a {
-  color: var(--accent-text);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
+  cursor: default;
 }
 
 img {
@@ -74,11 +66,9 @@ img {
 
 ::selection {
   background: var(--accent-soft);
-  color: var(--text);
 }
 
-input,
-textarea {
+input {
   caret-color: var(--accent);
 }
 
@@ -89,21 +79,11 @@ textarea {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in oklch, var(--text-3) 35%, transparent) transparent;
+  scrollbar-color: color-mix(in oklch, var(--text-3) 30%, transparent) transparent;
 }
 
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-thumb {
-  background: color-mix(in oklch, var(--text-3) 30%, transparent);
-  border: 3px solid transparent;
-  border-radius: 10px;
-  background-clip: padding-box;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
+.root-fade {
+  height: 100%;
 }
 
 .sr-only {
@@ -115,6 +95,121 @@ textarea {
   white-space: nowrap;
 }
 
+.nowrap {
+  white-space: nowrap;
+}
+
+.collapse {
+  overflow: hidden;
+}
+
+.theme-switching,
+.theme-switching * {
+  transition:
+    background-color 320ms var(--ease),
+    color 320ms var(--ease),
+    border-color 320ms var(--ease),
+    box-shadow 320ms var(--ease),
+    fill 320ms var(--ease),
+    stroke 320ms var(--ease) !important;
+}
+
+/* ---------- Tones ---------- */
+.tone-ok {
+  --tone: var(--ok);
+}
+.tone-active {
+  --tone: var(--accent);
+}
+.tone-warn {
+  --tone: var(--warn);
+  --tone-text: var(--warn-text);
+}
+.tone-error {
+  --tone: var(--error);
+  --tone-text: var(--error);
+}
+.tone-muted {
+  --tone: var(--text-3);
+}
+.tone-quiet {
+  --tone: color-mix(in oklch, var(--text-3) 40%, transparent);
+}
+
+.dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tone, var(--text-3));
+}
+.dot--pulse {
+  animation: pulse 1.6s var(--ease) infinite;
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ---------- File kinds ---------- */
+.kind-pdf {
+  color: oklch(0.6 0.17 27);
+}
+.kind-image {
+  color: oklch(0.58 0.15 300);
+}
+.kind-sheet {
+  color: oklch(0.58 0.13 150);
+}
+.kind-slides {
+  color: oklch(0.64 0.15 55);
+}
+.kind-doc {
+  color: oklch(0.56 0.13 250);
+}
+[data-theme="dark"] .kind-pdf {
+  color: oklch(0.72 0.14 27);
+}
+[data-theme="dark"] .kind-image {
+  color: oklch(0.74 0.12 300);
+}
+[data-theme="dark"] .kind-sheet {
+  color: oklch(0.74 0.12 150);
+}
+[data-theme="dark"] .kind-slides {
+  color: oklch(0.76 0.13 60);
+}
+[data-theme="dark"] .kind-doc {
+  color: oklch(0.74 0.11 250);
+}
+
+/* ---------- Skeletons ---------- */
+.skel {
+  display: block;
+  height: 10px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--skel) 0%, var(--skel-hi) 50%, var(--skel) 100%) 0 0 / 200% 100%;
+  animation: skel 1.4s linear infinite;
+}
+.skel--fill {
+  position: absolute;
+  inset: 0;
+  height: auto;
+  border-radius: 0;
+}
+.skel--sheet {
+  width: min(52%, 340px);
+  height: auto;
+  aspect-ratio: 0.707;
+  border-radius: 4px;
+}
+@keyframes skel {
+  to {
+    background-position: -200% 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -123,8 +218,4 @@ textarea {
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
   }
-}
-
-.nowrap {
-  white-space: nowrap;
 }

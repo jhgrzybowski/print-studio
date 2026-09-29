@@ -5,10 +5,9 @@ import "@fontsource-variable/geist";
 import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/controls.css";
-import "./styles/layout.css";
-import "./styles/sidebar.css";
-import "./styles/compose.css";
-import "./styles/views.css";
+import "./styles/shell.css";
+import "./styles/work.css";
+import "./styles/pages.css";
 import App from "./App.jsx";
 
 createRoot(document.getElementById("root")).render(
