@@ -165,12 +165,7 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
                     transition={{ duration: 0.16 }}
                     style={{ rotate: flipped ? 180 : 0 }}
                   >
-                    <PageImage
-                      fileId={fileId}
-                      page={current}
-                      eager
-                      className={`sheet__img ${mono ? "is-mono" : ""} ${settings.fit_to_page || doc.kind === "image" ? "is-fit" : ""}`}
-                    />
+                    <PageImage fileId={fileId} page={current} eager className={`sheet__img ${mono ? "is-mono" : ""} ${settings.fit_to_page ? "is-fit" : ""}`} />
                   </motion.div>
                 </AnimatePresence>
               ) : (
