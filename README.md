@@ -44,9 +44,17 @@ The backend must already be running at `http://192.168.100.99:8000`.
 docker compose up -d --build
 ```
 
-This serves the app at http://192.168.100.99/. nginx in the container serves the static build and proxies `/api/` to the backend. That keeps the session cookie same-origin, so no CORS setup is needed. To point at a different backend, set `PRINTER_API_UPSTREAM` (for example `http://local-printer-api:8000` on a shared Docker network).
+This serves the app at http://drukarka.local/ (or http://192.168.100.99/). nginx in the container serves the static build and proxies `/api/` to the backend. That keeps the session cookie same-origin, so no CORS setup is needed. To point at a different backend, set `PRINTER_API_UPSTREAM` (for example `http://local-printer-api:8000` on a shared Docker network).
 
 The port binds to the LAN address only. Don't expose it, or the API, to the internet.
+
+On the printer host, production runs from a clone of `main` at `~/Repositories/print-studio`. To release, run this there:
+
+```bash
+git pull && docker compose up -d --build
+```
+
+The Docker build runs the unit tests first, so a failing test stops the release, and the running container stays up. Before a release, tag the current image with `docker tag print-studio:latest print-studio:<name>` so you can roll back. `print-studio:old-redesign-2438e41` is kept from the previous deployment (the dropped `redesign` branch, stopped in `~/Repositories/printing_app`).
 
 ### Development
 
@@ -112,8 +120,16 @@ Verified on the dev deployment (http://192.168.100.99:5173) with Playwright, at 
 - Two real one-page black-and-white prints (one sent from the phone layout), followed from Sent to Printed.
 - The production build and unit tests.
 
+Deployed to production at http://drukarka.local/ from `main` (751dd53). The container is healthy and the page and `/api/health` answer on that name.
+
+Known behaviour:
+- **Images and fit to page.** The backend sends PNG and JPEG files to CUPS unchanged. Without fit to page, CUPS prints them at the size stored in the file, so a large image can be cropped. The preview shows this: it fills and crops the sheet unless fit to page is on.
+- **Language of messages.** Messages already on screen keep their language until the next action after you switch.
+
 Not yet done:
 - **Cancel on a live job.** The Cancel button appears while a job runs, but cancelling was not tried on a real job.
+- **Unchecked layouts.** The phone layout in the light theme, and Polish at 1100 px or in the light theme.
+- **drukarka.local in a browser.** Checked with curl only. The test browser can't resolve mDNS names, so browser checks used the IP address.
 - **Code splitting.** The JS bundle is about 190 kB gzipped.
 - **Server messages.** Error text that comes from the backend is not translated.
 
