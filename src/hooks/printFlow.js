@@ -4,6 +4,7 @@ import { BASE_SETTINGS, fromRequested, reconcile, toPrintOptions } from "../lib/
 import { parseRange } from "../lib/pages.js";
 import { fileKind, formatBytes } from "../lib/format.js";
 import { useDebounced } from "./data.js";
+import { t, useLocale } from "../i18n/index.js";
 
 const OFFICE_EXT = ["docx", "xlsx", "pptx", "odt", "ods", "odp"];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -56,7 +57,13 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
       setSettings((s) => ({ ...s, pages: "" }));
 
       if (maxBytes && f.size > maxBytes) {
-        setDoc({ phase: "error", name: f.name, kind, size: f.size, message: `${f.name} is ${formatBytes(f.size)}. The limit is ${formatBytes(maxBytes)}.` });
+        setDoc({
+          phase: "error",
+          name: f.name,
+          kind,
+          size: f.size,
+          message: t("{name} is {size}. The limit is {limit}.", { name: f.name, size: formatBytes(f.size), limit: formatBytes(maxBytes) }),
+        });
         return;
       }
       const ext = f.name.split(".").pop()?.toLowerCase();
@@ -122,7 +129,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
           phase: "error",
           name: entry.original_filename,
           kind: fileKind(entry.detected_mime, entry.original_filename),
-          message: e.status === 404 ? "This upload has expired. Files are kept for 7 days, so attach it again to reprint." : e.message,
+          message: e.status === 404 ? t("This upload has expired. Files are kept for 7 days, so attach it again to reprint.") : e.message,
         });
         return false;
       }
@@ -146,6 +153,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
 
   const pageCount = doc?.file?.page_count || doc?.pages?.length || null;
 
+  const locale = useLocale();
   const rangeError = useMemo(() => {
     if (!settings.pages) return null;
     try {
@@ -154,7 +162,8 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     } catch (e) {
       return e.message;
     }
-  }, [settings.pages, pageCount]);
+    // locale is a dependency so the message follows the language.
+  }, [settings.pages, pageCount, locale]);
 
   const payload = useMemo(() => {
     if (doc?.phase !== "ready" || rangeError) return null;
@@ -195,16 +204,16 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
 }
 
 function uploadMessage(e, name) {
-  if (e.status === 413) return `${name} is too large to upload.`;
-  if (e.status === 415) return `${name} isn't a type the printer can take. Use PDF, JPEG, PNG, text, or an Office document.`;
-  if (e.status === 503) return "The converter is busy. Try again in a moment.";
-  if (e.status === 504) return "Converting this document took too long. Try exporting it as PDF first.";
-  return e.message || "Upload failed.";
+  if (e.status === 413) return t("{name} is too large to upload.", { name });
+  if (e.status === 415) return t("{name} isn't a type the printer can take. Use PDF, JPEG, PNG, text, or an Office document.", { name });
+  if (e.status === 503) return t("The converter is busy. Try again in a moment.");
+  if (e.status === 504) return t("Converting this document took too long. Try exporting it as PDF first.");
+  return e.message || t("Upload failed.");
 }
 
 function printMessage(e) {
-  if (e.status === 503) return "The printer isn't reachable. Turn it on, then print again.";
-  if (e.status === 409) return e.message || "The printer isn't ready.";
-  if (e.status === 404) return "This upload has expired. Attach the file again.";
-  return e.message || "Printing failed.";
+  if (e.status === 503) return t("The printer isn't reachable. Turn it on, then print again.");
+  if (e.status === 409) return e.message || t("The printer isn't ready.");
+  if (e.status === 404) return t("This upload has expired. Attach the file again.");
+  return e.message || t("Printing failed.");
 }

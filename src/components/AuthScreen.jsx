@@ -4,6 +4,7 @@ import { ArrowRight, Eye, EyeOff, IdCard, KeyRound, User } from "lucide-react";
 import { ease, tween } from "./controls.jsx";
 import { Mark } from "./glyphs.jsx";
 import { PrinterLine } from "./PrinterStatus.jsx";
+import { t } from "../i18n/index.js";
 
 // First visit only: the pieces arrive in reading order, 50 ms apart.
 const rise = (i) => ({
@@ -49,23 +50,23 @@ export function AuthScreen({ session, printer }) {
 
   async function submit(e) {
     e.preventDefault();
-    if (!form.username.trim()) return fail(form.password ? "Enter your username." : "Enter a username and password.", form.password ? "username" : "both");
-    if (!form.password) return fail("Enter your password.", "password");
-    if (signup && form.password.length < 8) return fail("Use at least 8 characters for the password.", "password");
+    if (!form.username.trim()) return fail(form.password ? t("Enter your username.") : t("Enter a username and password."), form.password ? "username" : "both");
+    if (!form.password) return fail(t("Enter your password."), "password");
+    if (signup && form.password.length < 8) return fail(t("Use at least 8 characters for the password."), "password");
     setBusy(true);
     setError(null);
     try {
       if (signup) await session.signup(form.username.trim(), form.password, form.display_name.trim());
       else await session.login(form.username.trim(), form.password);
     } catch (err) {
-      if (err.status === 401) fail("Wrong username or password.", "password");
-      else if (err.status === 409) fail("That username is taken.", "username");
+      if (err.status === 401) fail(t("Wrong username or password."), "password");
+      else if (err.status === 409) fail(t("That username is taken."), "username");
       else fail(err.message);
       setBusy(false);
     }
   }
 
-  const cta = busy ? (signup ? "Creating" : "Signing in") : signup ? "Create account" : "Sign in";
+  const cta = busy ? (signup ? t("auth|Creating") : t("Signing in")) : signup ? t("Create account") : t("Sign in");
 
   return (
     <div className="auth">
@@ -77,23 +78,23 @@ export function AuthScreen({ session, printer }) {
         <motion.div className="auth__head" {...rise(1)}>
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.h1 key={mode} className="auth__title" {...swap}>
-              {signup ? "Make an account" : "Print Studio"}
+              {signup ? t("Make an account") : "Print Studio"}
             </motion.h1>
           </AnimatePresence>
-          <p className="auth__sub">{signup ? "Pick a username and a password." : "Sign in to print on the home printer."}</p>
+          <p className="auth__sub">{signup ? t("Pick a username and a password.") : t("Sign in to print on the home printer.")}</p>
         </motion.div>
 
         <motion.form className="auth__form" onSubmit={submit} noValidate {...rise(2)}>
           <div className="auth__field">
             <User className="auth__icon" size={16} strokeWidth={1.5} aria-hidden />
             <label className="sr-only" htmlFor="auth-user">
-              Username
+              {t("Username")}
             </label>
             <input
               id="auth-user"
               ref={userRef}
               className="input input--lg"
-              placeholder="Username"
+              placeholder={t("Username")}
               autoComplete="username"
               autoCapitalize="none"
               spellCheck={false}
@@ -110,12 +111,12 @@ export function AuthScreen({ session, printer }) {
                 <div className="auth__field auth__field--gap">
                   <IdCard className="auth__icon" size={16} strokeWidth={1.5} aria-hidden />
                   <label className="sr-only" htmlFor="auth-name">
-                    Display name, optional
+                    {t("Display name, optional")}
                   </label>
                   <input
                     id="auth-name"
                     className="input input--lg"
-                    placeholder="Display name (optional)"
+                    placeholder={t("Display name (optional)")}
                     autoComplete="nickname"
                     value={form.display_name}
                     onChange={set("display_name")}
@@ -128,7 +129,7 @@ export function AuthScreen({ session, printer }) {
           <div className="auth__field">
             <KeyRound className="auth__icon" size={16} strokeWidth={1.5} aria-hidden />
             <label className="sr-only" htmlFor="auth-pass">
-              Password
+              {t("Password")}
             </label>
             <input
               id="auth-pass"
@@ -137,12 +138,12 @@ export function AuthScreen({ session, printer }) {
               aria-describedby={invalid("password") ? "auth-error" : undefined}
               className="input input--lg"
               type={show ? "text" : "password"}
-              placeholder={signup ? "Password, 8+ characters" : "Password"}
+              placeholder={signup ? t("Password, 8+ characters") : t("Password")}
               autoComplete={signup ? "new-password" : "current-password"}
               value={form.password}
               onChange={set("password")}
             />
-            <button type="button" className="auth__reveal" aria-label={show ? "Hide password" : "Show password"} onClick={() => setShow((s) => !s)}>
+            <button type="button" className="auth__reveal" aria-label={show ? t("Hide password") : t("Show password")} onClick={() => setShow((s) => !s)}>
               {show ? <EyeOff size={16} strokeWidth={1.5} /> : <Eye size={16} strokeWidth={1.5} />}
             </button>
           </div>
@@ -183,7 +184,7 @@ export function AuthScreen({ session, printer }) {
           }}
           {...rise(3)}
         >
-          {signup ? "I already have an account" : "New here? Make an account"}
+          {signup ? t("I already have an account") : t("New here? Make an account")}
         </motion.button>
       </div>
 

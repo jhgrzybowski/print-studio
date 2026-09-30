@@ -3,6 +3,7 @@ import { api, setUnauthorizedHandler } from "../api/client.js";
 import { interpretStatus } from "../lib/printer.js";
 import { supportedChoices } from "../lib/settings.js";
 import { ACTIVE_STATUSES } from "../lib/format.js";
+import { t, useLocale } from "../i18n/index.js";
 
 /* ---------- Session ---------- */
 export function useSession() {
@@ -88,18 +89,20 @@ export function usePrinter() {
     return () => window.removeEventListener("focus", onFocus);
   }, [refresh]);
 
+  const locale = useLocale();
   const info = useMemo(() => {
     if (error && !raw) {
       return {
         tone: "down",
-        label: error.status === 0 ? "Server unreachable" : "Status unavailable",
+        label: error.status === 0 ? t("Server unreachable") : t("Status unavailable"),
         detail: error.message,
         ready: false,
         reasons: [],
       };
     }
     return interpretStatus(raw);
-  }, [raw, error]);
+    // locale is a dependency so the labels follow the language.
+  }, [raw, error, locale]);
 
   useInterval(refresh, info.ready ? 20000 : 10000);
   return { raw, info, refresh, checkedAt };

@@ -1,7 +1,8 @@
 import { Dot } from "./controls.jsx";
+import { t } from "../i18n/index.js";
 
 export function queueLabel(raw) {
-  return (raw?.queue_name || "Printer").replace(/_/g, " ");
+  return (raw?.queue_name || t("Printer")).replace(/_/g, " ");
 }
 
 // Printer tones (ready | busy | warn | offline | down | unknown) mapped to dot tones.

@@ -43,7 +43,8 @@ Print one file to the Canon PIXMA MG5350 without guessing. Before printing, the 
 - On phones and narrow tablets, a print dock (settings summary plus a large Print button) and a settings sheet that can be swiped away.
 - Print, then track the job live in a job chip. Cancel an active job, or clear a finished one from the queue.
 - Browse and search history, and reprint any upload that hasn't expired.
-- Per-user print defaults stored on the server. Theme and accent are stored per browser.
+- Per-user print defaults stored on the server. Theme, accent and language are stored per browser.
+- English and Polish. Language follows the system unless one is picked in Settings. The Polish copy uses the words Polish printer drivers and operating systems use (for example "zadanie", "Druk dwustronny", "Typ nośnika"), not literal translations.
 
 ## Brand Commitments
 

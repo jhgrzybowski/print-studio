@@ -4,7 +4,8 @@ import { BookmarkCheck, BookmarkPlus, Check, ChevronDown, Copy, Ellipsis, File, 
 import { Dot, IconKey, MOD, PrintButton, Segmented, Select, Stepper, Tip } from "./controls.jsx";
 import { asGroups, mediaGroups, optionModel, paperSelectGroups } from "./Options.jsx";
 import { printerDot } from "./PrinterStatus.jsx";
-import { COLOR_LABELS } from "../lib/format.js";
+import { COLOR_LABELS, label as labelOf } from "../lib/format.js";
+import { t, tn } from "../i18n/index.js";
 
 function PagesField({ value, onChange, pageCount, error, disabled }) {
   const [open, setOpen] = useState(false);
@@ -18,12 +19,12 @@ function PagesField({ value, onChange, pageCount, error, disabled }) {
   }, [value]);
 
   const single = pageCount === 1;
-  const label = value ? value.replace(/,/g, ", ") : pageCount ? `All ${pageCount}` : "All pages";
+  const label = value ? value.replace(/,/g, ", ") : pageCount ? t("All {n}", { n: pageCount }) : t("All pages");
 
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
-      <Tip label="Pages">
-        <Popover.Trigger className={`field field--pages ${error ? "is-invalid" : ""}`} aria-label={`Pages: ${label}`} disabled={disabled || single}>
+      <Tip label={t("Pages")}>
+        <Popover.Trigger className={`field field--pages ${error ? "is-invalid" : ""}`} aria-label={t("Pages: {value}", { value: label })} disabled={disabled || single}>
           <Files className="field__lead" size={17} strokeWidth={1.5} aria-hidden />
           <span className="field__val">{label}</span>
           <ChevronDown className="field__chev" size={14} strokeWidth={1.6} aria-hidden />
@@ -43,9 +44,9 @@ function PagesField({ value, onChange, pageCount, error, disabled }) {
             }
           }}
         >
-          <p className="menu__label">Pages</p>
+          <p className="menu__label">{t("Pages")}</p>
           <Segmented
-            label="Pages"
+            label={t("Pages")}
             layoutKey="toolbar-pages"
             value={mode}
             onChange={(m) => {
@@ -54,12 +55,12 @@ function PagesField({ value, onChange, pageCount, error, disabled }) {
               else setTimeout(() => inputRef.current?.focus(), 30);
             }}
             options={[
-              { value: "all", label: pageCount ? `All ${pageCount}` : "All" },
-              { value: "range", label: "Range" },
+              { value: "all", label: pageCount ? t("All {n}", { n: pageCount }) : t("pages|All") },
+              { value: "range", label: t("Range") },
             ]}
           />
           <label className="sr-only" htmlFor={id}>
-            Page range
+            {t("Page range")}
           </label>
           <input
             ref={inputRef}
@@ -88,9 +89,9 @@ function DefaultsMenu({ model, onSaveDefaults, onResetDefaults, defaultsState })
   const saved = defaultsState === "saved";
   return (
     <DropdownMenu.Root>
-      <Tip label="More options">
+      <Tip label={t("More options")}>
         <DropdownMenu.Trigger asChild>
-          <button type="button" className={`ikey ikey--plain ikey--md ${saved ? "is-confirmed" : ""}`} aria-label="More options">
+          <button type="button" className={`ikey ikey--plain ikey--md ${saved ? "is-confirmed" : ""}`} aria-label={t("More options")}>
             {saved ? <BookmarkCheck size={18} strokeWidth={1.5} aria-hidden /> : <Ellipsis size={18} strokeWidth={1.5} aria-hidden />}
           </button>
         </DropdownMenu.Trigger>
@@ -104,18 +105,18 @@ function DefaultsMenu({ model, onSaveDefaults, onResetDefaults, defaultsState })
                   <Check size={14} strokeWidth={1.8} />
                 </DropdownMenu.ItemIndicator>
                 <FlipVertical2 size={16} strokeWidth={1.5} aria-hidden />
-                Print upside down
+                {t("Print upside down")}
               </DropdownMenu.CheckboxItem>
               <DropdownMenu.Separator className="menu__sep" />
             </>
           )}
           <DropdownMenu.Item className="menu__item" onSelect={onSaveDefaults} disabled={defaultsState === "saving"}>
             <BookmarkPlus size={16} strokeWidth={1.5} aria-hidden />
-            Save as my defaults
+            {t("Save as my defaults")}
           </DropdownMenu.Item>
           <DropdownMenu.Item className="menu__item" onSelect={onResetDefaults}>
             <RotateCcw size={16} strokeWidth={1.5} aria-hidden />
-            Use my defaults
+            {t("Use my defaults")}
           </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
@@ -129,7 +130,7 @@ function PhoneBar({ lead, title, printer, onPrinter }) {
     <div className="toolbar toolbar--phone">
       {lead}
       <p className="toolbar__title">{title}</p>
-      <button type="button" className="toolbar__printer" onClick={onPrinter} aria-label={`Printer: ${printer.info.label}. Open settings`}>
+      <button type="button" className="toolbar__printer" onClick={onPrinter} aria-label={t("Printer: {status}. Open settings", { status: printer.info.label })}>
         <Dot tone={printerDot(printer.info.tone)} pulse={printer.info.tone === "busy"} />
         <span>{printer.info.label}</span>
       </button>
@@ -146,15 +147,23 @@ export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSav
   if (narrow) return <PhoneBar lead={lead} title="Print Studio" printer={printer} onPrinter={onPrinter} />;
 
   return (
-    <div className="toolbar" role="toolbar" aria-label="Print settings">
+    <div className="toolbar" role="toolbar" aria-label={t("Print settings")}>
       {lead}
       <div className="toolbar__scroll">
         <div className="toolbar__group">
-          <Stepper label="Copies" icon={Copy} value={settings.copies} onChange={(v) => set("copies", v)} disabled={disabled} />
+          <Stepper
+            label={t("Copies")}
+            decLabel={t("Fewer copies")}
+            incLabel={t("More copies")}
+            icon={Copy}
+            value={settings.copies}
+            onChange={(v) => set("copies", v)}
+            disabled={disabled}
+          />
           <PagesField value={settings.pages} onChange={(v) => set("pages", v)} pageCount={pageCount} error={rangeError} disabled={!flow.doc} />
           {choices.paper_size?.length > 0 && (
             <Select
-              label="Paper size"
+              label={t("Paper size")}
               icon={File}
               value={settings.paper_size}
               onChange={(v) => set("paper_size", v)}
@@ -164,7 +173,7 @@ export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSav
           )}
           {choices.media_type?.length > 0 && (
             <Select
-              label="Paper type"
+              label={t("Paper type")}
               icon={Layers}
               collapse
               value={settings.media_type}
@@ -178,13 +187,13 @@ export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSav
         <span className="toolbar__sep" role="separator" aria-orientation="vertical" />
 
         <div className="toolbar__group">
-          {m.color && <Select label="Color" collapse="compact" disabled={disabled} value={m.color.value} onChange={m.color.onChange} groups={asGroups(m.color)} />}
-          {m.duplex && <Select label="Sides" collapse="compact" disabled={disabled} value={m.duplex.value} onChange={m.duplex.onChange} groups={asGroups(m.duplex)} />}
-          {m.orientation && <Segmented label="Orientation" layoutKey="tb-orient" iconOnly disabled={disabled} {...m.orientation} />}
-          {m.quality && <Select label="Quality" collapse="compact" disabled={disabled} value={m.quality.value} onChange={m.quality.onChange} groups={asGroups(m.quality)} />}
+          {m.color && <Select label={t("Color")} collapse="compact" disabled={disabled} value={m.color.value} onChange={m.color.onChange} groups={asGroups(m.color)} />}
+          {m.duplex && <Select label={t("Sides")} collapse="compact" disabled={disabled} value={m.duplex.value} onChange={m.duplex.onChange} groups={asGroups(m.duplex)} />}
+          {m.orientation && <Segmented label={t("Orientation")} layoutKey="tb-orient" iconOnly disabled={disabled} {...m.orientation} />}
+          {m.quality && <Select label={t("Quality")} collapse="compact" disabled={disabled} value={m.quality.value} onChange={m.quality.onChange} groups={asGroups(m.quality)} />}
           {choices.fit_to_page && (
             <IconKey
-              label={settings.fit_to_page ? "Fit to page: on" : "Fit to page: off"}
+              label={settings.fit_to_page ? t("Fit to page: on") : t("Fit to page: off")}
               icon={Shrink}
               pressed={!!settings.fit_to_page}
               onClick={() => set("fit_to_page", !settings.fit_to_page)}
@@ -214,12 +223,12 @@ export function Verdict({ validation, settings, rangeError, printerReady }) {
   if (rangeError) return null;
   const { state, result, warnings = [], error } = validation;
   let tone = "muted";
-  let title = "Checking";
+  let title = t("Checking");
   let notes = [];
   let opts = null;
   if (state === "error") {
     tone = "error";
-    title = "Couldn't check";
+    title = t("Couldn't check");
     notes = [error];
   } else if (result) {
     const n = result.selected_pages?.length || result.page_count || 0;
@@ -227,12 +236,19 @@ export function Verdict({ validation, settings, rangeError, printerReady }) {
     const unsupported = result.unsupported_options || [];
     tone = !result.valid ? "error" : warnings.length || unsupported.length || !printerReady ? "warn" : "ok";
     title = !result.valid
-      ? "Won't print with these settings"
+      ? t("Won't print with these settings")
       : n
-        ? `${n} page${n === 1 ? "" : "s"}${settings.copies > 1 ? ` × ${settings.copies}` : ""} · ${sheets} sheet${sheets === 1 ? "" : "s"}`
-        : "Ready";
-    if (result.valid && n) opts = [COLOR_LABELS[settings.color_mode], settings.duplex && (settings.duplex === "none" ? "One-sided" : "Two-sided")].filter(Boolean).join(" · ");
-    notes = [!printerReady && result.valid && "Printer isn't ready yet.", unsupported.length > 0 && `Not supported: ${unsupported.join(", ")}`, ...warnings].filter(Boolean);
+        ? `${tn(n, "{n} page", "{n} pages")}${settings.copies > 1 ? ` × ${settings.copies}` : ""} · ${tn(sheets, "{n} sheet", "{n} sheets")}`
+        : t("settings|Ready");
+    if (result.valid && n)
+      opts = [settings.color_mode && labelOf(COLOR_LABELS, settings.color_mode), settings.duplex && (settings.duplex === "none" ? t("One-sided") : t("Two-sided"))]
+        .filter(Boolean)
+        .join(" · ");
+    notes = [
+      !printerReady && result.valid && t("Printer isn't ready yet."),
+      unsupported.length > 0 && t("Not supported: {options}", { options: unsupported.join(", ") }),
+      ...warnings,
+    ].filter(Boolean);
   } else if (state !== "checking") return null;
 
   return (

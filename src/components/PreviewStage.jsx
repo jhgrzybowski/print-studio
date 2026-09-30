@@ -6,6 +6,7 @@ import { formatRange, selectedPages } from "../lib/pages.js";
 import { paperMM } from "../lib/format.js";
 import { FileGlyph } from "./FileGlyph.jsx";
 import { IconKey, Tip, ease } from "./controls.jsx";
+import { t } from "../i18n/index.js";
 
 const ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
@@ -18,12 +19,12 @@ function PageImage({ fileId, page, className, eager }) {
     <>
       {state === "loading" && <span className="skel skel--fill" aria-hidden />}
       {state === "error" ? (
-        <span className="page-missing">Page {page} didn't load</span>
+        <span className="page-missing">{t("Page {n} didn't load", { n: page })}</span>
       ) : (
         <img
           className={`${className} ${state === "ready" ? "is-ready" : ""}`}
           src={src}
-          alt={`Page ${page}`}
+          alt={t("Page {n}", { n: page })}
           loading={eager ? "eager" : "lazy"}
           decoding="async"
           draggable={false}
@@ -97,7 +98,7 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
   return (
     <div className={`stage ${multi ? "has-rail" : ""}`} onKeyDown={onKeyDown}>
       {multi && (
-        <div className="rail" ref={railRef} aria-label="Pages">
+        <div className="rail" ref={railRef} aria-label={t("Pages")}>
           {pages.map((p) => {
             const on = included.has(p.page);
             return (
@@ -107,7 +108,7 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
                   className="thumb__sheet"
                   style={{ aspectRatio: ratio }}
                   onClick={() => setCurrent(p.page)}
-                  aria-label={`Show page ${p.page}`}
+                  aria-label={t("Show page {n}", { n: p.page })}
                   aria-current={p.page === current ? "page" : undefined}
                 >
                   <PageImage fileId={fileId} page={p.page} className={`thumb__img ${mono ? "is-mono" : ""}`} />
@@ -115,7 +116,7 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
                 {readOnly ? (
                   <span className="thumb__num">{p.page}</span>
                 ) : (
-                  <button type="button" role="checkbox" aria-checked={on} aria-label={`Print page ${p.page}`} className="thumb__toggle" onClick={() => toggle(p.page)}>
+                  <button type="button" role="checkbox" aria-checked={on} aria-label={t("Print page {n}", { n: p.page })} className="thumb__toggle" onClick={() => toggle(p.page)}>
                     <span className="thumb__box" aria-hidden>
                       {on && <Check size={10} strokeWidth={2.4} />}
                     </span>
@@ -175,11 +176,11 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
               ) : (
                 <div className="sheet__none">
                   <FileGlyph kind={doc.kind} size={26} />
-                  <span>{doc.file?.detected_mime === "text/plain" ? "Text file" : "No preview"}</span>
-                  <span className="sheet__none-sub">It prints as it is.</span>
+                  <span>{doc.file?.detected_mime === "text/plain" ? t("Text file") : t("No preview")}</span>
+                  <span className="sheet__none-sub">{t("It prints as it is.")}</span>
                 </div>
               )}
-              {hasPreview && !included.has(current) && <span className="sheet__skip">Skipped</span>}
+              {hasPreview && !included.has(current) && <span className="sheet__skip">{t("Skipped")}</span>}
             </div>
           </motion.div>
         </div>
@@ -195,24 +196,24 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
             {multi && (
               <>
                 <div className="pager">
-                  <IconKey label="Previous page" icon={ChevronLeft} size="sm" onClick={() => go(-1)} disabled={current <= 1} tipSide="top" />
+                  <IconKey label={t("Previous page")} icon={ChevronLeft} size="sm" onClick={() => go(-1)} disabled={current <= 1} tipSide="top" />
                   <span className="pager__text" aria-live="polite">
                     {current} / {count}
-                    {!included.has(current) && <span className="sr-only">, skipped</span>}
+                    {!included.has(current) && <span className="sr-only">{t(", skipped")}</span>}
                   </span>
-                  <IconKey label="Next page" icon={ChevronRight} size="sm" onClick={() => go(1)} disabled={current >= count} tipSide="top" />
+                  <IconKey label={t("Next page")} icon={ChevronRight} size="sm" onClick={() => go(1)} disabled={current >= count} tipSide="top" />
                 </div>
                 <span className="stage-bar__sep" aria-hidden />
               </>
             )}
             <div className="zoom">
-              <IconKey label="Zoom out" icon={Minus} size="sm" onClick={() => setZoom(ZOOMS[zi - 1])} disabled={zi <= 0} tipSide="top" />
-              <Tip label="Fit to stage" side="top">
-                <button type="button" className="zoom__val" onClick={() => setZoom(1)} aria-label="Fit to stage">
+              <IconKey label={t("Zoom out")} icon={Minus} size="sm" onClick={() => setZoom(ZOOMS[zi - 1])} disabled={zi <= 0} tipSide="top" />
+              <Tip label={t("Fit to stage")} side="top">
+                <button type="button" className="zoom__val" onClick={() => setZoom(1)} aria-label={t("Fit to stage")}>
                   {zoom === 1 ? <Scan size={14} strokeWidth={1.5} aria-hidden /> : `${Math.round(zoom * 100)}%`}
                 </button>
               </Tip>
-              <IconKey label="Zoom in" icon={Plus} size="sm" onClick={() => setZoom(ZOOMS[zi + 1])} disabled={zi >= ZOOMS.length - 1} tipSide="top" />
+              <IconKey label={t("Zoom in")} icon={Plus} size="sm" onClick={() => setZoom(ZOOMS[zi + 1])} disabled={zi >= ZOOMS.length - 1} tipSide="top" />
             </div>
           </div>
         </div>

@@ -2,12 +2,13 @@ import { AnimatePresence, motion } from "motion/react";
 import { Check, X } from "lucide-react";
 import { Button, Dot, IconKey, ease, tween } from "./controls.jsx";
 import { formatBytes, HISTORY_STATUS, ACTIVE_STATUSES } from "../lib/format.js";
+import { t, tn } from "../i18n/index.js";
 
 const STAGES = [
-  { label: "Sent", statuses: ["submitted"] },
-  { label: "Queued", statuses: ["pending", "pending-held"] },
-  { label: "Printing", statuses: ["processing", "processing-stopped", "cancel-requested"] },
-  { label: "Done", statuses: ["completed"] },
+  { label: "job|Sent", statuses: ["submitted"] },
+  { label: "job|Queued", statuses: ["pending", "pending-held"] },
+  { label: "job|Printing", statuses: ["processing", "processing-stopped", "cancel-requested"] },
+  { label: "stage|Done", statuses: ["completed"] },
 ];
 
 function stageIndex(status) {
@@ -36,7 +37,7 @@ function Track({ status }) {
 /** A floating chip on the stage that follows the last job sent from here. */
 export function JobStrip({ entry, onCancel, onDismiss, onOpen, cancelling }) {
   const status = entry?.status || "submitted";
-  const st = HISTORY_STATUS[status] || { label: status };
+  const stateLabel = HISTORY_STATUS[status] ? t(HISTORY_STATUS[status].label) : status;
   const active = ACTIVE_STATUSES.has(status);
   const done = status === "completed";
   return (
@@ -48,7 +49,12 @@ export function JobStrip({ entry, onCancel, onDismiss, onOpen, cancelling }) {
       exit={{ opacity: 0, y: -6, scale: 0.97 }}
       transition={tween}
     >
-      <button type="button" className="jobchip__main" onClick={onOpen} aria-label={`${st.label}: ${entry?.original_filename || "print job"}. Open details`}>
+      <button
+        type="button"
+        className="jobchip__main"
+        onClick={onOpen}
+        aria-label={t("{status}: {name}. Open details", { status: stateLabel, name: entry?.original_filename || t("print job") })}
+      >
         <span className="jobchip__mark">
           <AnimatePresence initial={false} mode="popLayout">
             {done ? (
@@ -70,7 +76,7 @@ export function JobStrip({ entry, onCancel, onDismiss, onOpen, cancelling }) {
         </span>
         <span className="jobchip__text">
           <span className="jobchip__line">
-            <span className="jobchip__state">{st.label}</span>
+            <span className="jobchip__state">{stateLabel}</span>
             <span className="jobchip__name">{entry?.original_filename}</span>
           </span>
           <Track status={status} />
@@ -78,10 +84,10 @@ export function JobStrip({ entry, onCancel, onDismiss, onOpen, cancelling }) {
       </button>
       {active && entry?.cups_job_id ? (
         <Button variant="quiet" className="btn--sm jobchip__cancel" onClick={onCancel} disabled={cancelling || status === "cancel-requested"}>
-          {status === "cancel-requested" ? "Cancelling" : "Cancel"}
+          {status === "cancel-requested" ? t("action|Cancelling") : t("Cancel")}
         </Button>
       ) : (
-        <IconKey label="Dismiss" icon={X} size="sm" onClick={onDismiss} />
+        <IconKey label={t("Dismiss")} icon={X} size="sm" onClick={onDismiss} />
       )}
     </motion.div>
   );
@@ -91,15 +97,15 @@ export function JobStrip({ entry, onCancel, onDismiss, onOpen, cancelling }) {
 export function docLine({ flow, printer, canSend }) {
   const { doc, printing, validation, rangeError, pageCount } = flow;
   if (!doc) return null;
-  if (printing.state === "sending") return { sub: "Sending", tone: "active", pulse: true };
+  if (printing.state === "sending") return { sub: t("Sending"), tone: "active", pulse: true };
   if (printing.state === "error") return { sub: printing.error, tone: "error" };
-  if (doc.phase === "uploading") return { sub: `Uploading ${Math.round((doc.progress || 0) * 100)}%`, tone: "active", pulse: true };
-  if (doc.phase === "converting") return { sub: doc.retry ? "Converter busy, retrying" : "Converting to PDF", tone: "active", pulse: true };
-  if (doc.phase === "loading") return { sub: "Preparing preview", tone: "active", pulse: true };
+  if (doc.phase === "uploading") return { sub: t("Uploading {percent}%", { percent: Math.round((doc.progress || 0) * 100) }), tone: "active", pulse: true };
+  if (doc.phase === "converting") return { sub: doc.retry ? t("Converter busy, retrying") : t("Converting to PDF"), tone: "active", pulse: true };
+  if (doc.phase === "loading") return { sub: t("Preparing preview"), tone: "active", pulse: true };
   if (doc.phase === "error") return { sub: doc.message, tone: "error" };
   if (rangeError) return { sub: rangeError, tone: "error" };
   if (!canSend) return { sub: printer.info.detail || printer.info.label, tone: "warn" };
-  if (validation.result && !validation.result.valid) return { sub: "Settings won't print", tone: "error" };
-  const meta = [pageCount && `${pageCount} page${pageCount === 1 ? "" : "s"}`, formatBytes(doc.file?.size_bytes), doc.file?.converted && "from Office"].filter(Boolean).join(" · ");
+  if (validation.result && !validation.result.valid) return { sub: t("Settings won't print"), tone: "error" };
+  const meta = [pageCount && tn(pageCount, "{n} page", "{n} pages"), formatBytes(doc.file?.size_bytes), doc.file?.converted && t("from Office")].filter(Boolean).join(" · ");
   return { sub: meta, tone: "ok", quiet: true };
 }

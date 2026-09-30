@@ -232,6 +232,16 @@
     padding: 0 7px 0 9px;
   }
 }
+/* Polish values run about a third longer ("Jednostronnie", "Standardowa"), so they fold sooner. */
+@media (max-width: 1600px) {
+  :lang(pl) .field--compact .field__val {
+    display: none;
+  }
+  :lang(pl) .field--compact {
+    gap: 4px;
+    padding: 0 7px 0 9px;
+  }
+}
 
 /* ---------- Inset wells: segments and steppers ---------- */
 .seg {
@@ -604,6 +614,13 @@
   }
   .row .field {
     min-height: 40px;
+  }
+  /* Polish option names don't fit three across a phone, so segments use their short forms. */
+  :lang(pl) .row--seg .seg__text--full {
+    display: none;
+  }
+  :lang(pl) .row--seg .seg__text--short {
+    display: inline;
   }
 }
 

@@ -312,6 +312,7 @@ A two-column app frame: a 292 px sidebar and a fluid main column. The main colum
 - **Settings.** One centred column up to 680 px, 16 px between sections, 28 px top padding.
 - **Sign in.** A single 340 px column centred on a lit graphite field, 26 px between groups, printer status pinned 24 px from the bottom.
 - **Narrow.** Below 860 px the sidebar becomes a drawer (up to 320 px or 86 vw) over a 50 % black scrim.
+- **Polish.** Polish words run about a third longer, so layout folds sooner under `:lang(pl)`. Toolbar fields go icon-only below 1600 px (not 1480). On phones, segments switch to their short forms ("Cz-b", "Wył.", "Dłuższa", "Standard"). Copy is chosen to fit rather than truncated.
 - **Rhythm.** Spacing steps are 2, 4, 6, 8, 10, 12, 16 and 20 px; control height is 36 px (30 px inside wells, 46 px for large sign-in fields, 52 px in the phone dock). On coarse pointers small buttons grow an invisible hit area, segment options are 40 px, and keyboard hints are hidden.
 
 ## Elevation & Depth

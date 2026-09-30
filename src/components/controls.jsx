@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Select as RSelect, Tooltip as RTooltip } from "radix-ui";
 import { Check, ChevronDown, Minus, Plus } from "lucide-react";
+import { t, tn } from "../i18n/index.js";
 
 // Strong ease-out: instant response, long soft landing.
 export const ease = [0.23, 1, 0.32, 1];
@@ -156,7 +157,8 @@ export function Segmented({ value, onChange, options, label, disabled, iconOnly,
 }
 
 /* ---------- Stepper ---------- */
-export function Stepper({ value, onChange, min = 1, max = 99, label = "Copies", icon: Icon, disabled }) {
+/** decLabel / incLabel name the keys; languages that inflect need them spelled out ("Mniej kopii"). */
+export function Stepper({ value, onChange, min = 1, max = 99, label, decLabel, incLabel, icon: Icon, disabled }) {
   const [draft, setDraft] = useState(String(value));
   useEffect(() => setDraft(String(value)), [value]);
 
@@ -169,7 +171,7 @@ export function Stepper({ value, onChange, min = 1, max = 99, label = "Copies", 
   const body = (
     <div className={`stepper ${disabled ? "is-disabled" : ""}`} role="group" aria-label={label}>
       {Icon && <Icon className="stepper__lead" size={16} strokeWidth={1.5} aria-hidden />}
-      <button type="button" className="stepper__key" aria-label={`Fewer ${label.toLowerCase()}`} disabled={disabled || value <= min} onClick={() => commit(value - 1)}>
+      <button type="button" className="stepper__key" aria-label={decLabel || t("Fewer")} disabled={disabled || value <= min} onClick={() => commit(value - 1)}>
         <Minus size={14} strokeWidth={1.6} aria-hidden />
       </button>
       <input
@@ -186,7 +188,7 @@ export function Stepper({ value, onChange, min = 1, max = 99, label = "Copies", 
           if (e.key === "ArrowDown") (e.preventDefault(), commit(value - 1));
         }}
       />
-      <button type="button" className="stepper__key" aria-label={`More ${label.toLowerCase()}`} disabled={disabled || value >= max} onClick={() => commit(value + 1)}>
+      <button type="button" className="stepper__key" aria-label={incLabel || t("stepper|More")} disabled={disabled || value >= max} onClick={() => commit(value + 1)}>
         <Plus size={14} strokeWidth={1.6} aria-hidden />
       </button>
     </div>
@@ -195,7 +197,7 @@ export function Stepper({ value, onChange, min = 1, max = 99, label = "Copies", 
 }
 
 /* ---------- Select: a raised field that opens a dark menu ---------- */
-export function Select({ value, onChange, groups, label, disabled, placeholder = "Choose", icon, collapse, className = "" }) {
+export function Select({ value, onChange, groups, label, disabled, placeholder, icon, collapse, className = "" }) {
   // groups: [{ label?, items: [{ value, label, sub?, icon? }] }]
   const current = groups.flatMap((g) => g.items).find((i) => i.value === value);
   // Items that carry their own glyph lend it to the trigger, so the field shows what is chosen.
@@ -204,7 +206,7 @@ export function Select({ value, onChange, groups, label, disabled, placeholder =
     <RSelect.Trigger className={`field ${collapse ? `field--${collapse === true ? "collapse" : collapse}` : ""} ${className}`} aria-label={label}>
       {Icon && <Icon className="field__lead" size={17} strokeWidth={1.5} aria-hidden />}
       <span className="field__val">
-        <RSelect.Value placeholder={placeholder}>{current?.label}</RSelect.Value>
+        <RSelect.Value placeholder={placeholder ?? t("Choose")}>{current?.label}</RSelect.Value>
       </span>
       <RSelect.Icon className="field__chev">
         <ChevronDown size={14} strokeWidth={1.6} />
@@ -287,21 +289,21 @@ export function Row({ label, hint, htmlFor, children, className = "" }) {
  * The print slab: polished chrome with a drifting sheen. While sending it becomes a dark
  * well that fills with mercury; on success it shows a check for a moment.
  */
-export function PrintButton({ label = "Print", icon: Icon, onClick, disabled, state = "idle", shortcut, className = "" }) {
+export function PrintButton({ label, icon: Icon, onClick, disabled, state = "idle", shortcut, className = "" }) {
   const [flash, setFlash] = useState(false);
   const prev = useRef(state);
   useEffect(() => {
     if (prev.current === "sending" && state === "sent") {
       setFlash(true);
-      const t = setTimeout(() => setFlash(false), 1700);
+      const id = setTimeout(() => setFlash(false), 1700);
       prev.current = state;
-      return () => clearTimeout(t);
+      return () => clearTimeout(id);
     }
     prev.current = state;
   }, [state]);
 
   const sending = state === "sending";
-  const text = sending ? "Sending" : flash ? "Sent" : label;
+  const text = sending ? t("Sending") : flash ? t("print|Sent") : label || t("Print");
   const Lead = flash ? Check : Icon;
 
   return (

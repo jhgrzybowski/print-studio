@@ -9,6 +9,7 @@ import { Button, IconKey, Row, Segmented, Stepper, Tip, ease } from "./controls.
 import { OptionRows } from "./Options.jsx";
 import { PrinterLine } from "./PrinterStatus.jsx";
 import { Avatar } from "./Sidebar.jsx";
+import { setLocalePref, t, tn, useLocalePref } from "../i18n/index.js";
 
 function Section({ title, tools, children, i = 0 }) {
   return (
@@ -22,7 +23,7 @@ function Section({ title, tools, children, i = 0 }) {
   );
 }
 
-const EXT_NAMES = { "application/pdf": "PDF", "image/jpeg": "JPEG", "image/png": "PNG", "text/plain": "Text" };
+const EXT_NAMES = { "application/pdf": "PDF", "image/jpeg": "JPEG", "image/png": "PNG", "text/plain": "Text" }; // shown through t()
 
 export function SettingsView({ user, appearance, setAppearance, choices, prefs, printer, capabilities, onLogout, lead }) {
   const saved = prefs.prefs?.print_defaults;
@@ -30,6 +31,7 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
   const [draft, setDraft] = useState(base);
   const [state, setState] = useState("idle");
   const [health, setHealth] = useState(null);
+  const localePref = useLocalePref();
 
   useEffect(() => setDraft(base), [base]);
 
@@ -56,51 +58,65 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
 
   const raw = printer.raw;
   const formats = [
-    ...(capabilities?.native_mime_types || []).map((m) => EXT_NAMES[m] || m),
+    ...(capabilities?.native_mime_types || []).map((m) => (EXT_NAMES[m] ? t(EXT_NAMES[m]) : m)),
     ...(capabilities?.office?.available ? capabilities.office.formats.filter((f) => f.available).map((f) => f.extension.toUpperCase()) : []),
   ];
 
   const facts = [
-    ["Server", health ? (health.status === "ok" ? "Online" : health.status) : "Checking"],
-    ["Address", raw?.network?.host],
-    ["Accepts", formats.join(", ")],
-    ["Max upload", capabilities && formatBytes(capabilities.max_upload_bytes)],
-    ["Office", capabilities && (capabilities.office?.available ? `Up to ${capabilities.office.max_pages} pages` : "Unavailable")],
+    [t("Server"), health ? (health.status === "ok" ? t("Online") : health.status) : t("Checking")],
+    [t("Address"), raw?.network?.host],
+    [t("Accepts"), formats.join(", ")],
+    [t("Max upload"), capabilities && formatBytes(capabilities.max_upload_bytes)],
+    [t("Office"), capabilities && (capabilities.office?.available ? tn(capabilities.office.max_pages, "Up to {n} page", "Up to {n} pages") : t("Unavailable"))],
   ];
 
   return (
     <div className="page">
       <div className="bar">
         {lead}
-        <h1 className="bar__title bar__title--lg">Settings</h1>
+        <h1 className="bar__title bar__title--lg">{t("Settings")}</h1>
       </div>
       <div className="settings">
         <div className="settings__inner">
-          <Section title="Appearance" i={0}>
-            <Row label="Theme">
+          <Section title={t("Appearance")} i={0}>
+            <Row label={t("Theme")}>
               <Segmented
-                label="Theme"
+                label={t("Theme")}
                 layoutKey="settings-theme"
                 value={appearance.theme}
                 onChange={(v) => setAppearance({ theme: v })}
                 options={[
-                  { value: "light", label: "Light", icon: Sun },
-                  { value: "dark", label: "Dark", icon: Moon },
-                  { value: "system", label: "System", icon: Monitor },
+                  { value: "light", label: t("Light"), icon: Sun },
+                  { value: "dark", label: t("Dark"), icon: Moon },
+                  { value: "system", label: t("System"), icon: Monitor },
                 ]}
               />
             </Row>
-            <Row label="Accent">
-              <div className="swatches" role="radiogroup" aria-label="Accent">
+            <Row label={t("Language")}>
+              {/* Language names stay in their own language so anyone can find theirs. */}
+              <Segmented
+                label={t("Language")}
+                layoutKey="settings-language"
+                value={localePref}
+                onChange={setLocalePref}
+                options={[
+                  { value: "system", label: t("System"), icon: Monitor },
+                  { value: "en", label: "English" },
+                  { value: "pl", label: "Polski" },
+                ]}
+              />
+            </Row>
+            <Row label={t("Accent")}>
+              <div className="swatches" role="radiogroup" aria-label={t("Accent")}>
                 {PALETTES.map((p) => {
                   const on = appearance.palette === p.id;
                   return (
-                    <Tip key={p.id} label={p.label}>
+                    <Tip key={p.id} label={t(p.label)}>
                       <button
                         type="button"
                         role="radio"
                         aria-checked={on}
-                        aria-label={p.label}
+                        aria-label={t(p.label)}
                         className={`swatch ${on ? "is-on" : ""}`}
                         data-palette={p.id}
                         onClick={() => setAppearance({ palette: p.id })}
@@ -115,13 +131,13 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
           </Section>
 
           <Section
-            title="Print defaults"
+            title={t("Print defaults")}
             i={1}
             tools={
               <>
-                {state === "error" && <span className="section__note is-error">Not saved</span>}
+                {state === "error" && <span className="section__note is-error">{t("Not saved")}</span>}
                 <Button variant="quiet" className="btn--sm" onClick={() => setDraft(reconcile(BASE_SETTINGS, choices))}>
-                  Reset
+                  {t("Reset")}
                 </Button>
                 <Button
                   variant={dirty || state === "error" ? "raised" : "quiet"}
@@ -130,18 +146,18 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
                   disabled={(!dirty && state !== "error") || state === "saving"}
                 >
                   {state === "saved" && <Check size={14} strokeWidth={2} aria-hidden />}
-                  {state === "saved" ? "Saved" : state === "saving" ? "Saving" : "Save"}
+                  {state === "saved" ? t("Saved") : state === "saving" ? t("Saving") : t("Save")}
                 </Button>
               </>
             }
           >
-            <Row label="Copies">
-              <Stepper label="Copies" value={draft.copies} onChange={(v) => set("copies", v)} />
+            <Row label={t("Copies")}>
+              <Stepper label={t("Copies")} decLabel={t("Fewer copies")} incLabel={t("More copies")} value={draft.copies} onChange={(v) => set("copies", v)} />
             </Row>
             <OptionRows settings={draft} set={set} choices={choices} idPrefix="def" />
           </Section>
 
-          <Section title="Printer" i={2} tools={<IconKey label="Check now" icon={RefreshCw} size="sm" onClick={printer.refresh} />}>
+          <Section title={t("Printer")} i={2} tools={<IconKey label={t("Check now")} icon={RefreshCw} size="sm" onClick={printer.refresh} />}>
             <PrinterLine printer={printer} className="settings__printer" />
             {printer.info.detail && <p className="settings__detail">{printer.info.detail}</p>}
             <dl className="facts">
@@ -154,18 +170,16 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
             </dl>
           </Section>
 
-          <Section title="Account" i={3}>
+          <Section title={t("Account")} i={3}>
             <div className="account">
               <Avatar user={user} size="lg" />
               <div className="account__text">
                 <p className="account__name">{user.display_name || user.username}</p>
-                <p className="account__meta">
-                  {user.username} · since {formatDate(user.created_at)}
-                </p>
+                <p className="account__meta">{t("{username} · since {date}", { username: user.username, date: formatDate(user.created_at) })}</p>
               </div>
               <Button variant="quiet" className="btn--sm" onClick={onLogout}>
                 <LogOut size={14} strokeWidth={1.6} aria-hidden />
-                Sign out
+                {t("Sign out")}
               </Button>
             </div>
           </Section>

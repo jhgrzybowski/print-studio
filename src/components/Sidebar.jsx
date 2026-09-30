@@ -10,6 +10,7 @@ import { IconKey, MOD, Tip, tween } from "./controls.jsx";
 import { jobTone } from "./Dock.jsx";
 import { dayGroup, fileKind, formatTime, HISTORY_STATUS, initials, ACTIVE_STATUSES, paperName } from "../lib/format.js";
 import { selectedPages } from "../lib/pages.js";
+import { t, tn, useLocale } from "../i18n/index.js";
 
 export function Wordmark({ size }) {
   return (
@@ -56,10 +57,10 @@ function HistoryRow({ item, job, selected, onSelect, onReprint }) {
   const active = ACTIVE_STATUSES.has(item.status);
   // Live CUPS state can run ahead of the stored status while a job is moving.
   const status = active && job?.state ? job.state : item.status;
-  const label = HISTORY_STATUS[status]?.label || status;
+  const label = HISTORY_STATUS[status] ? t(HISTORY_STATUS[status].label) : status;
   const o = item.requested_options || {};
   const printed = selectedPages(o.pages, item.page_count).length;
-  const pages = printed && `${printed} ${printed === 1 ? "page" : "pages"}${o.copies > 1 ? ` × ${o.copies}` : ""}`;
+  const pages = printed && `${tn(printed, "{n} page", "{n} pages")}${o.copies > 1 ? ` × ${o.copies}` : ""}`;
   const meta = [pages, o.paper_size && paperName(o.paper_size), formatTime(item.created_at)].filter(Boolean).join(" · ");
   return (
     <motion.li
@@ -77,12 +78,12 @@ function HistoryRow({ item, job, selected, onSelect, onReprint }) {
             {active || status === "aborted" || status === "canceled" ? `${label} · ${formatTime(item.created_at)}` : meta}
           </span>
         </span>
-        <span className="sr-only">Status: {label}</span>
+        <span className="sr-only">{t("Status: {label}", { label })}</span>
         <span className="hrow__status">
           <StatusMark status={status} active={active} />
         </span>
       </button>
-      {!active && item.file_id && <IconKey label="Print again" icon={RotateCw} size="sm" className="hrow__again" onClick={() => onReprint(item)} tipSide="right" />}
+      {!active && item.file_id && <IconKey label={t("Print again")} icon={RotateCw} size="sm" className="hrow__again" onClick={() => onReprint(item)} tipSide="right" />}
     </motion.li>
   );
 }
@@ -110,6 +111,7 @@ function HistoryList({ history, selectedId, onSelect, onReprint, query }) {
     return q ? items.filter((i) => i.original_filename.toLowerCase().includes(q)) : items;
   }, [items, query]);
 
+  const locale = useLocale();
   const groups = useMemo(() => {
     const out = [];
     for (const it of filtered) {
@@ -118,7 +120,8 @@ function HistoryList({ history, selectedId, onSelect, onReprint, query }) {
       out[out.length - 1].items.push(it);
     }
     return out;
-  }, [filtered]);
+    // Day headings follow the language.
+  }, [filtered, locale]);
 
   useEffect(() => {
     if (!sentinel) return;
@@ -128,12 +131,12 @@ function HistoryList({ history, selectedId, onSelect, onReprint, query }) {
   }, [sentinel, loadMore, items.length]);
 
   if (status === "loading" || status === "idle") return <HistorySkeleton />;
-  if (status === "error" && !items.length) return <p className="hlist__empty">History is offline. Retrying.</p>;
-  if (!items.length) return <p className="hlist__empty">Your prints will appear here.</p>;
-  if (!filtered.length) return <p className="hlist__empty">No match for “{query}”</p>;
+  if (status === "error" && !items.length) return <p className="hlist__empty">{t("History is offline. Retrying.")}</p>;
+  if (!items.length) return <p className="hlist__empty">{t("Your prints will appear here.")}</p>;
+  if (!filtered.length) return <p className="hlist__empty">{t("No match for “{query}”", { query })}</p>;
 
   return (
-    <nav className="hlist" aria-label="History">
+    <nav className="hlist" aria-label={t("History")}>
       {groups.map((g) => (
         <section key={g.label} className="hgroup">
           <h2 className="hgroup__label">{g.label}</h2>
@@ -155,6 +158,7 @@ function HistoryList({ history, selectedId, onSelect, onReprint, query }) {
   );
 }
 
+// Labels are keys, translated at render.
 const THEMES = [
   { value: "light", label: "Light", icon: Sun },
   { value: "dark", label: "Dark", icon: Moon },
@@ -166,7 +170,7 @@ function ProfileMenu({ user, appearance, setAppearance, onSettings, onLogout, se
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
-        <button type="button" className={`profile ${settingsOpen ? "is-on" : ""}`} aria-label={`Account: ${name}`}>
+        <button type="button" className={`profile ${settingsOpen ? "is-on" : ""}`} aria-label={t("Account: {name}", { name })}>
           <Avatar user={user} />
           <span className="profile__text">
             <span className="profile__name">{name}</span>
@@ -184,10 +188,12 @@ function ProfileMenu({ user, appearance, setAppearance, onSettings, onLogout, se
             </span>
           </div>
           <DropdownMenu.Separator className="menu__sep" />
-          <DropdownMenu.Label className="menu__label">Theme · {THEMES.find((t) => t.value === appearance.theme)?.label}</DropdownMenu.Label>
-          <DropdownMenu.RadioGroup value={appearance.theme} onValueChange={(v) => setAppearance({ theme: v })} className="menu__themes" aria-label="Theme">
+          <DropdownMenu.Label className="menu__label">
+            {t("Theme")} · {t(THEMES.find((th) => th.value === appearance.theme)?.label || "System")}
+          </DropdownMenu.Label>
+          <DropdownMenu.RadioGroup value={appearance.theme} onValueChange={(v) => setAppearance({ theme: v })} className="menu__themes" aria-label={t("Theme")}>
             {THEMES.map(({ value, label, icon: Icon }) => (
-              <DropdownMenu.RadioItem key={value} value={value} className="menu__theme" aria-label={label} title={label} onSelect={(e) => e.preventDefault()}>
+              <DropdownMenu.RadioItem key={value} value={value} className="menu__theme" aria-label={t(label)} title={t(label)} onSelect={(e) => e.preventDefault()}>
                 <Icon size={16} strokeWidth={1.5} aria-hidden />
               </DropdownMenu.RadioItem>
             ))}
@@ -195,11 +201,11 @@ function ProfileMenu({ user, appearance, setAppearance, onSettings, onLogout, se
           <DropdownMenu.Separator className="menu__sep" />
           <DropdownMenu.Item className="menu__item" onSelect={onSettings}>
             <Settings size={16} strokeWidth={1.5} aria-hidden />
-            Settings
+            {t("Settings")}
           </DropdownMenu.Item>
           <DropdownMenu.Item className="menu__item" onSelect={onLogout}>
             <LogOut size={16} strokeWidth={1.5} aria-hidden />
-            Sign out
+            {t("Sign out")}
           </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
@@ -215,16 +221,16 @@ export const Sidebar = forwardRef(function Sidebar(
   const selectedId = view.kind === "history" ? view.id : null;
 
   return (
-    <aside className="sidebar" aria-label="Sidebar">
+    <aside className="sidebar" aria-label={t("Sidebar")}>
       <div className="sidebar__top">
         <Wordmark />
         <div className="sidebar__tools">
-          <Tip label={`New print`}>
-            <button type="button" className="newprint metal" aria-label="New print" onClick={onNew}>
+          <Tip label={t("New print")}>
+            <button type="button" className="newprint metal" aria-label={t("New print")} onClick={onNew}>
               <Plus size={16} strokeWidth={1.8} aria-hidden />
             </button>
           </Tip>
-          {drawer && <IconKey label="Close" icon={PanelLeftClose} onClick={onClose} />}
+          {drawer && <IconKey label={t("Close")} icon={PanelLeftClose} onClick={onClose} />}
         </div>
       </div>
 
@@ -233,14 +239,14 @@ export const Sidebar = forwardRef(function Sidebar(
         <input
           ref={searchRef}
           type="search"
-          placeholder="Search prints"
-          aria-label="Search history"
+          placeholder={t("Search prints")}
+          aria-label={t("Search history")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Escape" && query && (e.stopPropagation(), setQuery(""))}
         />
         {query ? (
-          <button type="button" className="search__clear" aria-label="Clear search" onClick={() => setQuery("")}>
+          <button type="button" className="search__clear" aria-label={t("Clear search")} onClick={() => setQuery("")}>
             <X size={13} strokeWidth={1.8} />
           </button>
         ) : (
@@ -255,7 +261,14 @@ export const Sidebar = forwardRef(function Sidebar(
       </div>
 
       <div className="sidebar__foot">
-        <PrinterLine printer={printer} as="button" type="button" className="sidebar__printer" onClick={onSettings} aria-label={`Printer: ${printer.info.label}. Open settings`} />
+        <PrinterLine
+          printer={printer}
+          as="button"
+          type="button"
+          className="sidebar__printer"
+          onClick={onSettings}
+          aria-label={t("Printer: {status}. Open settings", { status: printer.info.label })}
+        />
         <ProfileMenu user={user} appearance={appearance} setAppearance={setAppearance} onSettings={onSettings} onLogout={onLogout} settingsOpen={view.kind === "settings"} />
       </div>
     </aside>

@@ -5,19 +5,21 @@ import { Printer, SlidersHorizontal, X } from "lucide-react";
 import { Button, IconKey, PrintButton, Row, Segmented, Stepper, drawerEase } from "./controls.jsx";
 import { OptionRows } from "./Options.jsx";
 import { paperName } from "../lib/format.js";
+import { t, tn } from "../i18n/index.js";
 
+// English keys, translated in the summary.
 const COLOR_WORD = { color: "Color", monochrome: "B&W", auto: "Auto color" };
 const SIDES_WORD = { none: "One-sided", "long-edge": "Two-sided", "short-edge": "Two-sided" };
 
 /** Copies, paper, color and sides in one line: what Print will do, readable at a glance. */
 export function settingsSummary(settings, pageCount) {
-  const range = settings.pages ? `Pages ${settings.pages.replace(/,/g, ", ")}` : null;
+  const range = settings.pages ? t("Pages {range}", { range: settings.pages.replace(/,/g, ", ") }) : null;
   return [
-    `${settings.copies} ${settings.copies === 1 ? "copy" : "copies"}`,
+    tn(settings.copies, "{n} copy", "{n} copies"),
     range,
     settings.paper_size && paperName(settings.paper_size),
-    COLOR_WORD[settings.color_mode],
-    pageCount !== 1 && SIDES_WORD[settings.duplex],
+    COLOR_WORD[settings.color_mode] && t(COLOR_WORD[settings.color_mode]),
+    pageCount !== 1 && SIDES_WORD[settings.duplex] && t(SIDES_WORD[settings.duplex]),
   ]
     .filter(Boolean)
     .join(" · ");
@@ -33,10 +35,10 @@ function PagesRow({ value, onChange, pageCount, error }) {
   }, [value]);
 
   return (
-    <Row label="Pages" className="row--seg">
+    <Row label={t("Pages")} className="row--seg">
       <div className="pages-row">
         <Segmented
-          label="Pages"
+          label={t("Pages")}
           layoutKey="sheet-pages"
           value={mode}
           onChange={(m) => {
@@ -45,14 +47,14 @@ function PagesRow({ value, onChange, pageCount, error }) {
             else setTimeout(() => inputRef.current?.focus(), 30);
           }}
           options={[
-            { value: "all", label: pageCount ? `All ${pageCount}` : "All" },
-            { value: "range", label: "Choose" },
+            { value: "all", label: pageCount ? t("All {n}", { n: pageCount }) : t("pages|All") },
+            { value: "range", label: t("pages|Choose") },
           ]}
         />
         {mode === "range" && (
           <>
             <label className="sr-only" htmlFor={id}>
-              Page range
+              {t("Page range")}
             </label>
             <input
               ref={inputRef}
@@ -100,7 +102,7 @@ export function PrintDock({ flow, choices, disabled, printDisabled, onPrint, onS
         <button type="button" className={`pdock__summary ${rangeError ? "is-invalid" : ""}`} onClick={() => setOpen(true)} disabled={!loaded && disabled}>
           <SlidersHorizontal size={18} strokeWidth={1.5} aria-hidden />
           <span className="pdock__text">
-            <span className="pdock__label">Print settings</span>
+            <span className="pdock__label">{t("Print settings")}</span>
             <span className="pdock__value">{summary}</span>
           </span>
         </button>
@@ -138,25 +140,32 @@ export function PrintDock({ flow, choices, disabled, printDisabled, onPrint, onS
                 >
                   <SheetGrip onClose={() => setOpen(false)} controls={drag} />
                   <div className="sheet-panel__head">
-                    <Dialog.Title className="sheet-panel__title">Print settings</Dialog.Title>
+                    <Dialog.Title className="sheet-panel__title">{t("Print settings")}</Dialog.Title>
                     <Dialog.Close asChild>
-                      <IconKey label="Close" icon={X} size="sm" />
+                      <IconKey label={t("Close")} icon={X} size="sm" />
                     </Dialog.Close>
                   </div>
                   <div className="sheet-panel__body">
                     <div className="rows">
-                      <Row label="Copies">
-                        <Stepper label="Copies" value={settings.copies} onChange={(v) => set("copies", v)} disabled={disabled} />
+                      <Row label={t("Copies")}>
+                        <Stepper
+                          label={t("Copies")}
+                          decLabel={t("Fewer copies")}
+                          incLabel={t("More copies")}
+                          value={settings.copies}
+                          onChange={(v) => set("copies", v)}
+                          disabled={disabled}
+                        />
                       </Row>
                       {pageCount > 1 && <PagesRow value={settings.pages} onChange={(v) => set("pages", v)} pageCount={pageCount} error={rangeError} />}
                       <OptionRows settings={settings} set={set} choices={choices} disabled={disabled} idPrefix="sheet" />
                     </div>
                     <div className="sheet-panel__defaults">
                       <Button variant="quiet" onClick={onResetDefaults}>
-                        Use my defaults
+                        {t("Use my defaults")}
                       </Button>
                       <Button variant="quiet" onClick={onSaveDefaults} disabled={defaultsState === "saving"}>
-                        {defaultsState === "saved" ? "Saved" : "Save as defaults"}
+                        {defaultsState === "saved" ? t("Saved") : t("Save as defaults")}
                       </Button>
                     </div>
                   </div>

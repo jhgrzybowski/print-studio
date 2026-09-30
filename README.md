@@ -32,6 +32,7 @@ It covers every endpoint that `local_printer_api` serves:
 | Jobs | Cancel an active job, or clear a finished one from the queue | `DELETE /jobs/{id}`, `POST /jobs/{id}/forget`, `GET /jobs?scope=all` |
 | History | Sidebar grouped by day, with search and infinite scroll. The detail view has a read-only preview and a "Print again" action | `GET /history`, `/history/{id}` |
 | Preferences | Saved print defaults, stored per user | `GET/PUT /me/preferences` |
+| Language | English or Polish, following the system by default. Change it in Settings → Appearance; the choice is stored per browser | — |
 
 ## Run it
 
@@ -66,19 +67,26 @@ docker compose -f deploy/docker-compose.dev.yml up -d
 
 It serves the source tree with hot reload at http://192.168.100.99:5173/ against the same backend. Its compose project (`print-studio-dev`) is separate from production, so the two never touch.
 
+The host also advertises `drukarka.local` over mDNS (an avahi alias), so on the LAN the dev app is at http://drukarka.local:5173/. `vite.config.js` lists that name in `server.allowedHosts`; Vite rejects any other hostname.
+
 ### Checks
 
 ```bash
 npm run check
 ```
 
-This runs the unit tests for page ranges and the print-settings model (`node --test`). The Docker build runs them too, before building.
+This runs the unit tests (`node --test`) for page ranges, the print-settings model and translations. The translation tests check Polish plurals and fail if any interface string lacks a Polish entry. The Docker build runs them too, before building.
+
+### Translations
+
+Strings live in the code in English and go through `t()` / `tn()` from `src/i18n/index.js`. Polish is in `src/i18n/pl.js`. A key with a `context|` prefix is used where one English word needs different Polish words. The Polish terms follow Canon, Brother and Windows print dialogs. The header of `pl.js` lists the sources and the false friends it avoids.
 
 ## Layout
 
 ```
 src/
   api/client.js        fetch wrapper, XHR upload with progress, 401 handling
+  i18n/                language preference, t()/tn() with plural rules, Polish strings
   hooks/               session, printer status, options, history + job polling, preferences, appearance, print flow
   lib/                 page ranges, settings model, printer status interpretation, formatting
   components/          Sidebar, Toolbar, DropZone, PreviewStage, Dock, PrintSheet, Options, HistoryDetail, SettingsView, AuthScreen, PrinterStatus, controls, glyphs
@@ -96,6 +104,7 @@ The screens:
 - **Studio (phone and narrow tablet, up to 860 px):** a slim top bar showing printer status. A bottom print dock pairs a settings summary with a large Print button. The summary opens a settings sheet that can be dismissed by dragging down. The sheet has a page-range field that is checked against the page count.
 - **History detail:** the preview, a list of facts about the print, Print again, and a More menu with Open PDF and Clear from printer queue.
 - **Settings, sign-in and registration:** a single column with an account avatar.
+- **Languages:** English and Polish. In Polish, the studio, history detail and Settings were checked at 1440 px, and the phone print sheet at 390 px.
 
 Verified on the dev deployment (http://192.168.100.99:5173) with Playwright, at 1440 and 1100 px (dark and light themes) and at 390 px as a touch phone (dark theme):
 - Sign in (including a wrong password), registration, and upload of PDF, PNG and text files. Rejection of an unsupported file.
@@ -105,6 +114,7 @@ Verified on the dev deployment (http://192.168.100.99:5173) with Playwright, at 
 
 Not yet done:
 - **Cancel on a live job.** The Cancel button appears while a job runs, but cancelling was not tried on a real job.
-- **Code splitting.** The JS bundle is about 180 kB gzipped.
+- **Code splitting.** The JS bundle is about 190 kB gzipped.
+- **Server messages.** Error text that comes from the backend is not translated.
 
 Design notes are in [DESIGN.md](DESIGN.md); product context is in [PRODUCT.md](PRODUCT.md).

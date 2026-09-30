@@ -12,6 +12,7 @@ import {
   ACTIVE_STATUSES,
   COLOR_LABELS,
   DUPLEX_LABELS,
+  label,
   fileKind,
   formatBytes,
   formatDateTime,
@@ -24,6 +25,7 @@ import {
   TERMINAL_STATUSES,
 } from "../lib/format.js";
 import { meaningfulWarnings } from "../hooks/printFlow.js";
+import { t } from "../i18n/index.js";
 
 export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusLine, lead }) {
   const cached = history.items.find((h) => h.id === id);
@@ -43,7 +45,7 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
     api
       .historyEntry(id)
       .then((e) => alive && setEntry(e))
-      .catch((e) => alive && !cached && setError(e.status === 404 ? "This print is no longer in your history." : e.message));
+      .catch((e) => alive && !cached && setError(e.status === 404 ? t("This print is no longer in your history.") : e.message));
     return () => {
       alive = false;
     };
@@ -71,7 +73,7 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
         <div className="notice-view">
           <CircleAlert size={22} strokeWidth={1.5} aria-hidden />
           <p>{error}</p>
-          <Button onClick={onOpenCompose}>New print</Button>
+          <Button onClick={onOpenCompose}>{t("New print")}</Button>
         </div>
       </div>
     );
@@ -91,13 +93,13 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
   const opts = entry.requested_options || {};
   const kind = fileKind(entry.detected_mime, entry.original_filename);
   const warnings = meaningfulWarnings(entry.warnings);
-  const st = HISTORY_STATUS[entry.status] || { label: entry.status };
+  const stLabel = HISTORY_STATUS[entry.status] ? t(HISTORY_STATUS[entry.status].label) : entry.status;
 
   async function cancel() {
     setBusy("cancel");
     try {
       const r = await api.cancelJob(entry.cups_job_id);
-      onStatusLine?.(r.message || (r.cancelled ? "Cancelling" : "Already finished"));
+      onStatusLine?.(r.message || (r.cancelled ? t("action|Cancelling") : t("Already finished")));
       await history.pollJobs();
     } catch (e) {
       onStatusLine?.(e.message, "error");
@@ -112,7 +114,7 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
       await history.refresh();
       const e = await api.historyEntry(id).catch(() => null);
       if (e) setEntry(e);
-      onStatusLine?.("Cleared from the queue");
+      onStatusLine?.(t("Cleared from the queue"));
     } catch (e) {
       onStatusLine?.(e.message, "error");
     } finally {
@@ -121,17 +123,24 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
   }
 
   const rows = [
-    ["Sent", formatDateTime(entry.created_at)],
-    ["Pages", opts.pages ? `${opts.pages.replace(/,/g, ", ")} of ${entry.page_count ?? "?"}` : entry.page_count ? `All ${entry.page_count}` : "All"],
-    ["Copies", opts.copies || 1],
-    opts.paper_size && ["Paper", `${paperName(opts.paper_size)}${opts.fit_to_page ? ", fit" : ""}`],
-    opts.orientation && ["Layout", ORIENTATION_LABELS[opts.orientation] || opts.orientation],
-    opts.color_mode && ["Color", COLOR_LABELS[opts.color_mode] || opts.color_mode],
-    opts.duplex && ["Sides", DUPLEX_LABELS[opts.duplex] || opts.duplex],
-    opts.quality && ["Quality", QUALITY_LABELS[opts.quality] || opts.quality],
-    opts.media_type && ["Media", mediaLabel(opts.media_type)],
-    ["File", formatBytes(entry.size_bytes)],
-    entry.cups_job_id && ["Job", entry.cups_job_id],
+    [t("fact|Sent"), formatDateTime(entry.created_at)],
+    [
+      t("Pages"),
+      opts.pages
+        ? t("{range} of {total}", { range: opts.pages.replace(/,/g, ", "), total: entry.page_count ?? "?" })
+        : entry.page_count
+          ? t("All {n}", { n: entry.page_count })
+          : t("pages|All"),
+    ],
+    [t("Copies"), opts.copies || 1],
+    opts.paper_size && [t("Paper"), `${paperName(opts.paper_size)}${opts.fit_to_page ? t(", fit") : ""}`],
+    opts.orientation && [t("Layout"), label(ORIENTATION_LABELS, opts.orientation)],
+    opts.color_mode && [t("Color"), label(COLOR_LABELS, opts.color_mode)],
+    opts.duplex && [t("Sides"), label(DUPLEX_LABELS, opts.duplex)],
+    opts.quality && [t("Quality"), label(QUALITY_LABELS, opts.quality)],
+    opts.media_type && [t("Media"), mediaLabel(opts.media_type)],
+    [t("File"), formatBytes(entry.size_bytes)],
+    entry.cups_job_id && [t("Job"), entry.cups_job_id],
   ].filter(Boolean);
 
   const expired = file.state === "expired";
@@ -150,7 +159,7 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
           <p className={`bar__sub tone-${jobTone(entry.status)}`}>
             <Dot tone={jobTone(entry.status)} pulse={active} />
             <span>
-              {st.label} · {shortWhen(entry.created_at)}
+              {stLabel} · {shortWhen(entry.created_at)}
             </span>
           </p>
         </div>
@@ -159,19 +168,20 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
           {active && entry.cups_job_id && (
             <Button variant="quiet" className="btn--danger" onClick={cancel} disabled={busy === "cancel" || entry.status === "cancel-requested"}>
               {entry.status === "cancel-requested" ? (
-                "Cancelling"
+                t("action|Cancelling")
               ) : (
                 <>
-                  Cancel<span className="bar__long"> job</span>
+                  {t("Cancel")}
+                  <span className="bar__long">{t("cancel| job")}</span>
                 </>
               )}
             </Button>
           )}
           {(pdf || forgettable) && (
             <DropdownMenu.Root>
-              <Tip label="More">
+              <Tip label={t("More")}>
                 <DropdownMenu.Trigger asChild>
-                  <button type="button" className="ikey ikey--plain ikey--md" aria-label="More">
+                  <button type="button" className="ikey ikey--plain ikey--md" aria-label={t("More")}>
                     <Ellipsis size={18} strokeWidth={1.5} aria-hidden />
                   </button>
                 </DropdownMenu.Trigger>
@@ -181,13 +191,13 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
                   {pdf && (
                     <DropdownMenu.Item className="menu__item" onSelect={() => window.open(api.pdfUrl(entry.file_id), "_blank", "noopener")}>
                       <ExternalLink size={16} strokeWidth={1.5} aria-hidden />
-                      Open PDF
+                      {t("Open PDF")}
                     </DropdownMenu.Item>
                   )}
                   {forgettable && (
                     <DropdownMenu.Item className="menu__item" onSelect={forget} disabled={busy === "forget"}>
                       <Eraser size={16} strokeWidth={1.5} aria-hidden />
-                      Clear from printer queue
+                      {t("Clear from printer queue")}
                     </DropdownMenu.Item>
                   )}
                 </DropdownMenu.Content>
@@ -195,7 +205,7 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
             </DropdownMenu.Root>
           )}
         </div>
-        <PrintButton icon={RotateCw} label={expired ? "Upload expired" : "Print again"} onClick={() => onReprint(entry)} disabled={expired} />
+        <PrintButton icon={RotateCw} label={expired ? t("Upload expired") : t("Print again")} onClick={() => onReprint(entry)} disabled={expired} />
       </div>
 
       <div className="detail">
@@ -209,14 +219,14 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
           <div className="stage stage--center">
             <div className="gone">
               <FileGlyph kind={kind} size={24} />
-              <p>{expired ? "Upload expired, so there's no preview." : "No preview."}</p>
+              <p>{expired ? t("Upload expired, so there's no preview.") : t("No preview.")}</p>
             </div>
           </div>
         )}
 
-        <aside className="facts-panel" aria-label="Print details">
+        <aside className="facts-panel" aria-label={t("Print details")}>
           <header className="facts-panel__head">
-            <h2>Details</h2>
+            <h2>{t("Details")}</h2>
           </header>
           <dl className="facts">
             {rows.map(([k, v]) => (
