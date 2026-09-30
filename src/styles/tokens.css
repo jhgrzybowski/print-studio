@@ -91,6 +91,9 @@
 
   --accent: oklch(0.76 var(--a-c) var(--a-h));
   --accent-soft: oklch(0.76 var(--a-c) var(--a-h) / 0.22);
+  --accent-wash: oklch(0.76 var(--a-c) var(--a-h) / 0.1);
+  --accent-ink: oklch(0.48 calc(var(--a-c) * 1.2) var(--a-h));
+  --on-accent: #0b0c0e;
   --ok: #86d3a3;
   --warn: #e8c071;
   --warn-text: #e8c071;
@@ -144,6 +147,9 @@
 
   --accent: oklch(0.52 var(--a-c) var(--a-h));
   --accent-soft: oklch(0.52 var(--a-c) var(--a-h) / 0.18);
+  --accent-wash: oklch(0.52 var(--a-c) var(--a-h) / 0.08);
+  --accent-ink: oklch(0.46 calc(var(--a-c) * 1.2) var(--a-h));
+  --on-accent: #ffffff;
   --ok: #2f8a55;
   --warn: #b27a12;
   --warn-text: #8a5d06;

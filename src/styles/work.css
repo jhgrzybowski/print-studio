@@ -331,7 +331,10 @@
   height: 100%;
   object-fit: contain;
   opacity: 0;
-  transition: opacity var(--t-mid) ease;
+  transition:
+    opacity var(--t-mid) ease,
+    rotate 360ms var(--ease),
+    scale 360ms var(--ease);
 }
 .thumb__img.is-ready {
   opacity: 1;
@@ -373,9 +376,13 @@
   color: var(--ink);
 }
 .thumb__toggle[aria-checked="true"] .thumb__box {
-  background: var(--field);
-  box-shadow: var(--field-shadow);
+  background: var(--accent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25);
+  color: var(--on-accent);
+}
+.thumb.is-current .thumb__num {
   color: var(--accent);
+  font-weight: 620;
 }
 
 /* Paper area: a size container, so the sheet fits both width and height. */
@@ -442,8 +449,14 @@
   object-fit: contain;
   object-position: center;
 }
+/* The first page fades in; later pages replace it in place, already decoded. */
 .sheet__img.is-ready {
   opacity: 1;
+}
+@starting-style {
+  .sheet__img.is-ready {
+    opacity: 0;
+  }
 }
 .sheet__none,
 .page-missing {
@@ -524,6 +537,14 @@
 .stage-bar__sep:first-child {
   display: none;
 }
+/* A turned page says so in the accent. */
+.stage-rotate.is-turned {
+  color: var(--accent);
+}
+.rotate-pair {
+  display: flex;
+  gap: 4px;
+}
 .pager,
 .zoom {
   display: flex;
@@ -534,6 +555,11 @@
   min-width: 48px;
   text-align: center;
   font-weight: 500;
+  color: var(--text-3);
+}
+.pager__cur {
+  color: var(--accent);
+  font-weight: 620;
 }
 .zoom__val {
   display: grid;
@@ -681,13 +707,28 @@
 }
 .blank__copy {
   display: grid;
+  justify-items: center;
   gap: 6px;
-  max-width: 380px;
+  width: 100%;
+  max-width: 420px;
+  min-width: 0;
 }
 .blank__title {
+  max-width: 100%;
   font-size: var(--fs-28);
   font-weight: 540;
   letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+/* A file name has no spaces to break at, so it may break anywhere, and stops at two lines. */
+.blank__title--file {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--fs-20);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 .blank__sub {
   color: var(--text-2);
@@ -832,7 +873,7 @@
   .stage-bar__sep:has(+ .zoom) {
     display: none;
   }
-  .stage-bar-wrap:not(:has(.pager, .verdict)) {
+  .stage-bar-wrap:not(:has(.pager, .verdict, .stage-rotate)) {
     display: none;
   }
   .stage-bar__sep:last-child {
@@ -862,6 +903,23 @@
   font-size: var(--fs-16);
   font-weight: 560;
   letter-spacing: -0.01em;
+}
+/* Sized to its words so only the name is the home link, not the empty bar beside it. */
+.toolbar__home {
+  flex: 0 1 auto;
+  height: 36px;
+  margin-right: auto;
+  padding: 0 8px;
+  margin-left: -8px;
+  border-radius: var(--r-sm);
+  text-align: left;
+  transition:
+    background-color var(--t-fast) ease,
+    transform var(--t-press) var(--ease);
+}
+.toolbar__home:active {
+  background: var(--press);
+  transform: scale(0.97);
 }
 .toolbar__printer {
   display: inline-flex;

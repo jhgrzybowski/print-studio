@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useAnimate } from "motion/react";
-import { Check, ChevronLeft, ChevronRight, Minus, Plus, Scan } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Minus, Plus, RotateCw, Scan } from "lucide-react";
 import { api } from "../api/client.js";
 import { formatRange, selectedPages } from "../lib/pages.js";
 import { paperMM } from "../lib/format.js";
@@ -9,8 +9,9 @@ import { IconKey, Tip, ease } from "./controls.jsx";
 import { t } from "../i18n/index.js";
 
 const ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+const NO_TURNS = {};
 
-function PageImage({ fileId, page, className, eager }) {
+function PageImage({ fileId, page, className, style }) {
   const src = api.previewPageUrl(fileId, page);
   // State is tied to the URL it describes, so a new page starts as loading without a reset effect.
   const [result, setResult] = useState({ src: null, state: "loading" });
@@ -23,9 +24,10 @@ function PageImage({ fileId, page, className, eager }) {
       ) : (
         <img
           className={`${className} ${state === "ready" ? "is-ready" : ""}`}
+          style={style}
           src={src}
           alt={t("Page {n}", { n: page })}
-          loading={eager ? "eager" : "lazy"}
+          loading="lazy"
           decoding="async"
           draggable={false}
           onLoad={() => setResult({ src, state: "ready" })}
@@ -36,12 +38,91 @@ function PageImage({ fileId, page, className, eager }) {
   );
 }
 
+// Decoded page images by URL. The sheet swaps to a page only once it is ready to paint, so paging
+// never passes through an empty sheet.
+const decoded = new Map();
+function preload(src) {
+  let p = decoded.get(src);
+  if (!p) {
+    const img = new Image();
+    img.src = src;
+    p = img.decode();
+    p.catch(() => decoded.delete(src));
+    decoded.set(src, p);
+    if (decoded.size > 120) decoded.delete(decoded.keys().next().value);
+  }
+  return p;
+}
+
+const quarter = (deg) => (((deg % 180) + 180) % 180) === 90;
+
+/**
+ * Turns as angles that take the short way round, so going from 270° to 0° spins a quarter
+ * forward rather than three quarters back.
+ */
+function useSpins(turns, count) {
+  const seen = useRef(new Map());
+  return useMemo(() => {
+    const out = [];
+    for (let p = 1; p <= count; p++) {
+      const deg = turns(p);
+      const prev = seen.current.get(p);
+      const shown = prev ? prev.shown + (((deg - prev.deg + 540) % 360) - 180) : deg;
+      seen.current.set(p, { deg, shown });
+      out[p] = shown;
+    }
+    return out;
+  }, [turns, count]);
+}
+
+/**
+ * The page on the sheet. It keeps showing the last page until the next one has decoded, then
+ * swaps in the same frame. A quarter turn shrinks the page to fit, as it will print.
+ */
+function SheetPage({ fileId, page, spins, ar, className }) {
+  const [shown, setShown] = useState({ page: null, state: "loading" });
+  useEffect(() => {
+    let live = true;
+    preload(api.previewPageUrl(fileId, page)).then(
+      () => live && setShown({ page, state: "ready" }),
+      () => live && setShown({ page, state: "error" }),
+    );
+    return () => {
+      live = false;
+    };
+  }, [fileId, page]);
+
+  // A new page arrives already turned; only a turn of the page in view animates.
+  const last = useRef(shown.page);
+  const jump = last.current !== shown.page;
+  useEffect(() => {
+    last.current = shown.page;
+  });
+
+  if (shown.page == null) return <span className="skel skel--fill" aria-hidden />;
+  const spin = spins[shown.page] || 0;
+  return (
+    <motion.div
+      className="sheet__content"
+      initial={false}
+      animate={{ rotate: spin, scale: quarter(spin) ? Math.min(ar, 1 / ar) : 1 }}
+      transition={jump ? { duration: 0 } : { type: "spring", bounce: 0.12, duration: 0.42 }}
+    >
+      {shown.state === "error" ? (
+        <span className="page-missing">{t("Page {n} didn't load", { n: shown.page })}</span>
+      ) : (
+        <img className={`${className} is-ready`} src={api.previewPageUrl(fileId, shown.page)} alt={t("Page {n}", { n: shown.page })} draggable={false} />
+      )}
+    </motion.div>
+  );
+}
+
 /**
  * The page on its paper, under the stage light. Paper size and orientation set the sheet's
  * proportions, black & white desaturates it, and extra copies stack behind it. `head` sits at
  * the top left, `corner` at the top right, and `status` in the floating bar.
  */
-export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly, head, corner, status, feedKey }) {
+export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly, head, corner, status, feedKey, rotations = NO_TURNS, onRotate }) {
   const pages = doc.pages || [];
   const count = pageCount || pages.length;
   const [current, setCurrent] = useState(1);
@@ -61,7 +142,10 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
 
   const [w, h] = paperMM(settings.paper_size);
   const landscape = /landscape/.test(settings.orientation);
-  const flipped = /^reverse/.test(settings.orientation);
+  // Jobs from before page turns printed upside down through a reverse orientation.
+  const legacy = /^reverse/.test(settings.orientation) ? 180 : 0;
+  const turns = useCallback((p) => rotations[p] || legacy, [rotations, legacy]);
+  const spins = useSpins(turns, count);
   const ratio = landscape ? `${h} / ${w}` : `${w} / ${h}`;
   const ar = landscape ? h / w : w / h;
   const mono = settings.color_mode === "monochrome";
@@ -88,12 +172,20 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
     if (e.target.closest("input, textarea, [role=radiogroup], [role=menu], [role=listbox]")) return;
     if (e.key === "ArrowRight" || e.key === "PageDown") (e.preventDefault(), go(1));
     if (e.key === "ArrowLeft" || e.key === "PageUp") (e.preventDefault(), go(-1));
+    if (canTurn && (e.key === "r" || e.key === "R") && !e.metaKey && !e.ctrlKey && !e.altKey) (e.preventDefault(), onRotate([current], e.shiftKey ? -90 : 90));
   }
 
   const zi = ZOOMS.indexOf(zoom);
   const fileId = doc.file?.file_id;
   const hasPreview = pages.length > 0 && fileId;
   const multi = count > 1 && hasPreview;
+  const canTurn = !readOnly && hasPreview && !!onRotate;
+
+  // The neighbours decode ahead, so the next page is ready before it is asked for.
+  useEffect(() => {
+    if (!hasPreview) return;
+    for (const p of [current + 1, current - 1]) if (p >= 1 && p <= pages.length) preload(api.previewPageUrl(fileId, p)).catch(() => {});
+  }, [current, fileId, hasPreview, pages.length]);
 
   return (
     <div className={`stage ${multi ? "has-rail" : ""}`} onKeyDown={onKeyDown}>
@@ -111,7 +203,12 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
                   aria-label={t("Show page {n}", { n: p.page })}
                   aria-current={p.page === current ? "page" : undefined}
                 >
-                  <PageImage fileId={fileId} page={p.page} className={`thumb__img ${mono ? "is-mono" : ""}`} />
+                  <PageImage
+                    fileId={fileId}
+                    page={p.page}
+                    className={`thumb__img ${mono ? "is-mono" : ""}`}
+                    style={spins[p.page] ? { rotate: `${spins[p.page]}deg`, scale: quarter(spins[p.page]) ? Math.min(ar, 1 / ar) : 1 } : undefined}
+                  />
                 </button>
                 {readOnly ? (
                   <span className="thumb__num">{p.page}</span>
@@ -151,23 +248,18 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
             </AnimatePresence>
             <div className={`sheet ${included.has(current) || !hasPreview ? "" : "is-excluded"}`}>
               {!hasPreview && doc.text != null ? (
-                <div className={`sheet__text ${mono ? "is-mono" : ""}`} style={{ rotate: flipped ? "180deg" : undefined }}>
+                <div className={`sheet__text ${mono ? "is-mono" : ""}`} style={{ rotate: legacy ? "180deg" : undefined }}>
                   {doc.text}
                 </div>
               ) : hasPreview ? (
-                <AnimatePresence mode="popLayout" initial={false}>
-                  <motion.div
-                    key={`${fileId}-${current}`}
-                    className="sheet__content"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.16 }}
-                    style={{ rotate: flipped ? 180 : 0 }}
-                  >
-                    <PageImage fileId={fileId} page={current} eager className={`sheet__img ${mono ? "is-mono" : ""} ${settings.fit_to_page ? "is-fit" : ""}`} />
-                  </motion.div>
-                </AnimatePresence>
+                <SheetPage
+                  key={fileId}
+                  fileId={fileId}
+                  page={current}
+                  spins={spins}
+                  ar={ar}
+                  className={`sheet__img ${mono ? "is-mono" : ""} ${settings.fit_to_page ? "is-fit" : ""}`}
+                />
               ) : (
                 <div className="sheet__none">
                   <FileGlyph kind={doc.kind} size={26} />
@@ -193,11 +285,24 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
                 <div className="pager">
                   <IconKey label={t("Previous page")} icon={ChevronLeft} size="sm" onClick={() => go(-1)} disabled={current <= 1} tipSide="top" />
                   <span className="pager__text" aria-live="polite">
-                    {current} / {count}
+                    <span className="pager__cur">{current}</span> / {count}
                     {!included.has(current) && <span className="sr-only">{t(", skipped")}</span>}
                   </span>
                   <IconKey label={t("Next page")} icon={ChevronRight} size="sm" onClick={() => go(1)} disabled={current >= count} tipSide="top" />
                 </div>
+                <span className="stage-bar__sep" aria-hidden />
+              </>
+            )}
+            {canTurn && (
+              <>
+                <IconKey
+                  label={multi ? t("Rotate this page") : t("Rotate page")}
+                  icon={RotateCw}
+                  size="sm"
+                  className={`stage-rotate ${rotations[current] ? "is-turned" : ""}`}
+                  onClick={() => onRotate([current], 90)}
+                  tipSide="top"
+                />
                 <span className="stage-bar__sep" aria-hidden />
               </>
             )}

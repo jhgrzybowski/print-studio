@@ -5,6 +5,7 @@ import { Printer, SlidersHorizontal, X } from "lucide-react";
 import { Button, IconKey, PrintButton, Row, Segmented, Stepper, glide } from "./controls.jsx";
 import { OptionRows } from "./Options.jsx";
 import { paperName } from "../lib/format.js";
+import { cleanRange } from "../lib/pages.js";
 import { t, tn } from "../i18n/index.js";
 
 // English keys, translated in the summary.
@@ -60,12 +61,19 @@ function PagesRow({ value, onChange, pageCount, error }) {
               ref={inputRef}
               id={id}
               className="input"
-              inputMode="numeric"
+              // A numeric keypad has no hyphen, so ranges need the text keyboard.
+              inputMode="text"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              enterKeyHint="done"
               placeholder={pageCount > 2 ? `1-${Math.min(3, pageCount)}, ${pageCount}` : "1"}
               value={value}
               aria-invalid={!!error}
               aria-describedby={error ? `${id}-err` : undefined}
-              onChange={(e) => onChange(e.target.value.replace(/[^\d,\-\s]/g, ""))}
+              onChange={(e) => onChange(cleanRange(e.target.value))}
+              onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
             />
             {error && (
               <p id={`${id}-err`} className="pop__error">
@@ -83,7 +91,7 @@ function PagesRow({ value, onChange, pageCount, error }) {
  * The phone's print dock: a summary of the settings that opens the sheet, and Print within
  * thumb reach. The sheet slides up from the dock and can be flicked away.
  */
-export function PrintDock({ flow, choices, disabled, printDisabled, onPrint, onSaveDefaults, onResetDefaults, defaultsState, status }) {
+export function PrintDock({ flow, choices, disabled, printDisabled, onPrint, onSaveDefaults, onResetDefaults, defaultsState, status, rotation }) {
   const [open, setOpen] = useState(false);
   const summaryRef = useRef(null);
   const { settings, set, pageCount, rangeError, printing } = flow;
@@ -138,7 +146,7 @@ export function PrintDock({ flow, choices, disabled, printDisabled, onPrint, onS
                     />
                   </Row>
                   {pageCount > 1 && <PagesRow value={settings.pages} onChange={(v) => set("pages", v)} pageCount={pageCount} error={rangeError} />}
-                  <OptionRows settings={settings} set={set} choices={choices} disabled={disabled} idPrefix="sheet" />
+                  <OptionRows settings={settings} set={set} choices={choices} disabled={disabled} idPrefix="sheet" rotation={rotation} />
                 </div>
                 <div className="sheet-panel__defaults">
                   <Button variant="quiet" onClick={onResetDefaults}>

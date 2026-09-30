@@ -4,11 +4,12 @@ import { Tooltip } from "radix-ui";
 import { Menu, RefreshCw, WifiOff, X } from "lucide-react";
 import { api } from "./api/client.js";
 import { useAppearance } from "./hooks/appearance.js";
-import { useHistory, useMedia, usePreferences, usePrinter, usePrinterOptions, useSession } from "./hooks/data.js";
+import { useArchive, useHistory, useMedia, usePreferences, usePrinter, usePrinterOptions, useSession } from "./hooks/data.js";
 import { usePrintFlow } from "./hooks/printFlow.js";
 import { BASE_SETTINGS, pickDefaults, reconcile } from "./lib/settings.js";
 import { formatTime } from "./lib/format.js";
-import { t, useLocale } from "./i18n/index.js";
+import { hasRotation } from "./lib/rotate.js";
+import { t, tn, useLocale } from "./i18n/index.js";
 import { AuthScreen } from "./components/AuthScreen.jsx";
 import { Sidebar, Wordmark } from "./components/Sidebar.jsx";
 import { DropZone } from "./components/DropZone.jsx";
@@ -19,6 +20,8 @@ import { docLine, JobStrip } from "./components/Dock.jsx";
 import { FileGlyph } from "./components/FileGlyph.jsx";
 import { HistoryDetail } from "./components/HistoryDetail.jsx";
 import { SettingsView } from "./components/SettingsView.jsx";
+import { ArchiveView } from "./components/ArchiveView.jsx";
+import { HomeView } from "./components/HomeView.jsx";
 import { Button, Dot, IconKey, ease, glide, tween, useLiquidMetal } from "./components/controls.jsx";
 
 const ACCEPT = ".pdf,.png,.jpg,.jpeg,.txt,.docx,.xlsx,.pptx,.odt,.ods,.odp,application/pdf,image/png,image/jpeg,text/plain";
@@ -136,7 +139,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
   const { capabilities, choices, error: optionsError, reload: reloadOptions } = usePrinterOptions();
   const history = useHistory(true);
   const prefs = usePreferences(true);
-  const [view, setView] = useState({ kind: "compose" });
+  const [view, setView] = useState({ kind: "home" });
   const [drawer, setDrawer] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [tracked, setTracked] = useState(null);
@@ -327,11 +330,67 @@ function Shell({ session, printer, appearance, setAppearance }) {
     setDrawer(false);
   }, []);
   const closeDrawer = useCallback(() => setDrawer(false), []);
+  const openArchive = useCallback(() => {
+    setView({ kind: "archive" });
+    setDrawer(false);
+  }, []);
+  const goHome = useCallback(() => {
+    setView({ kind: "home" });
+    setDrawer(false);
+  }, []);
+
+  const archive = useArchive(prefs);
+  const { archive: archiveId, restore: restoreId, remove: removeIds } = archive;
+  const archiveEntry = useCallback(
+    async (entry) => {
+      try {
+        await archiveId(entry.id);
+        flash(t("Moved to the archive"));
+      } catch (e) {
+        flash(t("Couldn't archive: {error}", { error: e.message }), "error");
+      }
+    },
+    [archiveId, flash],
+  );
+  const restoreEntry = useCallback(
+    async (entry) => {
+      try {
+        await restoreId(entry.id);
+        flash(t("Back in your history"));
+      } catch (e) {
+        flash(t("Couldn't restore: {error}", { error: e.message }), "error");
+      }
+    },
+    [restoreId, flash],
+  );
+  const removeEntries = useCallback(
+    async (ids) => {
+      try {
+        await removeIds(ids);
+        flash(tn(ids.length, "Deleted {n} print", "Deleted {n} prints"));
+        setView((v) => (v.kind === "history" && ids.includes(v.id) ? { kind: "archive" } : v));
+      } catch (e) {
+        flash(t("Couldn't delete: {error}", { error: e.message }), "error");
+      }
+    },
+    [removeIds, flash],
+  );
 
   const trackedEntry = useMemo(() => {
     if (!tracked) return null;
     return history.items.find((h) => h.id === tracked) || { id: tracked, status: "submitted", original_filename: flow.doc?.name };
   }, [tracked, history.items, flow.doc?.name]);
+
+  const { canRotate, rotate, rotations, unrotate, pageCount } = flow;
+  const rotation = useMemo(
+    () => ({
+      canRotate,
+      turned: hasRotation(rotations),
+      rotateAll: (delta) => rotate(Array.from({ length: pageCount || 1 }, (_, i) => i + 1), delta),
+      reset: unrotate,
+    }),
+    [canRotate, rotate, rotations, unrotate, pageCount],
+  );
 
   const loaded = flow.doc?.phase === "ready";
   const printDisabled = !loaded || !flow.canPrint || !canSend || flow.printing.state === "sending" || (flow.validation.result && !flow.validation.result.valid);
@@ -346,12 +405,16 @@ function Shell({ session, printer, appearance, setAppearance }) {
       user={session.user}
       printer={printer}
       history={history}
+      archive={archive}
       view={view}
       drawer={narrow}
       onClose={closeDrawer}
+      onHome={goHome}
       onNew={newPrint}
       onSelectHistory={selectHistory}
       onReprint={reprint}
+      onArchive={archiveEntry}
+      onOpenArchive={openArchive}
       onSettings={openSettings}
       onLogout={session.logout}
       appearance={appearance}
@@ -421,13 +484,34 @@ function Shell({ session, printer, appearance, setAppearance }) {
           }}
         />
 
+        {view.kind === "home" && (
+          <motion.div key="home" className="view" {...fadeIn}>
+            <HomeView
+              narrow={narrow}
+              lead={drawerKey}
+              printer={printer}
+              onPrinter={openSettings}
+              history={history}
+              archive={archive}
+              capabilities={capabilities}
+              dragging={dragging}
+              current={flow.doc?.phase === "ready" ? flow.doc : null}
+              onResume={goCompose}
+              onBrowse={browse}
+              onOpen={selectHistory}
+              onReprint={reprint}
+              onOpenArchive={openArchive}
+            />
+          </motion.div>
+        )}
         {view.kind === "compose" && (
           <motion.div key="compose" className="page" {...fadeIn}>
             <Toolbar
               lead={drawerKey}
               narrow={narrow}
               printer={printer}
-              onPrinter={() => setView({ kind: "settings" })}
+              onPrinter={openSettings}
+              onHome={goHome}
               flow={flow}
               choices={choices}
               disabled={!hasChoices}
@@ -436,6 +520,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
               onSaveDefaults={saveDefaults}
               onResetDefaults={resetToDefaults}
               defaultsState={defaultsState}
+              rotation={rotation}
             />
             <div className="compose">
               <motion.div key={loaded ? "loaded" : "empty"} className="compose__body" {...fadeIn}>
@@ -448,6 +533,8 @@ function Shell({ session, printer, appearance, setAppearance }) {
                     head={docHead}
                     feedKey={flow.printing.state === "sent" ? flow.printing.result?.job_id || "sent" : null}
                     status={narrow ? null : verdict}
+                    rotations={flow.rotations}
+                    onRotate={canRotate ? rotate : undefined}
                   />
                 ) : (
                   <DropZone dragging={dragging} onBrowse={browse} doc={flow.doc} capabilities={capabilities} touch={narrow} />
@@ -479,14 +566,39 @@ function Shell({ session, printer, appearance, setAppearance }) {
                 onResetDefaults={resetToDefaults}
                 defaultsState={defaultsState}
                 status={verdict}
+                rotation={rotation}
               />
             )}
           </motion.div>
         )}
         {view.kind === "history" && (
           <div key={`h-${view.id}`} className="view">
-            <HistoryDetail id={view.id} history={history} onReprint={reprint} onOpenCompose={newPrint} onStatusLine={flash} lead={drawerKey} />
+            <HistoryDetail
+              id={view.id}
+              history={history}
+              onReprint={reprint}
+              onOpenCompose={newPrint}
+              onStatusLine={flash}
+              lead={drawerKey}
+              archived={archive.archived.has(view.id)}
+              onArchive={archiveEntry}
+              onRestore={restoreEntry}
+              onDelete={(entry) => removeEntries([entry.id])}
+            />
           </div>
+        )}
+        {view.kind === "archive" && (
+          <motion.div key="archive" className="view" {...fadeIn}>
+            <ArchiveView
+              lead={drawerKey}
+              archive={archive}
+              history={history}
+              onOpen={selectHistory}
+              onReprint={reprint}
+              onRestore={restoreEntry}
+              onRemove={removeEntries}
+            />
+          </motion.div>
         )}
         {view.kind === "settings" && (
           <motion.div key="settings" className="view" {...fadeIn}>

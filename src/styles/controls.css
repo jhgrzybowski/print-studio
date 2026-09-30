@@ -142,6 +142,11 @@
 .btn--danger {
   color: var(--error);
 }
+.btn--danger.is-armed {
+  background: color-mix(in oklab, var(--error) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--error) 40%, transparent);
+  font-weight: 600;
+}
 @media (hover: hover) {
   .btn--danger:hover:not(:disabled) {
     color: var(--error);
@@ -294,6 +299,10 @@
 }
 .seg__opt.is-active {
   color: var(--ink);
+}
+/* The chosen option's glyph takes the accent, inked dark enough to read on chrome. */
+.seg__opt.is-active svg {
+  color: var(--accent-ink);
 }
 .seg__thumb {
   position: absolute;
@@ -467,6 +476,14 @@
 }
 .menu__item[data-disabled] {
   opacity: 0.4;
+}
+.menu__item.tone-error,
+.menu__item.tone-error svg {
+  color: var(--error);
+}
+.menu__item.is-armed {
+  background: color-mix(in oklab, var(--error) 14%, transparent);
+  font-weight: 560;
 }
 .menu__item--check {
   padding-left: 32px;
@@ -655,6 +672,7 @@
   transition: box-shadow var(--t-mid) ease;
 }
 .switch.is-on {
+  background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--well);
   box-shadow:
     var(--well-shadow),
     inset 0 0 0 1.5px var(--accent);
@@ -728,6 +746,12 @@
 }
 .print:active:not(:disabled) {
   transform: scale(0.97);
+}
+/* Ready to print: the slab sits in a soft pool of the accent. */
+.print:not(:disabled, .is-sending) {
+  box-shadow:
+    var(--chrome-shadow),
+    0 8px 22px -8px color-mix(in oklab, var(--accent) 70%, transparent);
 }
 .print:disabled {
   background: var(--field);

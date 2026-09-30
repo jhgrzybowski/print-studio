@@ -1,9 +1,21 @@
 // Page-range helpers. The API takes CUPS-style ranges such as "1,3-5,8".
 import { t, tn } from "../i18n/index.js";
 
+/**
+ * What a page-range field keeps of typed text: digits, commas, spaces and hyphens. Dashes that
+ * phone keyboards and autocorrect produce (en, em, minus) become hyphens.
+ */
+export function cleanRange(input) {
+  return normalizeDashes(input)
+    .replace(/;/g, ",")
+    .replace(/[^\d,\-\s]/g, "");
+}
+
+const normalizeDashes = (input) => String(input || "").replace(/[‐-―−]/g, "-");
+
 /** Parse "1,3-5" into a sorted array of unique page numbers, or throw. */
 export function parseRange(input, pageCount) {
-  const text = String(input || "").replace(/\s+/g, "");
+  const text = normalizeDashes(input).replace(/\s+/g, "");
   if (!text) throw new Error(t("Enter pages, for example 1-3, 5"));
   const pages = new Set();
   for (const part of text.split(",")) {

@@ -240,6 +240,7 @@ export function usePreferences(enabled) {
       .catch(() => setPrefs({}));
   }, [enabled]);
 
+  // A patch may be a function of the newest preferences, so quick changes in a row don't undo each other.
   const save = useCallback(async (patch) => {
     // PUT replaces the whole object, so never save over preferences we failed to read.
     if (!synced.current) {
@@ -247,16 +248,51 @@ export function usePreferences(enabled) {
       latest.current = { ...(r.preferences || {}), ...latest.current };
       synced.current = true;
     }
-    const next = { ...latest.current, ...patch };
+    const before = latest.current;
+    const next = { ...before, ...(typeof patch === "function" ? patch(before) : patch) };
     latest.current = next;
     setPrefs(next);
-    const r = await api.savePreferences(next);
-    latest.current = r.preferences || next;
-    setPrefs(latest.current);
+    try {
+      const r = await api.savePreferences(next);
+      latest.current = r.preferences || next;
+    } catch (e) {
+      // Put back what the server still has, unless a later change has already moved on.
+      if (latest.current === next) latest.current = before;
+      throw e;
+    } finally {
+      setPrefs(latest.current);
+    }
     return latest.current;
   }, []);
+  const update = save;
 
-  return { prefs, save, loaded: prefs !== null };
+  return { prefs, save, update, loaded: prefs !== null };
+}
+
+const NONE = [];
+const without = (list, ids) => (list || NONE).filter((id) => !ids.includes(id));
+
+/**
+ * Archived and deleted prints, kept with the account's preferences. The server keeps every
+ * history record, so deleting hides a print for good rather than erasing it there.
+ */
+export function useArchive(prefs) {
+  const ids = prefs.prefs?.archived_history || NONE;
+  const deleted = prefs.prefs?.deleted_history || NONE;
+  const archived = useMemo(() => new Set(ids), [ids]);
+  const hidden = useMemo(() => new Set([...ids, ...deleted]), [ids, deleted]);
+  const { update } = prefs;
+  const archive = useCallback((id) => update((p) => ({ archived_history: [id, ...without(p.archived_history, [id])] })), [update]);
+  const restore = useCallback((id) => update((p) => ({ archived_history: without(p.archived_history, [id]) })), [update]);
+  const remove = useCallback(
+    (list) =>
+      update((p) => ({
+        archived_history: without(p.archived_history, list),
+        deleted_history: [...new Set([...(p.deleted_history || NONE), ...list])],
+      })),
+    [update],
+  );
+  return { ids, archived, hidden, archive, restore, remove, loaded: prefs.loaded };
 }
 
 /* ---------- Debounced value ---------- */
