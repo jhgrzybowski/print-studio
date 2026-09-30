@@ -1,5 +1,5 @@
-import { RectangleHorizontal, RectangleVertical } from "lucide-react";
-import { Row, Segmented, Select, Switch } from "./controls.jsx";
+import { RectangleHorizontal, RectangleVertical, RotateCcwSquare, RotateCwSquare } from "lucide-react";
+import { IconKey, Row, Segmented, Select, Switch } from "./controls.jsx";
 import { AutoGlyph, ColorGlyph, DraftGlyph, HighGlyph, LongEdgeGlyph, MonoGlyph, OneSidedGlyph, ShortEdgeGlyph, StandardGlyph } from "./glyphs.jsx";
 import { COLOR_LABELS, DUPLEX_LABELS, label, mediaLabel, paperGroups, paperMM, paperName, QUALITY_LABELS } from "../lib/format.js";
 import { t, tn } from "../i18n/index.js";
@@ -49,20 +49,11 @@ export const asGroups = (desc) => [{ items: desc.options.map((o) => ({ value: o.
 export function optionModel(settings, set, choices) {
   const orient = choices.orientation || [];
   const landscape = /landscape/.test(settings.orientation);
-  const flipped = /^reverse/.test(settings.orientation);
-  const canFlip = orient.includes("reverse-portrait") || orient.includes("reverse-landscape");
-  const setOrientation = (base, flip) => {
-    const v = flip ? `reverse-${base}` : base;
-    set("orientation", orient.includes(v) ? v : base);
-  };
   return {
     landscape,
-    flipped,
-    canFlip,
-    toggleFlip: () => setOrientation(landscape ? "landscape" : "portrait", !flipped),
     orientation: orient.length > 0 && {
       value: landscape ? "landscape" : "portrait",
-      onChange: (v) => setOrientation(v, flipped),
+      onChange: (v) => set("orientation", v),
       options: [
         { value: "portrait", label: t("Portrait"), icon: RectangleVertical },
         { value: "landscape", label: t("Landscape"), icon: RectangleHorizontal },
@@ -104,7 +95,7 @@ export function optionModel(settings, set, choices) {
 }
 
 /** Output rows with words, for the defaults in Settings and the phone sheet. */
-export function OptionRows({ settings, set, choices, disabled, idPrefix = "opt" }) {
+export function OptionRows({ settings, set, choices, disabled, idPrefix = "opt", rotation }) {
   const m = optionModel(settings, set, choices);
   return (
     <>
@@ -150,9 +141,12 @@ export function OptionRows({ settings, set, choices, disabled, idPrefix = "opt" 
         </Row>
       )}
 
-      {m.canFlip && (
-        <Row label={t("Upside down")} hint={t("Rotate the output 180°")}>
-          <Switch label={t("Print upside down")} checked={m.flipped} onChange={m.toggleFlip} disabled={disabled} />
+      {rotation?.canRotate && (
+        <Row label={t("Rotate all pages")} hint={t("Turned pages shrink to fit the paper")}>
+          <div className="rotate-pair">
+            <IconKey label={t("Rotate left")} icon={RotateCcwSquare} onClick={() => rotation.rotateAll(-90)} disabled={disabled} />
+            <IconKey label={t("Rotate right")} icon={RotateCwSquare} onClick={() => rotation.rotateAll(90)} disabled={disabled} />
+          </div>
         </Row>
       )}
     </>

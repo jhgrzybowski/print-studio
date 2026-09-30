@@ -58,7 +58,9 @@ export function DropZone({ dragging, onBrowse, doc, capabilities, touch }) {
         </span>
       </motion.button>
       <div className="blank__copy">
-        <h1 className="blank__title">{title}</h1>
+        <h1 className={`blank__title ${busy && !dragging ? "blank__title--file" : ""}`} title={busy ? doc.name : undefined}>
+          {title}
+        </h1>
         {sub && (
           <p className={`blank__sub ${failed ? "is-error" : ""}`} role={failed ? "alert" : undefined} aria-live={busy ? "polite" : undefined}>
             {sub}

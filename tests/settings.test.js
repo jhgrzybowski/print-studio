@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BASE_SETTINGS, supportedChoices, reconcile, toPrintOptions, fromRequested, pickDefaults } from "../src/lib/settings.js";
+import { BASE_SETTINGS, supportedChoices, reconcile, toPrintOptions, fromRequested, pickDefaults, meaningfulWarnings } from "../src/lib/settings.js";
 
 // Shape of GET /options from local_printer_api.
 const OPTIONS = {
@@ -47,6 +47,16 @@ test("toPrintOptions sends only supported options", () => {
     fit_to_page: true,
   });
   assert.equal("fit_to_page" in toPrintOptions(BASE_SETTINGS, c), false);
+});
+
+test("meaningfulWarnings drops the per-option mapping notes", () => {
+  const notes = [
+    "Mapped fit_to_page through detected fit-to-page option",
+    "Mapped color mode through detected PPD ColorModel option",
+    "Mapped quality to detected cupsPrintQuality=Normal",
+  ];
+  assert.deepEqual(meaningfulWarnings([...notes, "Paper tray is empty"]), ["Paper tray is empty"]);
+  assert.deepEqual(meaningfulWarnings(undefined), []);
 });
 
 test("fromRequested and pickDefaults keep known keys only", () => {

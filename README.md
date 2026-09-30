@@ -30,7 +30,10 @@ It covers every endpoint that `local_printer_api` serves:
 | Check | A dry run on every change, showing sheet count, warnings, and unsupported options | `POST /print/validate` |
 | Print | Chrome Print key in the toolbar (also Ctrl/⌘+P or Ctrl/⌘+Enter; Ctrl/⌘+K searches history), or the Print button in the phone dock. Then a job chip with a progress track follows the job (Sent, Queued, Printing, Printed) and offers Cancel | `POST /print`, `GET /jobs/{id}` |
 | Jobs | Cancel an active job, or clear a finished one from the queue | `DELETE /jobs/{id}`, `POST /jobs/{id}/forget`, `GET /jobs?scope=all` |
+| Home | The start screen, also reached from the wordmark (or the phone title). A drop area for a new file beside the four latest prints, each openable or printable again | `GET /history` |
+| Rotation | Turn every page from the options, or the page in view from the pager (or R, Shift+R), a quarter at a time. The turns are baked into a new upload when you print: PDFs and Office files with pdf-lib (loaded only when needed), PNG and JPEG on a canvas | `POST /files` |
 | History | Sidebar grouped by day, with search and infinite scroll. The detail view has a read-only preview and a "Print again" action | `GET /history`, `/history/{id}` |
+| Archive | Move a print out of the history list; the Archive view lists them, restores them, or deletes them for good. Both lists live in your preferences, because the backend has no delete for history | `GET/PUT /me/preferences`, `GET /history/{id}` |
 | Preferences | Saved print defaults, stored per user | `GET/PUT /me/preferences` |
 | Language | English or Polish, following the system by default. Change it in Settings → Appearance; the choice is stored per browser | — |
 
@@ -104,8 +107,8 @@ src/
   api/client.js        fetch wrapper, XHR upload with progress, 401 handling
   i18n/                language preference, t()/tn() with plural rules, Polish strings
   hooks/               session, printer status, options, history + job polling, preferences, appearance, print flow
-  lib/                 page ranges, settings model, printer status interpretation, formatting
-  components/          Sidebar, Toolbar, DropZone, PreviewStage, Dock, PrintSheet, Options, HistoryDetail, SettingsView, AuthScreen, PrinterStatus, controls, glyphs
+  lib/                 page ranges, settings model, page rotation, printer status interpretation, formatting
+  components/          HomeView, Sidebar, Toolbar, DropZone, PreviewStage, Dock, PrintSheet, Options, HistoryDetail, ArchiveView, SettingsView, AuthScreen, PrinterStatus, controls, glyphs
   styles/              tokens (OKLCH palettes, elevation, metal), base, controls, shell, work, pages
 public/                favicon, home-screen icons, web app manifest
 scripts/icons.mjs      renders the home-screen icons
@@ -118,9 +121,11 @@ Dockerfile, docker-compose.yml
 Version 0.2.0 ("liquid metal") is a full redesign of the interface. The functionality is the same as 0.1.0.
 
 The screens:
+- **Home:** the start screen. The mark, the name and a one-line slogan above two panels: on the left a drop area with the accepted formats and a Choose file button, on the right the four latest prints with Print again keys and a link to the archive. While a file is loaded, a "Continue with …" link leads back to it. The panels stack on a phone.
 - **Studio (desktop):** print history in the sidebar; the preview in the main pane; a toolbar of print preferences above it. Pages can be skipped by clicking their thumbnails. A job chip tracks the running print and has a Cancel button.
 - **Studio (phone and narrow tablet, up to 860 px):** a slim top bar showing printer status. A bottom print dock pairs a settings summary with a large Print button. The summary opens a settings sheet that can be dismissed by dragging down its handle, its header, or its content when the content is scrolled to the top. The sheet has a page-range field that is checked against the page count.
-- **History detail:** the preview, a list of facts about the print, Print again, and a More menu with Open PDF and Clear from printer queue.
+- **History detail:** the preview, a list of facts about the print, Print again, and a More menu with Open PDF, Clear from printer queue, and Move to archive (or, for an archived print, Restore to history and a two-step Delete permanently).
+- **Archive:** reached from the key beside New print in the sidebar, which shows a count. Each row opens the print, prints it again, restores it, or deletes it after a second confirming press; Delete all works the same way.
 - **Settings, sign-in and registration:** a single column with an account avatar.
 - **Home screen:** added to a phone's home screen, the app opens in its own window, without browser bars, under the chrome-drop icon.
 - **Languages:** English and Polish. In Polish, the studio, history detail and Settings were checked at 1440 px, and the phone print sheet at 390 px.
@@ -130,18 +135,23 @@ Verified on the dev deployment (http://192.168.100.99:5173) with Playwright, at 
 - Page skipping and page-range validation, the settings sheet, and the drawer, history detail, More menu and settings.
 - Two real one-page black-and-white prints (one sent from the phone layout), followed from Sent to Printed.
 - The production build and unit tests.
+- In Polish, at 1440 px: home, moving a print to the archive and back, the archive view, the two-step delete (armed, not confirmed) and the archived detail menu. At 390 px: home, the phone title leading home with the continue link, an en dash typed into the page range becoming a hyphen, and rotating every page.
 
 Deployed to production at http://drukarka.local/ from `main` (751dd53). The container is healthy and the page and `/api/health` answer on that name.
 
 Known behaviour:
 - **Images and fit to page.** The backend sends PNG and JPEG files to CUPS unchanged. Without fit to page, CUPS prints them at the size stored in the file, so a large image can be cropped. The preview shows this: it fills and crops the sheet unless fit to page is on.
 - **Language of messages.** Messages already on screen keep their language until the next action after you switch.
+- **Deleting from the archive hides, it doesn't erase.** The backend has no way to delete a history entry, so a deleted print is only hidden for your account; the file and the record stay on the print server.
+- **Rotation uploads a copy.** Printing turned pages uploads a new, turned file, and history shows that copy. An image reopened from history can't be turned, because the app only has the server's rendering of it, not the original file.
+- **Upside down.** The old 180° orientation options are gone from the Orientation row; a PDF or Office print that used one comes back as turned pages.
 
 Not yet done:
 - **Cancel on a live job.** The Cancel button appears while a job runs, but cancelling was not tried on a real job.
 - **Unchecked layouts.** The phone layout in the light theme, and Polish at 1100 px or in the light theme.
 - **drukarka.local in a browser.** Checked with curl only. The test browser can't resolve mDNS names, so browser checks used the IP address.
-- **Code splitting.** The JS bundle is about 190 kB gzipped.
+- **Code splitting.** The main JS bundle is about 196 kB gzipped; only pdf-lib (about 176 kB gzipped) is split off, loaded the first time turned PDF pages are printed.
+- **Rotation on paper.** Turned pages were checked in the preview and in pdf-lib unit tests, not printed.
 - **Server messages.** Error text that comes from the backend is not translated.
 
 Design notes are in [DESIGN.md](DESIGN.md); product context is in [PRODUCT.md](PRODUCT.md).

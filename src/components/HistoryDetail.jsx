@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { DropdownMenu } from "radix-ui";
-import { CircleAlert, Ellipsis, Eraser, ExternalLink, RotateCw } from "lucide-react";
+import { Archive, ArchiveRestore, CircleAlert, Ellipsis, Eraser, ExternalLink, RotateCw, Trash2 } from "lucide-react";
 import { api } from "../api/client.js";
 import { PreviewStage } from "./PreviewStage.jsx";
 import { jobTone } from "./Dock.jsx";
@@ -24,15 +24,16 @@ import {
   shortWhen,
   TERMINAL_STATUSES,
 } from "../lib/format.js";
-import { meaningfulWarnings } from "../hooks/printFlow.js";
+import { meaningfulWarnings } from "../lib/settings.js";
 import { t } from "../i18n/index.js";
 
-export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusLine, lead }) {
+export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusLine, lead, archived, onArchive, onRestore, onDelete }) {
   const cached = history.items.find((h) => h.id === id);
   const [entry, setEntry] = useState(cached || null);
   const [file, setFile] = useState({ state: "loading" });
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
+  const [confirming, setConfirming] = useState(false);
 
   // Keep the list and the detail in step with polling.
   useEffect(() => {
@@ -160,6 +161,7 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
             <Dot tone={jobTone(entry.status)} pulse={active} />
             <span>
               {stLabel} · {shortWhen(entry.created_at)}
+              {archived && ` · ${t("In the archive")}`}
             </span>
           </p>
         </div>
@@ -177,8 +179,8 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
               )}
             </Button>
           )}
-          {(pdf || forgettable) && (
-            <DropdownMenu.Root>
+          {(pdf || forgettable || !active) && (
+            <DropdownMenu.Root onOpenChange={(open) => !open && setConfirming(false)}>
               <Tip label={t("More")}>
                 <DropdownMenu.Trigger asChild>
                   <button type="button" className="ikey ikey--plain ikey--md" aria-label={t("More")}>
@@ -198,6 +200,33 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
                     <DropdownMenu.Item className="menu__item" onSelect={forget} disabled={busy === "forget"}>
                       <Eraser size={16} strokeWidth={1.5} aria-hidden />
                       {t("Clear from printer queue")}
+                    </DropdownMenu.Item>
+                  )}
+                  {!active && (pdf || forgettable) && <DropdownMenu.Separator className="menu__sep" />}
+                  {!active && !archived && (
+                    <DropdownMenu.Item className="menu__item" onSelect={() => onArchive(entry)}>
+                      <Archive size={16} strokeWidth={1.5} aria-hidden />
+                      {t("Move to archive")}
+                    </DropdownMenu.Item>
+                  )}
+                  {archived && (
+                    <DropdownMenu.Item className="menu__item" onSelect={() => onRestore(entry)}>
+                      <ArchiveRestore size={16} strokeWidth={1.5} aria-hidden />
+                      {t("Restore to history")}
+                    </DropdownMenu.Item>
+                  )}
+                  {archived && (
+                    // The first choice arms it and keeps the menu open; the second deletes.
+                    <DropdownMenu.Item
+                      className={`menu__item tone-error ${confirming ? "is-armed" : ""}`}
+                      onSelect={(e) => {
+                        if (confirming) return onDelete(entry);
+                        e.preventDefault();
+                        setConfirming(true);
+                      }}
+                    >
+                      <Trash2 size={16} strokeWidth={1.5} aria-hidden />
+                      {confirming ? t("Delete for good?") : t("Delete permanently")}
                     </DropdownMenu.Item>
                   )}
                 </DropdownMenu.Content>
