@@ -75,10 +75,20 @@ function ServerDown({ onRetry, message }) {
  * The phone sidebar. It tracks the finger when swiped left and closes on a short flick. The
  * scrim is driven by the same value, so it dims with the drawer's position rather than on a timer.
  */
+// Matches `.drawer { width: min(320px, 86vw) }`.
+const drawerWidth = () => Math.min(320, window.innerWidth * 0.86);
+
 function Drawer({ onClose, children }) {
-  const [width] = useState(() => Math.min(320, window.innerWidth * 0.86));
+  const [width, setWidth] = useState(drawerWidth);
+  const size = useRef(width);
   const x = useMotionValue(-width);
-  const scrim = useTransform(x, [-width, 0], [0, 1]);
+  const scrim = useTransform(x, (v) => Math.min(1, Math.max(0, 1 + v / size.current)));
+  // A rotation changes the drawer's width, and with it how far the drawer travels to close.
+  useEffect(() => {
+    const fit = () => setWidth((size.current = drawerWidth()));
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
   const dragged = useRef(false);
   const reduce = useReducedMotion();
   // The spring's last pixels settle well after the drawer looks gone; taps meanwhile go to the app.
@@ -91,7 +101,9 @@ function Drawer({ onClose, children }) {
         style={{ x, pointerEvents: taps }}
         animate={{ x: 0 }}
         exit={{ x: -width }}
-        transition={glide}
+        // MotionConfig already skips transforms under reduced motion; saying so here keeps the drawer
+        // correct on its own, as the sheet is.
+        transition={reduce ? { duration: 0 } : glide}
         drag="x"
         dragDirectionLock
         dragConstraints={{ left: 0, right: 0 }}
