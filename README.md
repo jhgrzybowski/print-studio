@@ -89,6 +89,14 @@ This runs the unit tests (`node --test`) for page ranges, the print-settings mod
 
 Strings live in the code in English and go through `t()` / `tn()` from `src/i18n/index.js`. Polish is in `src/i18n/pl.js`. A key with a `context|` prefix is used where one English word needs different Polish words. The Polish terms follow Canon, Brother and Windows print dialogs. The header of `pl.js` lists the sources and the false friends it avoids.
 
+### App icons
+
+The home-screen icons in `public/` (`apple-touch-icon.png` and the manifest's `icon-*.png`) are rendered from the favicon's chrome drop by `scripts/icons.mjs`. After changing the mark, run this (it needs `rsvg-convert`, from `brew install librsvg`):
+
+```bash
+npm run icons
+```
+
 ## Layout
 
 ```
@@ -99,6 +107,8 @@ src/
   lib/                 page ranges, settings model, printer status interpretation, formatting
   components/          Sidebar, Toolbar, DropZone, PreviewStage, Dock, PrintSheet, Options, HistoryDetail, SettingsView, AuthScreen, PrinterStatus, controls, glyphs
   styles/              tokens (OKLCH palettes, elevation, metal), base, controls, shell, work, pages
+public/                favicon, home-screen icons, web app manifest
+scripts/icons.mjs      renders the home-screen icons
 deploy/nginx.conf.template
 Dockerfile, docker-compose.yml
 ```
@@ -109,9 +119,10 @@ Version 0.2.0 ("liquid metal") is a full redesign of the interface. The function
 
 The screens:
 - **Studio (desktop):** print history in the sidebar; the preview in the main pane; a toolbar of print preferences above it. Pages can be skipped by clicking their thumbnails. A job chip tracks the running print and has a Cancel button.
-- **Studio (phone and narrow tablet, up to 860 px):** a slim top bar showing printer status. A bottom print dock pairs a settings summary with a large Print button. The summary opens a settings sheet that can be dismissed by dragging down. The sheet has a page-range field that is checked against the page count.
+- **Studio (phone and narrow tablet, up to 860 px):** a slim top bar showing printer status. A bottom print dock pairs a settings summary with a large Print button. The summary opens a settings sheet that can be dismissed by dragging down its handle, its header, or its content when the content is scrolled to the top. The sheet has a page-range field that is checked against the page count.
 - **History detail:** the preview, a list of facts about the print, Print again, and a More menu with Open PDF and Clear from printer queue.
 - **Settings, sign-in and registration:** a single column with an account avatar.
+- **Home screen:** added to a phone's home screen, the app opens in its own window, without browser bars, under the chrome-drop icon.
 - **Languages:** English and Polish. In Polish, the studio, history detail and Settings were checked at 1440 px, and the phone print sheet at 390 px.
 
 Verified on the dev deployment (http://192.168.100.99:5173) with Playwright, at 1440 and 1100 px (dark and light themes) and at 390 px as a touch phone (dark theme):

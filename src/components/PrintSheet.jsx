@@ -124,33 +124,29 @@ export function PrintDock({ flow, choices, disabled, printDisabled, onPrint, onS
                     </Dialog.Close>
                   </>
                 }
+                foot={<PrintButton icon={Printer} onClick={printFromSheet} disabled={printDisabled} state={printing.state} className="print--dock" />}
               >
-                <div className="sheet-panel__body">
-                  <div className="rows">
-                    <Row label={t("Copies")}>
-                      <Stepper
-                        label={t("Copies")}
-                        decLabel={t("Fewer copies")}
-                        incLabel={t("More copies")}
-                        value={settings.copies}
-                        onChange={(v) => set("copies", v)}
-                        disabled={disabled}
-                      />
-                    </Row>
-                    {pageCount > 1 && <PagesRow value={settings.pages} onChange={(v) => set("pages", v)} pageCount={pageCount} error={rangeError} />}
-                    <OptionRows settings={settings} set={set} choices={choices} disabled={disabled} idPrefix="sheet" />
-                  </div>
-                  <div className="sheet-panel__defaults">
-                    <Button variant="quiet" onClick={onResetDefaults}>
-                      {t("Use my defaults")}
-                    </Button>
-                    <Button variant="quiet" onClick={onSaveDefaults} disabled={defaultsState === "saving"}>
-                      {defaultsState === "saved" ? t("Saved") : t("Save as defaults")}
-                    </Button>
-                  </div>
+                <div className="rows">
+                  <Row label={t("Copies")}>
+                    <Stepper
+                      label={t("Copies")}
+                      decLabel={t("Fewer copies")}
+                      incLabel={t("More copies")}
+                      value={settings.copies}
+                      onChange={(v) => set("copies", v)}
+                      disabled={disabled}
+                    />
+                  </Row>
+                  {pageCount > 1 && <PagesRow value={settings.pages} onChange={(v) => set("pages", v)} pageCount={pageCount} error={rangeError} />}
+                  <OptionRows settings={settings} set={set} choices={choices} disabled={disabled} idPrefix="sheet" />
                 </div>
-                <div className="sheet-panel__foot">
-                  <PrintButton icon={Printer} onClick={printFromSheet} disabled={printDisabled} state={printing.state} className="print--dock" />
+                <div className="sheet-panel__defaults">
+                  <Button variant="quiet" onClick={onResetDefaults}>
+                    {t("Use my defaults")}
+                  </Button>
+                  <Button variant="quiet" onClick={onSaveDefaults} disabled={defaultsState === "saving"}>
+                    {defaultsState === "saved" ? t("Saved") : t("Save as defaults")}
+                  </Button>
                 </div>
               </SheetLayers>
             </Dialog.Portal>
@@ -166,8 +162,10 @@ export function PrintDock({ flow, choices, disabled, printDisabled, onPrint, onS
  * whatever speed the finger left it, so a flick carries straight into the close and a sheet
  * grabbed on its way out follows the finger again. The scrim dims with the sheet's position.
  */
-function SheetLayers({ trigger, onClose, head, children }) {
+function SheetLayers({ trigger, onClose, head, foot, children }) {
   const panel = useRef(null);
+  const body = useRef(null);
+  const pull = useRef(null);
   const drag = useDragControls();
   const height = useRef(window.innerHeight);
   const y = useMotionValue(height.current);
@@ -213,6 +211,31 @@ function SheetLayers({ trigger, onClose, head, children }) {
     drag.start(e);
   };
 
+  // The content pulls the sheet down too, as in native sheets: when the finger lands with the
+  // content at its top and first moves down. Anything else scrolls as usual. Touch and pen only;
+  // a mouse has the grip and the header.
+  const pullStart = (e) => {
+    pull.current = e.pointerType !== "mouse" && e.isPrimary && body.current.scrollTop <= 0 ? { x: e.clientX, y: e.clientY, on: false } : null;
+  };
+  const pullMove = (e) => {
+    const p = pull.current;
+    if (!p || p.on || !e.isPrimary) return;
+    const dx = e.clientX - p.x;
+    const dy = e.clientY - p.y;
+    if (Math.hypot(dx, dy) < 4) return;
+    if (dy > Math.abs(dx)) {
+      p.on = true;
+      drag.start(e);
+    } else pull.current = null;
+  };
+  useEffect(() => {
+    const el = body.current;
+    // Once the pull owns the touch, the browser must not start an overscroll, which would cancel it.
+    const hold = (e) => pull.current?.on && e.cancelable && e.preventDefault();
+    el.addEventListener("touchmove", hold, { passive: false });
+    return () => el.removeEventListener("touchmove", hold);
+  }, []);
+
   // While closing, taps pass through to the app rather than landing on a scrim that is nearly gone.
   const taps = isPresent ? "auto" : "none";
 
@@ -249,7 +272,10 @@ function SheetLayers({ trigger, onClose, head, children }) {
           <div className="sheet-panel__head" onPointerDown={grab}>
             {head}
           </div>
-          {children}
+          <div ref={body} className="sheet-panel__body" onPointerDown={pullStart} onPointerMove={pullMove}>
+            {children}
+          </div>
+          <div className="sheet-panel__foot">{foot}</div>
         </motion.div>
       </Dialog.Content>
     </>
