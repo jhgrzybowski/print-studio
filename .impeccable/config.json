@@ -1,0 +1,19 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [
+      ".impeccable/mocks/liquid-metal/index.html"
+    ],
+    "ignoreValues": [
+      {
+        "rule": "pulsing-dot",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/liquid-metal/index.html"
+        ],
+        "createdAt": "2026-09-29T22:02:39.731Z",
+        "reason": "Claude: pulse marks a job actively printing and stops when the job completes; tied to live queue state"
+      }
+    ]
+  }
+}

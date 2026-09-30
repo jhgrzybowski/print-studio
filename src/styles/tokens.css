@@ -1,159 +1,172 @@
-/* Print Studio design tokens.
-   Matte neumorphic body; liquid chrome only where the user acts or the machine reports. */
+/* Liquid metal studio. Dark graphite by default, brushed aluminium in light.
+   Chrome is reserved for what commits: Print, the selected segment, the mark. */
 
-@property --chrome-a {
-  syntax: "<angle>";
-  inherits: true;
-  initial-value: 0deg;
+@property --mx {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 50%;
+}
+@property --my {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: -40%;
 }
 
 :root {
-  /* Palette: one accent hue; neutrals stay cool so light mode never reads cream. */
-  --accent-l: 0.62;
-  --accent-c: 0.19;
-  --accent-h: 262;
-  --n-h: 262;
-  --n-c: 0.008;
+  --font: "Funnel Sans Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Funnel Display Variable", var(--font);
 
-  --font: "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --fs-11: 11px;
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-16: 16px;
+  --fs-20: 20px;
+  --fs-28: 28px;
+  --fs-40: 40px;
 
-  --fs-11: 0.6875rem;
-  --fs-12: 0.75rem;
-  --fs-13: 0.8125rem;
-  --fs-14: 0.875rem;
-  --fs-16: 1rem;
-  --fs-19: 1.1875rem;
-  --fs-23: 1.4375rem;
-  --fs-28: 1.75rem;
-
-  --r-xs: 8px;
+  --r-xs: 7px;
   --r-sm: 10px;
   --r-md: 12px;
-  --r-lg: 16px;
-  --r-xl: 22px;
+  --r-lg: 14px;
+  --r-xl: 18px;
 
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --t-fast: 140ms;
-  --t-mid: 220ms;
-  --t-slow: 360ms;
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-move: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --t-press: 140ms;
+  --t-fast: 160ms;
+  --t-mid: 200ms;
 
-  --sidebar-w: 284px;
-  --pane-w: 344px;
+  --sidebar-w: 292px;
+  --bar-h: 60px;
 
-  --chrome-stops:
-    #2a2c35 0deg, #8f95ad 26deg, #f4f5fb 48deg, #ffc18a 51deg, #7c95ff 54deg, #eef0fa 60deg,
-    #a9aec4 86deg, #3b3e4c 120deg, #16181f 152deg, #6d7390 186deg, #dfe2f2 214deg, #ffffff 228deg,
-    #b8bdd6 246deg, #555a70 280deg, #9aa0bf 300deg, #f6f7fd 316deg, #ffb07a 320deg, #6c88ff 324deg,
-    #c7cbe0 332deg, #2a2c35 360deg;
-  --chrome: conic-gradient(from var(--chrome-a), var(--chrome-stops));
+  /* Accent: hue and chroma. */
+  --a-h: 250;
+  --a-c: 0.13;
 }
 
-/* ---------- Palettes ---------- */
-[data-palette="cobalt"] { --accent-h: 262; --accent-c: 0.19; --n-h: 262; }
-[data-palette="iris"] { --accent-h: 292; --accent-c: 0.18; --n-h: 285; }
-[data-palette="jade"] { --accent-h: 166; --accent-c: 0.13; --accent-l: 0.66; --n-h: 215; }
-[data-palette="ember"] { --accent-h: 42; --accent-c: 0.17; --accent-l: 0.67; --n-h: 250; }
-[data-palette="graphite"] { --accent-h: 260; --accent-c: 0.025; --accent-l: 0.74; --n-h: 260; --n-c: 0.004; }
+[data-palette="cobalt"] {
+  --a-h: 250;
+  --a-c: 0.13;
+}
+[data-palette="iris"] {
+  --a-h: 292;
+  --a-c: 0.13;
+}
+[data-palette="jade"] {
+  --a-h: 166;
+  --a-c: 0.1;
+}
+[data-palette="ember"] {
+  --a-h: 45;
+  --a-c: 0.14;
+}
+[data-palette="graphite"] {
+  --a-h: 250;
+  --a-c: 0.012;
+}
 
-/* ---------- Dark (default) ---------- */
+/* ---------- Dark: graphite ---------- */
 :root,
 [data-theme="dark"] {
   color-scheme: dark;
-  --ground: oklch(0.19 var(--n-c) var(--n-h));
-  --rail: oklch(0.165 var(--n-c) var(--n-h));
-  --surface: oklch(0.215 var(--n-c) var(--n-h));
-  --surface-2: oklch(0.245 calc(var(--n-c) * 1.2) var(--n-h));
-  --well: oklch(0.155 var(--n-c) var(--n-h));
-  --well-2: oklch(0.13 var(--n-c) var(--n-h));
-  --line: oklch(1 0 0 / 0.06);
 
-  --text: oklch(0.95 0.004 var(--n-h));
-  --text-2: oklch(0.76 0.01 var(--n-h));
-  --text-3: oklch(0.64 0.012 var(--n-h));
-  --icon: oklch(0.6 0.01 var(--n-h));
+  --bg: #0b0c0e;
+  --side: #111215;
+  --panel: #15171a;
+  --raise: #1d1f23;
+  --raise-2: #24272c;
+  --well: #0c0d0f;
+  --menu-bg: #1b1d21;
+  --line: rgb(255 255 255 / 0.06);
+  --line-2: rgb(255 255 255 / 0.1);
+  --hover: rgb(255 255 255 / 0.045);
+  --press: rgb(255 255 255 / 0.07);
 
-  --accent: oklch(var(--accent-l) var(--accent-c) var(--accent-h));
-  --accent-text: oklch(0.78 calc(var(--accent-c) * 0.8) var(--accent-h));
-  --accent-soft: oklch(var(--accent-l) var(--accent-c) var(--accent-h) / 0.16);
-  --accent-glow: oklch(var(--accent-l) var(--accent-c) var(--accent-h) / 0.45);
-  --on-accent: oklch(0.99 0 0);
+  --text: #eceef0;
+  --text-2: #a4aab1;
+  --text-3: #858b93;
+  --ink: #0e1012;
 
-  --ok: oklch(0.76 0.15 155);
-  --warn: oklch(0.8 0.14 80);
-  --error: oklch(0.7 0.18 25);
-  --ok-soft: oklch(0.76 0.15 155 / 0.14);
-  --warn-soft: oklch(0.8 0.14 80 / 0.14);
-  --error-soft: oklch(0.7 0.18 25 / 0.14);
+  --accent: oklch(0.76 var(--a-c) var(--a-h));
+  --accent-soft: oklch(0.76 var(--a-c) var(--a-h) / 0.22);
+  --ok: #86d3a3;
+  --warn: #e8c071;
+  --warn-text: #e8c071;
+  --error: #ff8e7e;
 
-  --hi: oklch(1 0 0 / 0.055);
-  --hi-strong: oklch(1 0 0 / 0.09);
-  --lo: oklch(0 0 0 / 0.55);
-  --lo-soft: oklch(0 0 0 / 0.35);
+  /* Chrome, with a mirror horizon at 50 %; the lightest stops pick up the accent faintly. */
+  --c0: #ffffff;
+  --c1: oklch(0.95 0.004 var(--a-h));
+  --c2: oklch(0.82 0.008 var(--a-h));
+  --c3: oklch(0.86 0.006 var(--a-h));
+  --c4: oklch(0.66 0.01 var(--a-h));
+  --chrome: linear-gradient(180deg, var(--c0) 0%, var(--c1) 13%, var(--c2) 40%, var(--c4) 50%, var(--c3) 53%, var(--c1) 78%, var(--c2) 100%);
+  --chrome-shadow: inset 0 1px 0 #fff, inset 0 -1px 0 rgb(0 0 0 / 0.3), 0 1px 1px rgb(0 0 0 / 0.55), 0 10px 20px -10px rgb(0 0 0 / 0.9);
 
-  --paper: oklch(0.985 0 0);
-  --paper-shadow: oklch(0 0 0 / 0.55);
-  --glass: oklch(0.32 0.01 var(--n-h) / 0.55);
-  --glass-edge: oklch(1 0 0 / 0.22);
+  --field: linear-gradient(180deg, #202327, #1a1c20);
+  --field-hover: linear-gradient(180deg, #25282d, #1e2025);
+  --field-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07), 0 0 0 1px rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.5);
+  --well-shadow: inset 0 1px 2px rgb(0 0 0 / 0.6), 0 1px 0 rgb(255 255 255 / 0.04);
+  --float-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 0 0 1px rgb(255 255 255 / 0.07), 0 12px 32px -8px rgb(0 0 0 / 0.7), 0 2px 6px rgb(0 0 0 / 0.4);
 
-  --chrome-core: radial-gradient(120% 100% at 50% 0%, oklch(0.34 0.006 var(--n-h)) 0%, oklch(0.2 0.006 var(--n-h)) 45%, oklch(0.08 0 0) 100%);
-  --chrome-glyph: oklch(0.72 0.01 var(--n-h));
+  --stage: radial-gradient(ellipse 55% 60% at 50% 40%, #202226, #141518 55%, #0e0f11);
+  --paper: #fbfbf9;
+  --paper-ghost: #e6e6e3;
+  --sheet-shadow: 0 1px 0 rgb(255 255 255 / 0.5) inset, 0 0 0 0.5px rgb(0 0 0 / 0.3), 0 2px 4px rgb(0 0 0 / 0.35), 0 18px 40px -12px rgb(0 0 0 / 0.75),
+    0 50px 90px -30px rgb(0 0 0 / 0.6);
+
+  --skel: rgb(255 255 255 / 0.05);
+  --skel-hi: rgb(255 255 255 / 0.1);
 }
 
-/* ---------- Light ---------- */
+/* ---------- Light: brushed aluminium ---------- */
 [data-theme="light"] {
   color-scheme: light;
-  --ground: oklch(0.925 calc(var(--n-c) + 0.002) var(--n-h));
-  --rail: oklch(0.905 calc(var(--n-c) + 0.003) var(--n-h));
-  --surface: oklch(0.935 calc(var(--n-c) + 0.002) var(--n-h));
-  --surface-2: oklch(0.955 var(--n-c) var(--n-h));
-  --well: oklch(0.9 calc(var(--n-c) + 0.004) var(--n-h));
-  --well-2: oklch(0.88 calc(var(--n-c) + 0.004) var(--n-h));
-  --line: oklch(0.3 0.02 var(--n-h) / 0.08);
 
-  --text: oklch(0.23 0.012 var(--n-h));
-  --text-2: oklch(0.42 0.014 var(--n-h));
-  --text-3: oklch(0.5 0.014 var(--n-h));
-  --icon: oklch(0.52 0.012 var(--n-h));
+  --bg: #e4e6e9;
+  --side: #dcdfe3;
+  --panel: #eceef0;
+  --raise: #f3f4f6;
+  --raise-2: #fafbfc;
+  --well: #d4d8dd;
+  --menu-bg: #f6f7f8;
+  --line: rgb(20 24 30 / 0.08);
+  --line-2: rgb(20 24 30 / 0.13);
+  --hover: rgb(20 24 30 / 0.05);
+  --press: rgb(20 24 30 / 0.08);
 
-  --accent: oklch(calc(var(--accent-l) - 0.06) var(--accent-c) var(--accent-h));
-  --accent-text: oklch(calc(var(--accent-l) - 0.16) var(--accent-c) var(--accent-h));
-  --accent-soft: oklch(var(--accent-l) var(--accent-c) var(--accent-h) / 0.14);
-  --accent-glow: oklch(var(--accent-l) var(--accent-c) var(--accent-h) / 0.35);
+  --text: #16181b;
+  --text-2: #4d535b;
+  --text-3: #5a6068;
+  --ink: #16181b;
 
-  --ok: oklch(0.55 0.14 155);
-  --warn: oklch(0.6 0.13 70);
-  --error: oklch(0.55 0.19 25);
-  --ok-soft: oklch(0.6 0.14 155 / 0.13);
-  --warn-soft: oklch(0.7 0.14 75 / 0.16);
-  --error-soft: oklch(0.6 0.19 25 / 0.12);
+  --accent: oklch(0.52 var(--a-c) var(--a-h));
+  --accent-soft: oklch(0.52 var(--a-c) var(--a-h) / 0.18);
+  --ok: #2f8a55;
+  --warn: #b27a12;
+  --warn-text: #8a5d06;
+  --error: #c43d2c;
 
-  --hi: oklch(1 0 0 / 0.95);
-  --hi-strong: oklch(1 0 0 / 1);
-  --lo: oklch(0.55 0.03 var(--n-h) / 0.34);
-  --lo-soft: oklch(0.55 0.03 var(--n-h) / 0.2);
+  --c0: #ffffff;
+  --c1: oklch(0.96 0.004 var(--a-h));
+  --c2: oklch(0.84 0.008 var(--a-h));
+  --c3: oklch(0.88 0.006 var(--a-h));
+  --c4: oklch(0.7 0.01 var(--a-h));
+  --chrome-shadow: inset 0 1px 0 #fff, inset 0 -1px 0 rgb(0 0 0 / 0.18), 0 0 0 1px rgb(20 24 30 / 0.14), 0 1px 1px rgb(20 24 30 / 0.2), 0 8px 16px -8px rgb(20 24 30 / 0.45);
 
-  --paper: oklch(1 0 0);
-  --paper-shadow: oklch(0.4 0.03 var(--n-h) / 0.28);
-  --glass: oklch(0.98 0.004 var(--n-h) / 0.6);
-  --glass-edge: oklch(1 0 0 / 0.9);
+  --field: linear-gradient(180deg, #fbfbfc, #eef0f2);
+  --field-hover: linear-gradient(180deg, #ffffff, #f3f4f6);
+  --field-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgb(20 24 30 / 0.1), 0 1px 2px rgb(20 24 30 / 0.12);
+  --well-shadow: inset 0 1px 2px rgb(20 24 30 / 0.18), 0 1px 0 rgb(255 255 255 / 0.7);
+  --float-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgb(20 24 30 / 0.09), 0 12px 32px -10px rgb(20 24 30 / 0.28), 0 2px 6px rgb(20 24 30 / 0.1);
 
-  --chrome-core: linear-gradient(160deg, oklch(0.99 0.002 var(--n-h)) 0%, oklch(0.9 0.006 var(--n-h)) 38%, oklch(0.97 0.004 var(--n-h)) 55%, oklch(0.8 0.01 var(--n-h)) 100%);
-  --chrome-glyph: oklch(0.5 0.012 var(--n-h));
-}
+  --stage: radial-gradient(ellipse 55% 60% at 50% 40%, #f1f2f4, #e2e4e8 55%, #d6d9de);
+  --paper: #ffffff;
+  --paper-ghost: #f1f1ef;
+  --sheet-shadow: 0 0 0 0.5px rgb(20 24 30 / 0.14), 0 2px 4px rgb(20 24 30 / 0.1), 0 18px 40px -14px rgb(20 24 30 / 0.3), 0 50px 90px -34px rgb(20 24 30 / 0.28);
 
-/* Graphite accent is near-neutral; keep it legible on light. */
-[data-theme="light"][data-palette="graphite"] {
-  --accent: oklch(0.38 0.02 260);
-  --accent-text: oklch(0.3 0.02 260);
-}
-
-/* ---------- Elevation (neumorphic pairs) ---------- */
-:root {
-  --raise-1: -3px -3px 8px var(--hi), 4px 4px 10px var(--lo-soft);
-  --raise-2: -6px -6px 16px var(--hi), 8px 8px 20px var(--lo);
-  --raise-3: -10px -10px 28px var(--hi), 14px 14px 36px var(--lo);
-  --inset-1: inset 2px 2px 5px var(--lo-soft), inset -2px -2px 5px var(--hi);
-  --inset-2: inset 4px 4px 10px var(--lo), inset -4px -4px 10px var(--hi);
-  --edge-top: inset 0 1px 0 var(--hi-strong);
+  --skel: rgb(20 24 30 / 0.06);
+  --skel-hi: rgb(20 24 30 / 0.11);
 }

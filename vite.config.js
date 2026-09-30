@@ -10,6 +10,8 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
+    // The printer host's mDNS alias (avahi-alias@drukarka on 192.168.100.99).
+    allowedHosts: ["drukarka.local"],
     proxy: {
       "/api": {
         target: API_TARGET,

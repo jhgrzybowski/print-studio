@@ -1,11 +1,13 @@
 // Thin client for local_printer_api. Every request goes through the same-origin
 // /api proxy so the HttpOnly session cookie is always sent.
 
+import { t } from "../i18n/index.js";
+
 export const API_BASE = import.meta.env.VITE_PRINTER_API_BASE_URL || "/api";
 
 export class ApiError extends Error {
   constructor(status, detail, message) {
-    super(message || describeDetail(detail) || `Request failed (${status})`);
+    super(message || describeDetail(detail) || t("Request failed ({status})", { status }));
     this.status = status;
     this.detail = detail;
   }
@@ -15,9 +17,7 @@ function describeDetail(detail) {
   if (!detail) return "";
   if (typeof detail === "string") return detail;
   if (Array.isArray(detail)) {
-    return detail
-      .map((d) => (d && typeof d === "object" ? d.msg || d.message || JSON.stringify(d) : String(d)))
-      .join("; ");
+    return detail.map((d) => (d && typeof d === "object" ? d.msg || d.message || JSON.stringify(d) : String(d))).join("; ");
   }
   if (typeof detail === "object") return detail.message || detail.error || JSON.stringify(detail);
   return String(detail);
@@ -51,7 +51,7 @@ async function request(method, path, { body, query, signal, quiet401 } = {}) {
     });
   } catch (err) {
     if (err.name === "AbortError") throw err;
-    throw new ApiError(0, null, "Can't reach the print server. Check that you're on the home network.");
+    throw new ApiError(0, null, t("Can't reach the print server. Check that you're on the home network."));
   }
   const text = await res.text();
   let data = null;
@@ -93,7 +93,7 @@ function uploadFile(file, { onProgress, signal } = {}) {
         reject(new ApiError(xhr.status, data && typeof data === "object" ? data.detail : data));
       }
     };
-    xhr.onerror = () => reject(new ApiError(0, null, "The upload was interrupted. Check your connection and try again."));
+    xhr.onerror = () => reject(new ApiError(0, null, t("The upload was interrupted. Check your connection and try again.")));
     xhr.onabort = () => reject(Object.assign(new Error("aborted"), { name: "AbortError" }));
     if (signal) signal.addEventListener("abort", () => xhr.abort());
     const form = new FormData();
@@ -110,8 +110,7 @@ export const api = {
   capabilities: () => request("GET", "/capabilities"),
 
   // Auth
-  signup: (username, password, display_name) =>
-    request("POST", "/auth/signup", { body: { username, password, display_name: display_name || null }, quiet401: true }),
+  signup: (username, password, display_name) => request("POST", "/auth/signup", { body: { username, password, display_name: display_name || null }, quiet401: true }),
   login: (username, password) => request("POST", "/auth/login", { body: { username, password }, quiet401: true }),
   logout: () => request("POST", "/auth/logout", { quiet401: true }),
   me: () => request("GET", "/auth/me", { quiet401: true }),

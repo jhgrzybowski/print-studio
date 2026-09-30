@@ -1,4 +1,5 @@
 // Human-facing labels for API values.
+import { getLocale, t, tn } from "../i18n/index.js";
 
 export function formatBytes(n) {
   if (n == null) return "";
@@ -8,13 +9,24 @@ export function formatBytes(n) {
   return `${Number.isInteger(mb) ? mb : mb.toFixed(1)} MB`;
 }
 
-const timeFmt = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" });
-const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: "long" });
-const dateFmt = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
-const fullFmt = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+// Dates follow the interface language, not the browser's, so a screen never mixes the two.
+const INTL_LOCALE = { en: "en-GB", pl: "pl-PL" };
+const FORMATS = {
+  time: { hour: "2-digit", minute: "2-digit" },
+  day: { weekday: "long" },
+  date: { day: "numeric", month: "short" },
+  full: { dateStyle: "medium", timeStyle: "short" },
+  long: { dateStyle: "long" },
+};
+const fmtCache = {};
+function fmt(kind) {
+  const loc = INTL_LOCALE[getLocale()] || "en-GB";
+  return (fmtCache[`${loc}:${kind}`] ||= new Intl.DateTimeFormat(loc, FORMATS[kind]));
+}
+const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-export const formatTime = (d) => timeFmt.format(new Date(d));
-export const formatDateTime = (d) => fullFmt.format(new Date(d));
+export const formatTime = (d) => fmt("time").format(new Date(d));
+export const formatDateTime = (d) => fmt("full").format(new Date(d));
 
 function startOfDay(d) {
   const x = new Date(d);
@@ -25,15 +37,16 @@ function startOfDay(d) {
 /** Group label for the history list. */
 export function dayGroup(d) {
   const days = Math.round((startOfDay(new Date()) - startOfDay(d)) / 86400000);
-  if (days <= 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 7) return dayFmt.format(new Date(d));
-  return dateFmt.format(new Date(d));
+  if (days <= 0) return t("Today");
+  if (days === 1) return t("Yesterday");
+  // Polish weekdays are lowercase mid-sentence; this is a heading.
+  if (days < 7) return capitalize(fmt("day").format(new Date(d)));
+  return fmt("date").format(new Date(d));
 }
 
 export function shortWhen(d) {
   const days = Math.round((startOfDay(new Date()) - startOfDay(d)) / 86400000);
-  return days <= 0 ? formatTime(d) : `${dateFmt.format(new Date(d))}, ${formatTime(d)}`;
+  return days <= 0 ? formatTime(d) : `${fmt("date").format(new Date(d))}, ${formatTime(d)}`;
 }
 
 export function initials(user) {
@@ -83,15 +96,15 @@ const PAPER_MM = {
 const PAPER_COMMON = ["A4", "Letter", "A5", "A6", "Legal", "w288h432", "w360h504", "c8x10", "Postcard", "DL", "C5", "C6"];
 
 export function paperName(v) {
-  if (!v) return "Printer default";
-  if (PAPER_NAMES[v]) return PAPER_NAMES[v];
+  if (!v) return t("Printer default");
+  if (PAPER_NAMES[v]) return t(PAPER_NAMES[v]);
   const m = /^w(\d+)h(\d+)(J|_l)?$/.exec(v);
   if (m) {
     const w = Math.round((Number(m[1]) / 72) * 25.4);
     const h = Math.round((Number(m[2]) / 72) * 25.4);
     return `${w} × ${h} mm`;
   }
-  return v.replace(/_l$/, " (long edge)").replace(/_/g, " ");
+  return v.replace(/_l$/, t("paper| (long edge)")).replace(/_/g, " ");
 }
 
 export function paperMM(v) {
@@ -105,13 +118,12 @@ export function paperMM(v) {
 export function paperGroups(choices = []) {
   const set = new Set(choices);
   const common = PAPER_COMMON.filter((c) => set.has(c));
-  const rest = choices
-    .filter((c) => !common.includes(c))
-    .sort((a, b) => paperName(a).localeCompare(paperName(b), undefined, { numeric: true }));
+  const rest = choices.filter((c) => !common.includes(c)).sort((a, b) => paperName(a).localeCompare(paperName(b), undefined, { numeric: true }));
   return { common, rest };
 }
 
-export const COLOR_LABELS = { color: "Color", monochrome: "Black & white", auto: "Auto" };
+// English keys; show them through label() or t() so they follow the interface language.
+export const COLOR_LABELS = { color: "Color", monochrome: "Black & white", auto: "color|Auto" };
 export const DUPLEX_LABELS = { none: "One-sided", "long-edge": "Long edge", "short-edge": "Short edge" };
 export const QUALITY_LABELS = { draft: "Draft", normal: "Standard", high: "High" };
 export const ORIENTATION_LABELS = {
@@ -127,23 +139,27 @@ export const MEDIA_LABELS = {
   matte: "Matte photo",
 };
 
+/** Translated label from one of the maps above, or the raw value. */
+export const label = (map, v) => (map[v] ? t(map[v]) : v);
+
 export function mediaLabel(v) {
-  if (!v) return "Printer default";
-  if (MEDIA_LABELS[v]) return MEDIA_LABELS[v];
+  if (!v) return t("Printer default");
+  if (MEDIA_LABELS[v]) return t(MEDIA_LABELS[v]);
   return v.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/(\d)/, " $1");
 }
 
+// Labels are keys: show them with t(). "job|" marks the state of a print job.
 export const HISTORY_STATUS = {
-  submitted: { label: "Sent", tone: "active" },
-  pending: { label: "Queued", tone: "active" },
-  "pending-held": { label: "Held", tone: "warn" },
-  processing: { label: "Printing", tone: "active" },
-  "processing-stopped": { label: "Stopped", tone: "warn" },
-  "cancel-requested": { label: "Cancelling", tone: "active" },
-  canceled: { label: "Cancelled", tone: "muted" },
-  aborted: { label: "Failed", tone: "error" },
-  completed: { label: "Printed", tone: "ok" },
-  forgotten: { label: "Cleared", tone: "muted" },
+  submitted: { label: "job|Sent", tone: "active" },
+  pending: { label: "job|Queued", tone: "active" },
+  "pending-held": { label: "job|Held", tone: "warn" },
+  processing: { label: "job|Printing", tone: "active" },
+  "processing-stopped": { label: "job|Stopped", tone: "warn" },
+  "cancel-requested": { label: "job|Cancelling", tone: "active" },
+  canceled: { label: "job|Cancelled", tone: "muted" },
+  aborted: { label: "job|Failed", tone: "error" },
+  completed: { label: "job|Printed", tone: "ok" },
+  forgotten: { label: "job|Cleared", tone: "muted" },
 };
 
 export const ACTIVE_STATUSES = new Set(["submitted", "pending", "pending-held", "processing", "processing-stopped", "cancel-requested"]);
@@ -152,12 +168,12 @@ export const TERMINAL_STATUSES = new Set(["canceled", "aborted", "completed"]);
 /** Summarise print options in one line. */
 export function optionsSummary(o = {}, pageCount) {
   const parts = [];
-  if (o.copies && o.copies > 1) parts.push(`${o.copies} copies`);
-  if (o.pages) parts.push(`pages ${o.pages.replace(/,/g, ", ")}`);
-  else if (pageCount) parts.push(`${pageCount} page${pageCount === 1 ? "" : "s"}`);
+  if (o.copies && o.copies > 1) parts.push(tn(o.copies, "{n} copy", "{n} copies"));
+  if (o.pages) parts.push(t("pages {range}", { range: o.pages.replace(/,/g, ", ") }));
+  else if (pageCount) parts.push(tn(pageCount, "{n} page", "{n} pages"));
   if (o.paper_size) parts.push(paperName(o.paper_size));
-  if (o.color_mode) parts.push(COLOR_LABELS[o.color_mode] || o.color_mode);
-  if (o.duplex && o.duplex !== "none") parts.push(`two-sided`);
+  if (o.color_mode) parts.push(label(COLOR_LABELS, o.color_mode));
+  if (o.duplex && o.duplex !== "none") parts.push(t("two-sided"));
   return parts.join(" · ");
 }
 
@@ -175,13 +191,14 @@ const REASONS = {
   "offline-report": "Printer reports offline",
   paused: "Queue paused",
   "connecting-to-device": "Connecting to printer",
-  "other": "Printer needs attention",
+  other: "Printer needs attention",
 };
 
 export function reasonText(r) {
   if (!r || r === "none") return "";
   const base = r.replace(/-(error|warning|report)$/, "");
-  return REASONS[base] || REASONS[r] || base.replace(/-/g, " ");
+  const known = REASONS[base] || REASONS[r];
+  return known ? t(known) : base.replace(/-/g, " ");
 }
 
 export function fileKind(mime = "", name = "") {
@@ -193,5 +210,4 @@ export function fileKind(mime = "", name = "") {
   return "doc";
 }
 
-const longDateFmt = new Intl.DateTimeFormat(undefined, { dateStyle: "long" });
-export const formatDate = (d) => longDateFmt.format(new Date(d));
+export const formatDate = (d) => fmt("long").format(new Date(d));

@@ -1,21 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Tooltip } from "radix-ui";
-import { Menu, RefreshCw, WifiOff } from "lucide-react";
+import { Menu, RefreshCw, WifiOff, X } from "lucide-react";
 import { api } from "./api/client.js";
 import { useAppearance } from "./hooks/appearance.js";
 import { useHistory, useMedia, usePreferences, usePrinter, usePrinterOptions, useSession } from "./hooks/data.js";
 import { usePrintFlow } from "./hooks/printFlow.js";
 import { BASE_SETTINGS, pickDefaults, reconcile } from "./lib/settings.js";
+import { formatTime } from "./lib/format.js";
+import { t, useLocale } from "./i18n/index.js";
 import { AuthScreen } from "./components/AuthScreen.jsx";
 import { Sidebar, Wordmark } from "./components/Sidebar.jsx";
 import { DropZone } from "./components/DropZone.jsx";
 import { PreviewStage } from "./components/PreviewStage.jsx";
-import { ToolPane } from "./components/ToolPane.jsx";
-import { Composer, JobTracker } from "./components/Composer.jsx";
+import { Toolbar, Verdict } from "./components/Toolbar.jsx";
+import { PrintDock } from "./components/PrintSheet.jsx";
+import { docLine, JobStrip } from "./components/Dock.jsx";
+import { FileGlyph } from "./components/FileGlyph.jsx";
 import { HistoryDetail } from "./components/HistoryDetail.jsx";
 import { SettingsView } from "./components/SettingsView.jsx";
-import { IconKey, Key } from "./components/controls.jsx";
+import { Button, Dot, IconKey, drawerEase, tween, useLiquidMetal } from "./components/controls.jsx";
 
 const ACCEPT = ".pdf,.png,.jpg,.jpeg,.txt,.docx,.xlsx,.pptx,.odt,.ods,.odp,application/pdf,image/png,image/jpeg,text/plain";
 
@@ -23,6 +27,9 @@ export default function App() {
   const session = useSession();
   const printer = usePrinter();
   const [appearance, setAppearance] = useAppearance();
+  // Subscribing here re-renders the whole tree when the language changes.
+  useLocale();
+  useLiquidMetal();
 
   let body;
   if (session.status === "loading") body = <Splash key="splash" />;
@@ -31,7 +38,7 @@ export default function App() {
   else body = <Shell key={`shell-${session.user.id}`} session={session} printer={printer} appearance={appearance} setAppearance={setAppearance} />;
 
   return (
-    <Tooltip.Provider delayDuration={450} skipDelayDuration={200}>
+    <Tooltip.Provider delayDuration={450} skipDelayDuration={300}>
       <AnimatePresence mode="wait">
         <motion.div
           key={session.status === "authed" ? "authed" : session.status}
@@ -50,8 +57,8 @@ export default function App() {
 
 function Splash() {
   return (
-    <div className="splash" aria-busy="true" aria-label="Loading">
-      <Wordmark />
+    <div className="splash" aria-busy="true" aria-label={t("Loading")}>
+      <Wordmark size={30} />
     </div>
   );
 }
@@ -59,13 +66,11 @@ function Splash() {
 function ServerDown({ onRetry, message }) {
   return (
     <div className="splash">
-      <div className="card server-down">
-        <WifiOff size={22} strokeWidth={1.6} aria-hidden />
-        <h1>Can't reach the print server</h1>
-        <p>{message || "Check that this device is on the home network."}</p>
-        <Key variant="raised" icon={RefreshCw} onClick={onRetry}>
-          Try again
-        </Key>
+      <div className="notice-view">
+        <WifiOff size={22} strokeWidth={1.5} aria-hidden />
+        <h1>{t("Can't reach the print server")}</h1>
+        <p>{message || t("Check that this device is on the home network.")}</p>
+        <Button onClick={onRetry}>{t("Try again")}</Button>
       </div>
     </div>
   );
@@ -82,8 +87,9 @@ function Shell({ session, printer, appearance, setAppearance }) {
   const [cancelling, setCancelling] = useState(false);
   const [defaultsState, setDefaultsState] = useState("idle");
   const [notice, setNotice] = useState(null);
-  const narrow = useMedia("(max-width: 900px)");
+  const narrow = useMedia("(max-width: 860px)");
   const fileInput = useRef(null);
+  const searchRef = useRef(null);
   const dragDepth = useRef(0);
 
   const defaults = prefs.prefs?.print_defaults || null;
@@ -94,15 +100,24 @@ function Shell({ session, printer, appearance, setAppearance }) {
   }, []);
   useEffect(() => {
     if (!notice) return;
-    const t = setTimeout(() => setNotice(null), 4200);
-    return () => clearTimeout(t);
+    const id = setTimeout(() => setNotice(null), 4200);
+    return () => clearTimeout(id);
   }, [notice]);
+  useEffect(() => {
+    if (!drawer) return;
+    const onKey = (e) => e.key === "Escape" && setDrawer(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [drawer]);
+  useEffect(() => {
+    if (!narrow) setDrawer(false);
+  }, [narrow]);
 
   const onPrinted = useCallback(
     async (r) => {
       if (r.history_id == null) {
         // CUPS took the job but the history write failed; there is nothing to track by.
-        flash(`Sent to the printer as job ${r.job_id}`);
+        flash(t("Sent to the printer as job {id}", { id: r.job_id }));
         history.refresh();
         return;
       }
@@ -148,11 +163,18 @@ function Shell({ session, printer, appearance, setAppearance }) {
     if (flow.canPrint && canSend && flow.printing.state !== "sending") flow.print();
   }, [flow, canSend]);
 
-  // Keyboard: Ctrl/Cmd+Enter or Ctrl/Cmd+P prints the loaded document.
+  // Keyboard: Ctrl/Cmd+Enter or Ctrl/Cmd+P prints the loaded document; Ctrl/Cmd+K searches history.
   useEffect(() => {
     const onKey = (e) => {
       const mod = e.ctrlKey || e.metaKey;
       if (!mod) return;
+      if (e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (narrow) setDrawer(true);
+        // The drawer mounts its sidebar on open; focus once it exists.
+        requestAnimationFrame(() => searchRef.current?.focus());
+        return;
+      }
       if (e.key === "Enter" || e.key.toLowerCase() === "p") {
         if (view.kind !== "compose" || flow.doc?.phase !== "ready") return;
         e.preventDefault();
@@ -161,7 +183,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [print, view.kind, flow.doc?.phase]);
+  }, [print, view.kind, flow.doc?.phase, narrow]);
 
   // Paste an image or file from the clipboard.
   useEffect(() => {
@@ -169,7 +191,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
       const f = e.clipboardData?.files?.[0];
       if (f) {
         e.preventDefault();
-        attach(f.name && f.name !== "image.png" ? f : new File([f], `Pasted image ${new Date().toLocaleTimeString()}.png`, { type: f.type }));
+        attach(f.name && f.name !== "image.png" ? f : new File([f], `${t("Pasted image {time}", { time: formatTime(Date.now()) })}.png`, { type: f.type }));
       }
     };
     window.addEventListener("paste", onPaste);
@@ -203,10 +225,11 @@ function Shell({ session, printer, appearance, setAppearance }) {
     try {
       await prefs.save({ print_defaults: pickDefaults(flow.settings) });
       setDefaultsState("saved");
+      flash(t("Saved as your defaults"));
       setTimeout(() => setDefaultsState("idle"), 1800);
     } catch (e) {
       setDefaultsState("idle");
-      flash(`Couldn't save defaults: ${e.message}`, "error");
+      flash(t("Couldn't save defaults: {error}", { error: e.message }), "error");
     }
   }
 
@@ -219,7 +242,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
     setCancelling(true);
     try {
       const r = await api.cancelJob(entry.cups_job_id);
-      flash(r.cancelled ? "Cancel requested" : r.message || "The job had already finished", r.cancelled ? "ok" : "muted");
+      flash(r.cancelled ? t("Cancel requested") : r.message || t("The job had already finished"), r.cancelled ? "ok" : "muted");
       await history.pollJobs();
     } catch (e) {
       flash(e.message, "error");
@@ -232,7 +255,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
     setTracked(null);
     goCompose();
     const ok = await flow.openExisting(entry);
-    if (ok) flash("Loaded with the settings you used last time");
+    if (ok) flash(t("Loaded with the settings you used last time"));
   }
 
   const trackedEntry = useMemo(() => {
@@ -241,11 +264,15 @@ function Shell({ session, printer, appearance, setAppearance }) {
   }, [tracked, history.items, flow.doc?.name]);
 
   const loaded = flow.doc?.phase === "ready";
-  const title =
-    view.kind === "settings" ? "Settings" : view.kind === "history" ? "Print details" : flow.doc ? flow.doc.name : "New print";
+  const printDisabled = !loaded || !flow.canPrint || !canSend || flow.printing.state === "sending" || (flow.validation.result && !flow.validation.result.valid);
+  const line = docLine({ flow, printer, canSend });
+  const verdict = <Verdict validation={flow.validation} settings={flow.settings} rangeError={flow.rangeError} printerReady={canSend} />;
+
+  const drawerKey = narrow ? <IconKey label={t("Open sidebar")} icon={Menu} onClick={() => setDrawer(true)} className="bar__menu" /> : null;
 
   const sidebar = (
     <Sidebar
+      ref={searchRef}
       user={session.user}
       printer={printer}
       history={history}
@@ -257,11 +284,8 @@ function Shell({ session, printer, appearance, setAppearance }) {
         setView({ kind: "history", id: h.id });
         setDrawer(false);
       }}
+      onReprint={reprint}
       onSettings={() => {
-        setView({ kind: "settings" });
-        setDrawer(false);
-      }}
-      onPrinter={() => {
         setView({ kind: "settings" });
         setDrawer(false);
       }}
@@ -271,19 +295,47 @@ function Shell({ session, printer, appearance, setAppearance }) {
     />
   );
 
+  const docHead = flow.doc && (
+    <div className="docmeta">
+      <span className={`docmeta__glyph kind-${flow.doc.kind}`}>
+        <FileGlyph kind={flow.doc.kind} size={16} />
+      </span>
+      <div className="docmeta__text">
+        <p className="docmeta__name">{flow.doc.name}</p>
+        {line && (
+          <p className={`docmeta__sub ${line.quiet ? "" : `tone-${line.tone}`}`} aria-live="polite">
+            {!line.quiet && <Dot tone={line.tone} pulse={line.pulse} />}
+            <span>{line.sub}</span>
+          </p>
+        )}
+      </div>
+      <Button variant="quiet" className="btn--sm" onClick={browse} aria-label={t("Change file")}>
+        {t("Change")}
+      </Button>
+      <IconKey label={t("Remove file")} icon={X} size="sm" onClick={flow.clear} />
+    </div>
+  );
+
   return (
     <div className={`app ${narrow ? "is-narrow" : ""}`} {...dragProps}>
       {narrow ? (
         <AnimatePresence>
           {drawer && (
             <>
-              <motion.div className="scrim" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDrawer(false)} />
+              <motion.div
+                className="scrim"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, ease: drawerEase }}
+                onClick={() => setDrawer(false)}
+              />
               <motion.div
                 className="drawer"
-                initial={{ x: "-104%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "-104%" }}
-                transition={{ type: "spring", stiffness: 380, damping: 38 }}
+                initial={{ transform: "translateX(-100%)" }}
+                animate={{ transform: "translateX(0%)" }}
+                exit={{ transform: "translateX(-100%)" }}
+                transition={{ duration: 0.3, ease: drawerEase }}
               >
                 {sidebar}
               </motion.div>
@@ -295,31 +347,30 @@ function Shell({ session, printer, appearance, setAppearance }) {
       )}
 
       <main className={`main ${dragging ? "is-dragging" : ""}`}>
-        <header className="topbar">
-          {narrow && <IconKey label="Open sidebar" icon={Menu} onClick={() => setDrawer(true)} />}
-          <h1 className="topbar__title">{title}</h1>
+        <div className="notices" aria-live="polite">
           <AnimatePresence>
             {notice && (
               <motion.p
                 key={notice.id}
                 className={`notice tone-${notice.tone}`}
                 role="status"
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                transition={tween}
               >
-                <span className="led" aria-hidden />
+                <Dot tone={notice.tone} />
                 {notice.text}
               </motion.p>
             )}
           </AnimatePresence>
           {optionsError && (
-            <Key variant="ghost" size="sm" icon={RefreshCw} onClick={reloadOptions}>
-              Printer options didn't load
-            </Key>
+            <button type="button" className="notice tone-warn is-action" onClick={reloadOptions}>
+              <RefreshCw size={14} strokeWidth={1.5} aria-hidden />
+              {t("Printer options didn't load. Retry")}
+            </button>
           )}
-        </header>
+        </div>
 
         <input
           ref={fileInput}
@@ -334,24 +385,50 @@ function Shell({ session, printer, appearance, setAppearance }) {
 
         <AnimatePresence mode="wait" initial={false}>
           {view.kind === "compose" && (
-            <motion.div
-              key={loaded ? "compose-loaded" : "compose-empty"}
-              className={`compose ${loaded ? "compose--loaded" : "compose--empty"}`}
-              initial={{ opacity: 0, scale: 0.99 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.99 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <div className="compose__work">
-                {loaded ? (
-                  <PreviewStage doc={flow.doc} settings={flow.settings} pageCount={flow.pageCount} onPagesChange={(v) => flow.set("pages", v)} />
-                ) : (
-                  <DropZone dragging={dragging} onBrowse={browse} doc={flow.doc} capabilities={capabilities} onRetry={flow.doc?.phase === "error" ? flow.clear : null} />
-                )}
-                <div className="compose__dock">
+            <motion.div key="compose" className="page" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={tween}>
+              <Toolbar
+                lead={drawerKey}
+                narrow={narrow}
+                printer={printer}
+                onPrinter={() => setView({ kind: "settings" })}
+                flow={flow}
+                choices={choices}
+                disabled={!hasChoices}
+                printDisabled={printDisabled}
+                onPrint={print}
+                onSaveDefaults={saveDefaults}
+                onResetDefaults={resetToDefaults}
+                defaultsState={defaultsState}
+              />
+              <div className="compose">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={loaded ? "loaded" : "empty"}
+                    className="compose__body"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    {loaded ? (
+                      <PreviewStage
+                        doc={flow.doc}
+                        settings={flow.settings}
+                        pageCount={flow.pageCount}
+                        onPagesChange={(v) => flow.set("pages", v)}
+                        head={docHead}
+                        feedKey={flow.printing.state === "sent" ? flow.printing.result?.job_id || "sent" : null}
+                        status={narrow ? null : verdict}
+                      />
+                    ) : (
+                      <DropZone dragging={dragging} onBrowse={browse} doc={flow.doc} capabilities={capabilities} touch={narrow} />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+                <div className="compose__corner">
                   <AnimatePresence>
                     {trackedEntry && (
-                      <JobTracker
+                      <JobStrip
                         key={trackedEntry.id}
                         entry={trackedEntry}
                         cancelling={cancelling}
@@ -361,30 +438,32 @@ function Shell({ session, printer, appearance, setAppearance }) {
                       />
                     )}
                   </AnimatePresence>
-                  <Composer flow={flow} printer={printer} canSend={canSend} onBrowse={browse} onPrint={print} />
                 </div>
               </div>
-              {loaded && (
-                <ToolPane
+              {narrow && loaded && (
+                <PrintDock
                   flow={flow}
                   choices={choices}
-                  printerReady={canSend}
                   disabled={!hasChoices}
+                  printDisabled={printDisabled}
+                  onPrint={print}
                   onSaveDefaults={saveDefaults}
                   onResetDefaults={resetToDefaults}
                   defaultsState={defaultsState}
+                  status={verdict}
                 />
               )}
             </motion.div>
           )}
           {view.kind === "history" && (
-            <motion.div key={`h-${view.id}`} className="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
-              <HistoryDetail id={view.id} history={history} onReprint={reprint} onOpenCompose={newPrint} onStatusLine={flash} />
+            <motion.div key={`h-${view.id}`} className="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={tween}>
+              <HistoryDetail id={view.id} history={history} onReprint={reprint} onOpenCompose={newPrint} onStatusLine={flash} lead={drawerKey} />
             </motion.div>
           )}
           {view.kind === "settings" && (
-            <motion.div key="settings" className="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+            <motion.div key="settings" className="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={tween}>
               <SettingsView
+                lead={drawerKey}
                 user={session.user}
                 appearance={appearance}
                 setAppearance={setAppearance}

@@ -4,5 +4,5 @@ const ICONS = { image: FileImage, pdf: FileText, sheet: FileSpreadsheet, slides:
 
 export function FileGlyph({ kind, size = 16 }) {
   const Icon = ICONS[kind] || File;
-  return <Icon size={size} strokeWidth={1.7} aria-hidden />;
+  return <Icon size={size} strokeWidth={1.5} aria-hidden />;
 }

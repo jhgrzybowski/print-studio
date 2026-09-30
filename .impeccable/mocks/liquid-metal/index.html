@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Print Studio — Liquid Metal mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0c0e;
+  --side:#121316;
+  --panel:#15171a;
+  --raise:#1d1f23;
+  --raise-2:#24272c;
+  --well:#0c0d0f;
+  --line:rgba(255,255,255,.06);
+  --line-2:rgba(255,255,255,.10);
+  --text:#eceef0;
+  --text-2:#a4aab1;
+  --text-3:#858b93;
+  --ok:#86d3a3;
+  --fail:#ff8e7e;
+  --ink:#0e1012;
+  --chrome:linear-gradient(180deg,#ffffff 0%,#e6e9ec 13%,#bcc1c7 40%,#959ba2 50%,#c6cbd0 53%,#eff1f3 78%,#d0d4d9 100%);
+  --chrome-soft:linear-gradient(180deg,#f7f8f9 0%,#d9dde1 45%,#b4b9bf 50%,#dfe2e5 56%,#f1f2f4 100%);
+  --ease:cubic-bezier(.16,1,.3,1);
+  --r:10px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:400 13px/1.4 Geist,ui-sans-serif,system-ui,sans-serif;font-feature-settings:"tnum" 1;-webkit-font-smoothing:antialiased;overflow:hidden}
+::selection{background:#d9dde2;color:var(--ink)}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+:focus-visible{outline:2px solid #cfd4da;outline-offset:2px;border-radius:8px}
+*{scrollbar-width:thin;scrollbar-color:#2e3136 transparent}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#2a2d31;border-radius:10px;border:3px solid transparent;background-clip:padding-box}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.i.sm{width:15px;height:15px}
+
+.app{display:grid;grid-template-columns:292px 1fr;height:100vh}
+
+/* ── Sidebar ─────────────────────────── */
+.sidebar{background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.brand{height:60px;display:flex;align-items:center;gap:10px;padding:0 12px 0 18px;border-bottom:1px solid var(--line)}
+.brand-mark{width:26px;height:26px;flex:none}
+.brand-name{font-weight:600;font-size:14px;letter-spacing:-.01em;flex:1}
+.icon-btn{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;color:var(--text-2);transition:background .2s,color .2s}
+.icon-btn:hover{background:var(--raise);color:var(--text)}
+.search{margin:14px 14px 6px;display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border-radius:var(--r);background:var(--well);box-shadow:inset 0 1px 2px rgba(0,0,0,.55),0 1px 0 rgba(255,255,255,.04);color:var(--text-3)}
+.search input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--text)}
+.search input::placeholder{color:var(--text-3)}
+.search:focus-within{box-shadow:inset 0 1px 2px rgba(0,0,0,.55),0 0 0 1px #6d737b}
+kbd{font:500 11px/1 Geist,sans-serif;color:var(--text-3);padding:3px 5px;border-radius:5px;border:1px solid var(--line-2)}
+.history{flex:1;overflow:auto;padding:4px 8px 16px}
+.group-title{font-size:12px;font-weight:500;color:var(--text-3);padding:16px 10px 6px}
+.job{position:relative;width:100%;display:grid;grid-template-columns:30px 1fr auto;gap:12px;align-items:center;padding:8px 10px;border-radius:12px;text-align:left;transition:background .25s var(--ease)}
+.job:hover{background:rgba(255,255,255,.035)}
+.job[aria-current="true"]{background:var(--raise);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(255,255,255,.05),0 6px 14px -8px rgba(0,0,0,.8)}
+.job .thumb{width:30px;height:38px;display:grid;place-items:center}
+.job .thumb svg{width:100%;height:100%;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
+.job-main{min-width:0;display:flex;flex-direction:column;gap:2px}
+.job-name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.job-meta{color:var(--text-2);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.job-meta.fail{color:var(--fail)}
+.job-side{display:grid;place-items:center;width:28px;height:28px}
+.job-side .status{color:var(--text-3)}
+.job-side .status.fail{color:var(--fail)}
+.job-side .reprint{display:none;width:28px;height:28px;border-radius:8px;place-items:center;color:var(--text-2)}
+.job-side .reprint:hover{background:var(--raise-2);color:var(--text)}
+.job:hover .job-side .status,.job:focus-within .job-side .status{display:none}
+.job:hover .job-side .reprint,.job:focus-within .job-side .reprint{display:grid}
+.pulse{display:block;width:8px;height:8px;border-radius:50%;background:var(--chrome-soft);box-shadow:0 0 0 0 rgba(220,225,230,.5);animation:pulse 1.6s var(--ease) infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(220,225,230,.45)}100%{box-shadow:0 0 0 9px rgba(220,225,230,0)}}
+.job.enter{animation:enter .7s var(--ease)}
+@keyframes enter{from{opacity:0;transform:translateY(-8px);filter:blur(4px)}}
+.empty-search{padding:28px 12px;color:var(--text-3);text-align:center}
+
+.printer-status{border-top:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;gap:10px;color:var(--text-2);font-size:12px}
+.printer-status b{color:var(--text);font-weight:500}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none;box-shadow:0 0 0 3px rgba(134,211,163,.12)}
+.dot.busy{background:#d9dde2;box-shadow:0 0 0 3px rgba(217,221,226,.12)}
+
+/* ── Main ────────────────────────────── */
+.main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.toolbar{height:60px;flex:none;display:flex;align-items:center;gap:6px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--line);position:relative;z-index:5}
+.tb-sep{width:1px;height:22px;background:var(--line-2);margin:0 3px;flex:none}
+.toolbar > *{flex:none}
+.spacer{flex:1}
+.drawer-btn,.scrim{display:none}
+
+.field{height:36px;display:inline-flex;align-items:center;gap:8px;padding:0 10px 0 10px;border-radius:var(--r);background:linear-gradient(180deg,#202327,#1a1c20);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 0 0 1px rgba(255,255,255,.06),0 1px 2px rgba(0,0,0,.5);color:var(--text);white-space:nowrap;transition:box-shadow .2s,background .2s}
+.field:hover{background:linear-gradient(180deg,#25282d,#1e2024)}
+.field[aria-expanded="true"]{box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 0 0 1px #6d737b,0 1px 2px rgba(0,0,0,.5)}
+.field > .i:first-child{color:var(--text-2)}
+.field .chev{color:var(--text-3);width:14px;height:14px}
+.field .val{font-weight:500}
+.field .dot{width:6px;height:6px;box-shadow:none}
+
+.stepper{height:36px;display:inline-flex;align-items:center;border-radius:var(--r);background:var(--well);box-shadow:inset 0 1px 2px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.04);padding:3px;gap:2px}
+.stepper .i-lead{color:var(--text-2);margin:0 4px 0 7px}
+.stepper button{width:28px;height:30px;border-radius:7px;display:grid;place-items:center;color:var(--text-2);transition:background .2s,color .2s}
+.stepper button:hover{background:var(--raise);color:var(--text)}
+.stepper button:disabled{opacity:.35;cursor:default;background:none}
+.stepper output{min-width:22px;text-align:center;font-weight:600}
+
+.seg{--n:2;--i:0;position:relative;height:36px;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:3px;border-radius:var(--r);background:var(--well);box-shadow:inset 0 1px 2px rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.04)}
+.seg .thumb{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / var(--n));transform:translateX(calc(100% * var(--i)));border-radius:7px;background:var(--chrome);box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(0,0,0,.25),0 1px 2px rgba(0,0,0,.6),0 4px 8px -4px rgba(0,0,0,.8);transition:transform .45s var(--ease)}
+.seg button{position:relative;z-index:1;min-width:30px;padding:0 10px;border-radius:7px;display:flex;align-items:center;justify-content:center;gap:6px;color:var(--text-2);font-weight:500;white-space:nowrap;transition:color .3s var(--ease)}
+.seg button[aria-pressed="true"]{color:var(--ink)}
+.seg button:not([aria-pressed="true"]):hover{color:var(--text)}
+.seg.icons button{padding:0 8px}
+.swatch{width:9px;height:9px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.swatch.c{background:conic-gradient(#e0532f,#e8b43a,#3f9a6c,#3677c4,#a34fb8,#e0532f)}
+.swatch.m{background:linear-gradient(90deg,#1b1d20 50%,#d7dade 50%)}
+
+/* Liquid metal: pointer-tracked specular on every chrome surface */
+.metal{position:relative;isolation:isolate;overflow:hidden;color:var(--ink);background:var(--chrome);box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(0,0,0,.3),0 1px 1px rgba(0,0,0,.55),0 10px 20px -10px rgba(0,0,0,.9)}
+.metal::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(90px 46px at var(--mx,50%) var(--my,-40%),rgba(255,255,255,.95),rgba(255,255,255,0) 70%);mix-blend-mode:overlay;opacity:.9;transition:opacity .4s}
+
+.print{height:38px;padding:0 8px 0 16px;border-radius:12px;display:inline-flex;align-items:center;gap:10px;font-weight:600;font-size:14px;letter-spacing:-.01em;min-width:128px;justify-content:space-between;transition:transform .15s var(--ease)}
+.print::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(112deg,transparent 18%,rgba(255,255,255,.7) 26%,transparent 34%,transparent 58%,rgba(255,255,255,.5) 64%,transparent 70%) 0 0/260% 100%;animation:flow 7s linear infinite}
+@keyframes flow{to{background-position:-260% 0}}
+.print:active{transform:scale(.97)}
+.print .kbd{font-size:11px;font-weight:500;padding:3px 6px;border-radius:6px;background:rgba(14,16,18,.1);box-shadow:inset 0 1px 1px rgba(0,0,0,.15),0 1px 0 rgba(255,255,255,.6)}
+.print .label{display:flex;align-items:center;gap:8px}
+.print .fill{position:absolute;inset:3px auto 3px 3px;width:0;border-radius:9px;background:var(--chrome);box-shadow:inset 0 1px 0 #fff,4px 0 10px -2px rgba(255,255,255,.35);z-index:-1;transition:width .25s linear}
+.print.sending{background:#0c0d0f;box-shadow:inset 0 1px 3px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.08)}
+.print.sending::before{display:none}
+.print.sending .label,.print.sending .kbd{color:#fff;mix-blend-mode:difference}
+.print.sending .kbd{background:none;box-shadow:none}
+.print.done{color:var(--ink)}
+
+/* Menus */
+.menu{position:absolute;min-width:220px;padding:6px;border-radius:12px;background:#1b1d21;box-shadow:0 0 0 1px rgba(255,255,255,.08),inset 0 1px 0 rgba(255,255,255,.05),0 18px 40px -12px rgba(0,0,0,.9),0 4px 10px rgba(0,0,0,.4);z-index:20;opacity:0;transform:translateY(-4px) scale(.98);transform-origin:top left;pointer-events:none;transition:opacity .18s,transform .3s var(--ease)}
+.menu.open{opacity:1;transform:none;pointer-events:auto}
+.menu button{width:100%;display:grid;grid-template-columns:18px 1fr auto;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;text-align:left}
+.menu button:hover,.menu button:focus-visible{background:var(--raise-2);outline:0}
+.menu .check{color:var(--text);visibility:hidden}
+.menu button[aria-checked="true"] .check{visibility:visible}
+.menu .sub{color:var(--text-3);font-size:12px}
+.menu .m-main{display:flex;flex-direction:column;gap:1px}
+.menu .m-title{font-weight:500}
+
+/* ── Stage ───────────────────────────── */
+.stage{position:relative;flex:1;min-height:0;overflow:auto;background:radial-gradient(ellipse 55% 60% at 50% 40%,#202226 0%,#141518 55%,#0e0f11 100%)}
+.doc-meta{position:absolute;top:18px;left:22px;z-index:2;display:flex;align-items:baseline;gap:10px}
+.doc-meta .name{font-weight:500;font-size:14px}
+.doc-meta .meta{color:var(--text-2);font-size:12px}
+.canvas{min-height:100%;min-width:100%;display:grid;place-items:center;padding:72px 80px 110px;width:max-content}
+.paper-wrap{position:relative}
+.sheet,.ghost{position:absolute;top:0;left:0;transform-origin:0 0;background:#fbfbf9;border-radius:2px}
+.sheet{overflow:hidden;box-shadow:0 1px 1px rgba(0,0,0,.35),0 14px 28px -10px rgba(0,0,0,.7),0 40px 70px -30px rgba(0,0,0,.8)}
+.ghost{background:#eeeeeb;box-shadow:0 10px 24px -12px rgba(0,0,0,.7);transition:transform .5s var(--ease),opacity .3s}
+.sheet .gloss{position:absolute;inset:0;pointer-events:none;background:linear-gradient(125deg,rgba(255,255,255,0) 35%,rgba(255,255,255,.55) 45%,rgba(255,255,255,0) 58%);opacity:0;transition:opacity .5s}
+.sheet.glossy .gloss{opacity:.6}
+.content{position:absolute;top:0;left:0;transform-origin:0 0;transition:filter .5s var(--ease)}
+.sheet.mono .content{filter:grayscale(1) contrast(1.04)}
+.sheet.flash{animation:feed .9s var(--ease)}
+@keyframes feed{0%{transform:var(--t) translateY(0)}35%{transform:var(--t) translateY(-10px)}100%{transform:var(--t)}}
+
+.stage-bar{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);z-index:3;display:flex;align-items:center;gap:4px;padding:5px;border-radius:14px;background:#1a1c20;box-shadow:0 0 0 1px rgba(255,255,255,.07),inset 0 1px 0 rgba(255,255,255,.05),0 16px 30px -12px rgba(0,0,0,.9)}
+.stage-bar .icon-btn{width:30px;height:30px}
+.stage-bar .icon-btn:disabled{opacity:.3;cursor:default;background:none}
+.stage-bar .num{min-width:52px;text-align:center;font-weight:500}
+.stage-bar .summary{padding:0 12px;color:var(--text-2);white-space:nowrap}
+.stage-bar .summary b{color:var(--text);font-weight:500}
+.stage-bar .zoom{min-width:44px;text-align:center;color:var(--text-2)}
+.bar-sep{width:1px;height:18px;background:var(--line-2);margin:0 4px}
+
+/* ── Document content (sample files) ─── */
+.doc{font-family:Geist,sans-serif;color:#1c1e21;font-size:13px;line-height:1.55}
+.doc h1{font:600 34px/1.1 "Source Serif 4",Georgia,serif;letter-spacing:-.015em;margin:0 0 6px}
+.doc h2{font:600 17px/1.2 "Source Serif 4",Georgia,serif;margin:28px 0 10px}
+.doc p{margin:0 0 10px;max-width:62ch}
+.doc .sub{color:#5d6168;font-size:13px}
+.doc .head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1.5px solid #1c1e21;padding-bottom:14px;margin-bottom:22px}
+.doc .facts{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid #d9dad6;margin-bottom:20px}
+.doc .facts div{padding:0 0 14px}
+.doc .facts span{display:block;font-size:11px;color:#6b6f75}
+.doc .facts b{font:600 20px/1.2 "Source Serif 4",serif}
+.doc table{width:100%;border-collapse:collapse;font-size:12.5px}
+.doc th{text-align:left;font-weight:500;color:#6b6f75;font-size:11px;border-bottom:1px solid #c9cac6;padding:6px 8px 6px 0}
+.doc td{border-bottom:1px solid #e4e4e0;padding:7px 8px 7px 0}
+.doc .foot{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;font-size:11px;color:#7a7e84}
+.doc .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:8px 0 18px}
+.doc .tile i{display:block;height:92px;border-radius:3px;margin-bottom:8px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.doc .tile b{display:block;font-weight:600}
+.doc .tile span{font-size:12px;color:#6b6f75}
+.doc .form{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin-bottom:18px}
+.doc .box{border:1px solid #bfc1bd;border-radius:3px;padding:8px 10px;min-height:48px}
+.doc .box span{display:block;font-size:10.5px;color:#6b6f75}
+.doc .box b{font-weight:500}
+.doc .mono-type{font-family:ui-monospace,Menlo,monospace}
+
+/* ── Responsive ──────────────────────── */
+@media (max-width:1520px){.field .collapse-pages{display:none}}
+@media (max-width:1360px){.field .val.collapsible{display:none}}
+@media (max-width:1180px){.seg .t-hide{display:none}}
+@media (max-width:1080px){.stage-bar .summary{display:none}}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;inset:0 auto 0 0;width:min(320px,86vw);z-index:30;transform:translateX(-102%);transition:transform .45s var(--ease);box-shadow:30px 0 60px -20px rgba(0,0,0,.8)}
+  body.drawer .sidebar{transform:none}
+  .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:25;opacity:0;pointer-events:none;transition:opacity .3s}
+  body.drawer .scrim{opacity:1;pointer-events:auto}
+  .drawer-btn{display:grid}
+  .toolbar{overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+  .toolbar::-webkit-scrollbar{display:none}
+  .toolbar > *{flex:none}
+  .spacer{flex:0 0 4px}
+  .print .kbd{display:none}
+  .print{min-width:0;gap:0;padding:0 16px}
+  .print-slot{position:sticky;right:0;padding-left:10px;background:linear-gradient(90deg,transparent,var(--panel) 12px)}
+  .doc-meta{left:16px;top:14px;flex-direction:column;gap:2px}
+  .canvas{padding:70px 24px 96px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="chromeG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/><stop offset=".3" stop-color="#cfd3d8"/>
+      <stop offset=".5" stop-color="#8e949b"/><stop offset=".54" stop-color="#d6dade"/>
+      <stop offset=".85" stop-color="#f4f5f6"/><stop offset="1" stop-color="#b5bac0"/>
+    </linearGradient>
+    <filter id="liquid" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="4" result="n">
+        <animate attributeName="baseFrequency" dur="9s" values="0.03;0.05;0.03" repeatCount="indefinite"/>
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="3.2"/>
+    </filter>
+    <symbol id="i-printer" viewBox="0 0 24 24"><path d="M7 9V4h10v5"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><path d="M7 14h10v6H7z"/></symbol>
+    <symbol id="i-paper" viewBox="0 0 24 24"><path d="M14 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5z"/><path d="M14 3.5v5h5"/></symbol>
+    <symbol id="i-media" viewBox="0 0 24 24"><path d="M12 4 3.5 8.5 12 13l8.5-4.5z"/><path d="m3.5 12.5 8.5 4.5 8.5-4.5"/><path d="m3.5 16 8.5 4.5 8.5-4.5"/></symbol>
+    <symbol id="i-copies" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2"/><path d="M15.5 8.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h2.5"/></symbol>
+    <symbol id="i-portrait" viewBox="0 0 24 24"><rect x="7" y="3.5" width="10" height="17" rx="1.5"/></symbol>
+    <symbol id="i-landscape" viewBox="0 0 24 24"><rect x="3.5" y="7" width="17" height="10" rx="1.5"/></symbol>
+    <symbol id="i-pages" viewBox="0 0 24 24"><path d="M5 6.5h14M5 12h14M5 17.5h9"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6.5 9.5 5.5 5.5 5.5-5.5"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.8v5M12 16.2v.01"/></symbol>
+    <symbol id="i-reprint" viewBox="0 0 24 24"><path d="M4.5 11.5A7.5 7.5 0 0 1 17.8 7L19.5 9"/><path d="M19.5 4.5V9H15"/><path d="M19.5 12.5A7.5 7.5 0 0 1 6.2 17L4.5 15"/><path d="M4.5 19.5V15H9"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4.5 9V4.5H9M15 4.5h4.5V9M19.5 15v4.5H15M9 19.5H4.5V15"/></symbol>
+    <symbol id="i-sidebar" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+  <aside class="sidebar" aria-label="Print history">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <g class="mark-shape">
+          <path d="M16 3.5c5.6 6.3 9.5 11.2 9.5 16a9.5 9.5 0 0 1-19 0c0-4.8 3.9-9.7 9.5-16z" fill="url(#chromeG)"/>
+          <path d="M11.3 20.2c.3 2.4 2 4.3 4.4 4.8" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".85"/>
+        </g>
+      </svg>
+      <span class="brand-name">Print Studio</span>
+      <button class="icon-btn" title="New print (⌘O)" aria-label="New print"><svg class="i"><use href="#i-plus"/></svg></button>
+    </div>
+    <label class="search">
+      <svg class="i sm"><use href="#i-search"/></svg>
+      <input id="q" type="search" placeholder="Search history" aria-label="Search history">
+      <kbd>⌘K</kbd>
+    </label>
+    <nav class="history" id="history"></nav>
+    <div class="printer-status" id="pstatus"></div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <main class="main">
+    <div class="toolbar" role="toolbar" aria-label="Print settings">
+      <button class="icon-btn drawer-btn" id="drawerBtn" aria-label="Show history"><svg class="i"><use href="#i-sidebar"/></svg></button>
+      <button class="field" data-menu="printer" aria-haspopup="menu" aria-expanded="false" title="Printer">
+        <svg class="i"><use href="#i-printer"/></svg><span class="val collapsible" data-val="printer"></span><span class="dot" id="pdot"></span><svg class="i chev"><use href="#i-chev"/></svg>
+      </button>
+      <div class="tb-sep"></div>
+      <div class="stepper" title="Copies">
+        <svg class="i sm i-lead"><use href="#i-copies"/></svg>
+        <button id="cMinus" aria-label="Fewer copies"><svg class="i sm"><use href="#i-minus"/></svg></button>
+        <output id="copies" aria-label="Copies">1</output>
+        <button id="cPlus" aria-label="More copies"><svg class="i sm"><use href="#i-plus"/></svg></button>
+      </div>
+      <button class="field" data-menu="paper" aria-haspopup="menu" aria-expanded="false" title="Paper size">
+        <svg class="i"><use href="#i-paper"/></svg><span class="val" data-val="paper"></span><svg class="i chev"><use href="#i-chev"/></svg>
+      </button>
+      <button class="field" data-menu="media" aria-haspopup="menu" aria-expanded="false" title="Media type">
+        <svg class="i"><use href="#i-media"/></svg><span class="val" data-val="media"></span><svg class="i chev"><use href="#i-chev"/></svg>
+      </button>
+      <button class="field" data-menu="pages" aria-haspopup="menu" aria-expanded="false" title="Page range">
+        <svg class="i"><use href="#i-pages"/></svg><span class="val collapse-pages" data-val="pages"></span><svg class="i chev"><use href="#i-chev"/></svg>
+      </button>
+      <div class="tb-sep"></div>
+      <div class="seg" data-seg="color" role="group" aria-label="Color mode">
+        <span class="thumb"></span>
+        <button data-v="color"><span class="swatch c"></span><span class="t-hide">Color</span></button>
+        <button data-v="mono"><span class="swatch m"></span><span class="t-hide">Mono</span></button>
+      </div>
+      <div class="seg icons" data-seg="orient" role="group" aria-label="Orientation">
+        <span class="thumb"></span>
+        <button data-v="portrait" aria-label="Portrait" title="Portrait"><svg class="i"><use href="#i-portrait"/></svg></button>
+        <button data-v="landscape" aria-label="Landscape" title="Landscape"><svg class="i"><use href="#i-landscape"/></svg></button>
+      </div>
+      <div class="seg" data-seg="sides" role="group" aria-label="Sides">
+        <span class="thumb"></span>
+        <button data-v="one" title="Print on one side">1-sided</button>
+        <button data-v="two" title="Print on both sides">2-sided</button>
+      </div>
+      <div class="spacer"></div>
+      <div class="print-slot">
+        <button class="print metal" id="printBtn"><span class="fill"></span><span class="label">Print</span><span class="kbd">⌘P</span></button>
+      </div>
+    </div>
+
+    <section class="stage" id="stage" aria-label="Print preview">
+      <div class="doc-meta"><span class="name" id="docName"></span><span class="meta" id="docMeta"></span></div>
+      <div class="canvas" id="canvas">
+        <div class="paper-wrap" id="wrap">
+          <div class="ghost" id="g2"></div>
+          <div class="ghost" id="g1"></div>
+          <div class="sheet" id="sheet"><div class="content doc" id="content"></div><div class="gloss"></div></div>
+        </div>
+      </div>
+      <div class="stage-bar">
+        <button class="icon-btn" id="prev" aria-label="Previous page"><svg class="i"><use href="#i-left"/></svg></button>
+        <span class="num" id="pageNum"></span>
+        <button class="icon-btn" id="next" aria-label="Next page"><svg class="i"><use href="#i-right"/></svg></button>
+        <span class="bar-sep"></span>
+        <span class="summary" id="summary"></span>
+        <span class="bar-sep"></span>
+        <button class="icon-btn" id="zOut" aria-label="Zoom out"><svg class="i"><use href="#i-minus"/></svg></button>
+        <span class="zoom" id="zoomVal"></span>
+        <button class="icon-btn" id="zIn" aria-label="Zoom in"><svg class="i"><use href="#i-plus"/></svg></button>
+        <button class="icon-btn" id="zFit" aria-label="Fit to window" title="Fit"><svg class="i"><use href="#i-fit"/></svg></button>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="menu" id="menu" role="menu"></div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const icon=(id,cls='i sm')=>`<svg class="${cls}"><use href="#i-${id}"/></svg>`;
+
+/* ── Options ── */
+const PRINTERS={
+  hl:{name:'Brother HL-L3270CDW',short:'HL-L3270CDW',sub:'Color laser · Ready',ok:true},
+  selphy:{name:'Canon SELPHY CP1500',short:'SELPHY CP1500',sub:'Photo · Ready',ok:true},
+  zebra:{name:'Zebra ZD421',short:'ZD421',sub:'Labels · Offline',ok:false},
+};
+const PAPER={A4:{mm:[210,297],sub:'210 × 297 mm'},Letter:{mm:[215.9,279.4],sub:'8.5 × 11 in'},A5:{mm:[148,210],sub:'148 × 210 mm'},'4×6':{mm:[101.6,152.4],sub:'4 × 6 in'}};
+const MEDIA={plain:{t:'Plain',sub:'Everyday paper'},heavy:{t:'Heavy',sub:'120–160 g/m²'},photo:{t:'Photo gloss',sub:'Glossy photo paper'},labels:{t:'Labels',sub:'Adhesive label stock'}};
+const PAGES={all:{t:'All pages'},current:{t:'Current page'},odd:{t:'Odd pages'},even:{t:'Even pages'}};
+
+/* ── Sample documents ── */
+const kilnCurve=`<svg viewBox="0 0 620 210" style="width:100%;height:auto;display:block;margin:4px 0 6px">
+  <g stroke="#e3e3df" stroke-width="1">${[0,1,2,3,4].map(k=>`<line x1="30" x2="600" y1="${20+k*40}" y2="${20+k*40}"/>`).join('')}</g>
+  <g font-size="10" fill="#8a8e94" font-family="Geist">${['1100','825','550','275','0'].map((t,k)=>`<text x="0" y="${24+k*40}">${t}</text>`).join('')}
+  ${[0,4,8,12,16,20,24].map(h=>`<text x="${30+h/24*560-4}" y="204">${h}h</text>`).join('')}</g>
+  <path d="M30 177 L77 162 L123 145 L182 93 L228 34 L245 25 L256 25" fill="none" stroke="#d9622b" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M256 25 L310 78 L403 125 L590 171" fill="none" stroke="#2f78b7" stroke-width="2.5" stroke-dasharray="1 0" stroke-linejoin="round"/>
+  <circle cx="250" cy="25" r="4" fill="#d9622b"/><text x="262" y="18" font-size="11" fill="#1c1e21" font-family="Geist" font-weight="600">1063 °C peak</text>
+</svg>`;
+const foot=(l,r)=>`<div class="foot"><span>${l}</span><span>${r}</span></div>`;
+const bars=n=>{let x=0,s='';let seed=7;for(let k=0;k<n;k++){seed=(seed*9301+49297)%233280;const w=1+Math.floor(seed/233280*3);if(k%2===0)s+=`<rect x="${x}" y="0" width="${w}" height="60"/>`;x+=w+1}return `<svg viewBox="0 0 ${x} 60" preserveAspectRatio="none" style="width:100%;height:60px;display:block">${s}</svg>`};
+const DOCS={
+  kiln:{name:'kiln-firing-log.pdf',size:'412 KB',n:3,type:'report',page:i=>[
+    `<div class="head"><div><h1>Kiln firing log</h1><div class="sub">Bisque · Cone 04 · Kiln B</div></div><div class="sub">Sep 27, 2026</div></div>
+     <div class="facts"><div><span>Load</span><b>38 pieces</b></div><div><span>Firing</span><b>9 h 40 min</b></div><div><span>Peak</span><b>1063 °C</b></div><div><span>Cool-down</span><b>14 h</b></div></div>
+     <h2 style="margin-top:0">Temperature curve</h2>${kilnCurve}
+     <h2>Schedule</h2>
+     <table><tr><th>Segment</th><th>Rate</th><th>Target</th><th>Hold</th></tr>
+     <tr><td>1 · Candle</td><td>50 °C/h</td><td>120 °C</td><td>60 min</td></tr>
+     <tr><td>2 · Water smoke</td><td>90 °C/h</td><td>600 °C</td><td>—</td></tr>
+     <tr><td>3 · Ramp</td><td>200 °C/h</td><td>1000 °C</td><td>—</td></tr>
+     <tr><td>4 · Soak</td><td>80 °C/h</td><td>1063 °C</td><td>30 min</td></tr>
+     <tr><td>5 · Cool</td><td>Natural</td><td>60 °C</td><td>—</td></tr></table>
+     <h2>Notes</h2><p>Top shelf ran about 15 °C hot near the element side. Next load: move the thin-walled cups to the lower middle shelf and add a witness cone on shelf A.</p>`,
+    `<div class="head"><div><h1>Load map</h1><div class="sub">Four shelves · 38 pieces</div></div><div class="sub">Kiln B</div></div>
+     <table><tr><th>Shelf</th><th>Piece</th><th>Qty</th><th>Glaze plan</th></tr>
+     ${[['A · top','Thin-wall cups','9','Celadon'],['A · top','Witness cones','3','—'],['B','Serving bowls, 24 cm','4','Tenmoku'],['B','Small plates','6','Shino'],['C','Planters','3','Iron red'],['C','Tea bowls','6','Chun blue'],['D · floor','Vases, tall','2','Matte white'],['D · floor','Test tiles','5','Mixed']].map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</table>
+     <h2>Loading notes</h2><p>Keep at least 2.5 cm between pieces and the elements. Tall vases on the floor shelf, rim down on cookies. Stack the small plates rim to rim in pairs; bisque only.</p><p>Shelf posts: 10 cm on A–B, 15 cm on C–D. Kiln wash refreshed on shelves B and C.</p>`,
+    `<div class="head"><div><h1>Glaze test tiles</h1><div class="sub">Pulled from last glaze firing · Cone 6</div></div><div class="sub">Batch 14</div></div>
+     <div class="tiles">${[['#8fb5a0','Celadon','Pooled well, slight crazing'],['#4b2e1f','Tenmoku','Rust breaks on edges'],['#e2b48c','Shino','Carbon trap on 2 of 5'],['#a3452a','Iron red','Needs slower cool'],['#7fa0c8','Chun blue','Opal at 3 coats'],['#ecebe4','Matte white','Dry, add 2% silica']].map(t=>`<div class="tile"><i style="background:${t[0]}"></i><b>${t[1]}</b><span>${t[2]}</span></div>`).join('')}</div>
+     <h2>Observations</h2><p>Chun blue opalescence only appears above three coats; two coats read as a flat grey-blue. Iron red lost its brightness on the fast cool — schedule a slow cool segment of 80 °C/h down to 760 °C for the next glaze load.</p>`
+  ][i]},
+  labels:{name:'shipping-labels-batch-12.pdf',size:'96 KB',n:4,type:'label',page:i=>`
+     <div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:2px solid #1c1e21;padding-bottom:10px;margin-bottom:16px"><b>PRIORITY</b><span>${i+1} of 4</span></div>
+     <div class="sub" style="font-size:11px">FROM</div><p><b>Harbor Clay Studio</b><br>ul. Garbarska 12<br>31-131 Kraków</p>
+     <div class="sub" style="font-size:11px;margin-top:18px">TO</div>
+     <p style="font-size:20px;line-height:1.35">${[['Marta Wiśniewska','ul. Długa 44/3','80-827 Gdańsk'],['Tomasz Lewandowski','Rynek 7','50-106 Wrocław'],['Ana Ferreira','Rua da Rosa 118','1200-387 Lisboa'],['Jonas Becker','Kastanienallee 21','10435 Berlin']][i].join('<br>')}</p>
+     <div style="margin-top:24px">${bars(60)}</div><div class="mono-type" style="text-align:center;font-size:12px;margin-top:6px">PX 4471 20${i}8 3316 PL</div>`},
+  pass:{name:'boarding-pass-KRK-LIS.pdf',size:'188 KB',n:1,type:'ticket',page:()=>`
+     <div class="head"><div><h1>Boarding pass</h1><div class="sub">Flight TP 1283 · Economy</div></div><div class="sub">Sep 28, 2026</div></div>
+     <div style="display:flex;align-items:center;gap:28px;margin:6px 0 22px"><div><div class="sub">Kraków</div><div style="font:600 64px/1 'Source Serif 4',serif">KRK</div></div>
+     <svg viewBox="0 0 80 20" style="width:90px"><path d="M2 10h72m-8-6 8 6-8 6" fill="none" stroke="#2f78b7" stroke-width="2"/></svg>
+     <div><div class="sub">Lisbon</div><div style="font:600 64px/1 'Source Serif 4',serif">LIS</div></div></div>
+     <div class="facts"><div><span>Passenger</span><b>A. Nowak</b></div><div><span>Boarding</span><b>06:15</b></div><div><span>Gate</span><b>B4</b></div><div><span>Seat</span><b>14C</b></div></div>
+     <div style="margin-top:10px;padding:18px;border:1px dashed #b9bbb7;border-radius:6px">${bars(90)}</div>
+     <p class="sub" style="margin-top:14px">Gate closes 20 minutes before departure. Keep this pass with your travel document.</p>`},
+  tax:{name:'tax-return-2025.pdf',size:'1.2 MB',n:6,type:'form',page:i=>`
+     <div class="head"><div><h1 style="font-size:26px">Annual tax return 2025</h1><div class="sub">Section ${String.fromCharCode(65+i)}</div></div><div class="sub">Form PIT-37</div></div>
+     <div class="form">${['Taxpayer ID','Tax office','Surname','First name','Income','Costs','Tax base','Advance paid'].map((l,k)=>`<div class="box"><span>${l}</span><b>${k<4?['•••• ••• 21','Kraków-Śródmieście','Nowak','Anna'][k]:(k+i)*1840+' PLN'}</b></div>`).join('')}</div>
+     <p class="sub">Fill in capital letters. Amounts in whole złoty.</p>`},
+  lease:{name:'lease-agreement-signed.pdf',size:'2.4 MB',n:12,type:'text',page:i=>`
+     ${i===0?`<h1 style="font-size:28px">Residential lease agreement</h1><div class="sub" style="margin-bottom:18px">Signed Sep 2026</div>`:''}
+     ${[1,2,3].map(k=>`<h2 style="margin-top:${i===0&&k===1?0:22}px">§ ${i*3+k}. ${['Premises','Term','Rent','Deposit','Utilities','Repairs','Use','Pets','Inspection','Termination','Notices','Keys'][(i*3+k-1)%12]}</h2><p>The tenant takes the premises in the condition recorded in the handover report attached to this agreement. Both parties keep one signed copy. Changes to this section are valid only in writing and signed by both parties.</p><p>Payments are due by the tenth day of each month to the account given in section 3. Late payments carry statutory interest.</p>`).join('')}`},
+  bread:{name:'sourdough-schedule.txt',size:'2 KB',n:1,type:'text',page:()=>`
+     <h1 style="font-size:28px">Sourdough schedule</h1><div class="sub" style="margin-bottom:18px">Two loaves · 75% hydration</div>
+     <table><tr><th>Time</th><th>Step</th></tr>${[['Fri 21:00','Feed starter 1:5:5'],['Sat 08:00','Autolyse 900 g flour, 650 g water'],['Sat 09:00','Add levain 180 g, salt 20 g'],['Sat 09:30–12:30','Four sets of folds, every 45 min'],['Sat 15:00','Pre-shape, bench rest 30 min'],['Sat 15:30','Shape, into bannetons, fridge'],['Sun 08:00','Bake 250 °C lid on 20 min, off 22 min']].map(r=>`<tr><td style="white-space:nowrap">${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>`},
+  mood:{name:'moodboard-v3.png',size:'5.8 MB',n:1,type:'photo',page:()=>`
+     <div style="display:grid;grid-template-columns:2fr 1fr 1fr;grid-template-rows:repeat(3,150px);gap:10px">
+     ${[['#284b63',2],['#d9a441',1],['#b5c7b1',1],['#e8e1d5',1],['#8b3a2f',1],['#1f2a2e',1],['#c96b3b',2],['#7d9aa6',1]].map(([c,r])=>`<div style="background:${c};grid-row:span ${r};border-radius:2px"></div>`).join('')}</div>
+     <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:12px;color:#6b6f75"><span>Harbor Clay — autumn palette</span><span>v3</span></div>`},
+};
+
+/* ── History ── */
+const now=new Date();
+let JOBS=[
+  {id:'j0',doc:'mood',day:'Today',time:'15:02',status:'printing',progress:'1 of 2',s:{printer:'selphy',paper:'4×6',media:'photo',color:'color',orient:'landscape',sides:'one',copies:2}},
+  {id:'j1',doc:'kiln',day:'Today',time:'14:32',status:'done',s:{printer:'hl',paper:'A4',media:'plain',color:'color',orient:'portrait',sides:'two',copies:1}},
+  {id:'j2',doc:'labels',day:'Today',time:'11:05',status:'done',s:{printer:'zebra',paper:'4×6',media:'labels',color:'mono',orient:'portrait',sides:'one',copies:1}},
+  {id:'j3',doc:'pass',day:'Yesterday',time:'18:47',status:'done',s:{printer:'hl',paper:'A4',media:'plain',color:'color',orient:'portrait',sides:'one',copies:1}},
+  {id:'j4',doc:'tax',day:'Yesterday',time:'16:20',status:'failed',reason:'Paper out',s:{printer:'hl',paper:'A4',media:'plain',color:'mono',orient:'portrait',sides:'two',copies:1}},
+  {id:'j5',doc:'lease',day:'Yesterday',time:'09:12',status:'done',s:{printer:'hl',paper:'A4',media:'heavy',color:'mono',orient:'portrait',sides:'two',copies:2}},
+  {id:'j6',doc:'bread',day:'Sep 22',time:'20:40',status:'done',s:{printer:'hl',paper:'A5',media:'plain',color:'mono',orient:'portrait',sides:'one',copies:1}},
+  {id:'j7',doc:'mood',day:'Sep 22',time:'13:18',status:'done',s:{printer:'selphy',paper:'4×6',media:'photo',color:'color',orient:'landscape',sides:'one',copies:1},v:'moodboard-v2.png'},
+];
+
+const thumb=t=>{
+  const L=(y,w,c='#c5c7c4')=>`<rect x="5" y="${y}" width="${w}" height="1.6" rx=".8" fill="${c}"/>`;
+  const body={
+    report:L(6,12,'#2a2c2f')+L(10,18)+`<path d="M5 22 9 19 12 20 16 14 19 16 25 18" fill="none" stroke="#d9622b" stroke-width="1.3"/>`+L(26,20)+L(29,16)+L(32,19),
+    label:`<rect x="5" y="5" width="20" height="2" fill="#2a2c2f"/>`+L(11,10)+L(15,16)+L(18,14)+`<g fill="#2a2c2f">${[0,2,3,5,7,8,10,12,13,15,17,19].map(x=>`<rect x="${5+x}" y="25" width="1" height="7"/>`).join('')}</g>`,
+    ticket:L(6,12,'#2a2c2f')+`<text x="5" y="19" font-size="7" font-weight="700" fill="#2a2c2f" font-family="Geist">KRK</text>`+`<path d="M5 22h20" stroke="#2f78b7" stroke-width="1"/>`+`<rect x="5" y="26" width="20" height="6" rx="1" fill="none" stroke="#bbb" stroke-dasharray="1.5 1"/>`,
+    form:L(6,14,'#2a2c2f')+[12,18,24].map(y=>`<rect x="5" y="${y}" width="9" height="4" fill="none" stroke="#bbb" stroke-width=".7"/><rect x="16" y="${y}" width="9" height="4" fill="none" stroke="#bbb" stroke-width=".7"/>`).join(''),
+    text:L(6,14,'#2a2c2f')+[11,14,17,20,23,26,29,32].map((y,k)=>L(y,k%3===2?13:20)).join(''),
+    photo:`<rect x="4" y="4" width="11" height="17" fill="#284b63"/><rect x="16" y="4" width="10" height="8" fill="#d9a441"/><rect x="16" y="13" width="10" height="8" fill="#b5c7b1"/><rect x="4" y="22" width="22" height="12" fill="#c96b3b"/>`,
+  }[t];
+  return `<svg viewBox="0 0 30 38"><rect x=".5" y=".5" width="29" height="37" rx="1.5" fill="#f6f6f3"/>${body}</svg>`;
+};
+
+/* ── State ── */
+const state={printer:'hl',copies:1,paper:'A4',media:'plain',pages:'all',color:'color',orient:'portrait',sides:'two',job:'j1',doc:'kiln',page:0,zoom:null};
+
+function jobMeta(j){
+  const d=DOCS[j.doc];
+  if(j.status==='failed')return `Failed · ${j.reason}`;
+  if(j.status==='printing')return `Printing ${j.progress} · ${PRINTERS[j.s.printer].short}`;
+  const unit=d.type==='label'?'labels':(d.n>1?'pages':'page');
+  return `${d.n} ${unit} · ${j.s.paper}${j.s.copies>1?` · ×${j.s.copies}`:''} · ${j.time}`;
+}
+function renderHistory(){
+  const q=$('#q').value.trim().toLowerCase();
+  const list=JOBS.filter(j=>(j.v||DOCS[j.doc].name).toLowerCase().includes(q));
+  if(!list.length){$('#history').innerHTML=`<div class="empty-search">Nothing printed matches “${q.replace(/</g,'&lt;')}”.</div>`;return}
+  const days=[...new Set(list.map(j=>j.day))];
+  $('#history').innerHTML=days.map(day=>`<div class="group-title">${day}</div>`+list.filter(j=>j.day===day).map(j=>{
+    const st=j.status==='done'?`<span class="status">${icon('check')}</span>`:j.status==='failed'?`<span class="status fail">${icon('alert')}</span>`:`<span class="status"><span class="pulse"></span></span>`;
+    return `<div class="job${j.fresh?' enter':''}" role="button" tabindex="0" data-id="${j.id}" aria-current="${j.id===state.job}">
+      <span class="thumb">${thumb(DOCS[j.doc].type)}</span>
+      <span class="job-main"><span class="job-name">${j.v||DOCS[j.doc].name}</span><span class="job-meta${j.status==='failed'?' fail':''}">${jobMeta(j)}</span></span>
+      <span class="job-side">${st}<button class="reprint" data-reprint="${j.id}" aria-label="Print again" title="Print again">${icon('reprint')}</button></span>
+    </div>`}).join('')).join('');
+  JOBS.forEach(j=>delete j.fresh);
+}
+function renderPrinter(){
+  const p=PRINTERS[state.printer], busy=JOBS.some(j=>j.status==='printing'&&j.s.printer===state.printer);
+  $('#pdot').className='dot'+(busy?' busy':'');$('#pdot').style.background=p.ok?'':'var(--fail)';
+  const queue=JOBS.filter(j=>j.status==='printing').length;
+  $('#pstatus').innerHTML=`<span class="dot${busy?' busy':''}" style="${p.ok?'':'background:var(--fail);box-shadow:0 0 0 3px rgba(255,142,126,.12)'}"></span><span><b>${p.name}</b><br>${p.ok?(busy?'Printing':'Ready'):'Offline — check the cable'}${queue?` · ${queue} in queue`:''}</span>`;
+}
+function renderControls(){
+  $$('[data-val]').forEach(el=>{const k=el.dataset.val;el.textContent=k==='printer'?PRINTERS[state.printer].short:k==='media'?MEDIA[state.media].t:k==='pages'?PAGES[state.pages].t:state[k]});
+  $$('.seg').forEach(seg=>{const k=seg.dataset.seg,btns=[...seg.querySelectorAll('button')];const i=btns.findIndex(b=>b.dataset.v===state[k]);seg.style.setProperty('--n',btns.length);seg.style.setProperty('--i',i);btns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===state[k]))});
+  $('#copies').textContent=state.copies;$('#cMinus').disabled=state.copies<=1;$('#cPlus').disabled=state.copies>=99;
+  renderPrinter();
+}
+
+/* ── Preview ── */
+const MM=3.7795;
+function renderPreview(){
+  const d=DOCS[state.doc];
+  let [w,h]=PAPER[state.paper].mm.map(v=>v*MM);
+  if(state.orient==='landscape')[w,h]=[h,w];
+  const pad=Math.round(Math.min(w,h)*0.075);
+  const sheet=$('#sheet'),content=$('#content');
+  // content lays out at a design width, then fits the printable area
+  const designW=state.orient==='landscape'?1000:700;
+  content.style.width=designW+'px';content.style.transform='none';
+  content.innerHTML=d.page(state.page)+foot(d.name,`${state.page+1} / ${d.n}`);
+  const ft=content.querySelector('.foot');ft.style.position='static';ft.style.marginTop='28px';
+  content.style.minHeight='0';
+  const ch=content.scrollHeight;
+  const s=Math.min((w-pad*2)/designW,(h-pad*2)/ch);
+  ft.style.position='';content.style.minHeight=((h-pad*2)/s)+'px';
+  content.style.transform=`translate(${pad}px,${pad}px) scale(${s})`;
+  sheet.classList.toggle('mono',state.color==='mono');
+  sheet.classList.toggle('glossy',state.media==='photo');
+  // fit to stage
+  const st=$('#stage'),narrow=innerWidth<860;
+  const availW=st.clientWidth-(narrow?48:160),availH=st.clientHeight-(narrow?170:190);
+  const fit=Math.min(availW/w,availH/h);
+  const z=state.zoom??fit;
+  const wrap=$('#wrap');wrap.style.width=w*z+'px';wrap.style.height=h*z+'px';
+  const t=`scale(${z})`;
+  sheet.style.cssText=`width:${w}px;height:${h}px;transform:${t};--t:${t}`;
+  const copies=Math.min(state.copies-1,2);
+  ['#g1','#g2'].forEach((g,k)=>{const el=$(g);el.style.width=w+'px';el.style.height=h+'px';el.style.opacity=k<copies?1:0;el.style.transform=`translate(${(k+1)*7}px,${(k+1)*7}px) scale(${z})`});
+  // meta + bar
+  $('#docName').textContent=JOBS.find(j=>j.id===state.job)?.v||d.name;
+  const sel=state.pages==='all'?d.n:state.pages==='current'?1:state.pages==='odd'?Math.ceil(d.n/2):Math.floor(d.n/2);
+  const sheets=(state.sides==='two'?Math.ceil(sel/2):sel)*state.copies;
+  $('#docMeta').textContent=`${d.n} ${d.n>1?'pages':'page'} · ${d.size}`;
+  $('#pageNum').textContent=`${state.page+1} / ${d.n}`;
+  $('#prev').disabled=state.page===0;$('#next').disabled=state.page>=d.n-1;
+  $('#summary').innerHTML=`<b>${sheets} ${sheets===1?'sheet':'sheets'}</b> · ${state.paper} ${MEDIA[state.media].t.toLowerCase()} · ${state.color==='mono'?'Mono':'Color'} · ${state.sides==='two'?'2-sided':'1-sided'}`;
+  $('#zoomVal').textContent=Math.round(z*100)+'%';
+}
+function render(){renderControls();renderPreview()}
+
+/* ── Interactions ── */
+function selectJob(id){
+  const j=JOBS.find(x=>x.id===id);if(!j)return;
+  Object.assign(state,j.s,{job:id,doc:j.doc,page:0,zoom:null,pages:'all'});
+  renderHistory();render();document.body.classList.remove('drawer');
+}
+$('#history').addEventListener('click',e=>{
+  const r=e.target.closest('[data-reprint]');if(r){e.stopPropagation();selectJob(r.dataset.reprint);doPrint();return}
+  const j=e.target.closest('.job');if(j)selectJob(j.dataset.id);
+});
+$('#history').addEventListener('keydown',e=>{const j=e.target.closest('.job');if(j&&(e.key==='Enter'||e.key===' ')&&e.target===j){e.preventDefault();selectJob(j.dataset.id)}});
+$('#q').addEventListener('input',renderHistory);
+$$('.seg').forEach(seg=>seg.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state[seg.dataset.seg]=b.dataset.v;render()}));
+$('#cMinus').onclick=()=>{state.copies=Math.max(1,state.copies-1);render()};
+$('#cPlus').onclick=()=>{state.copies=Math.min(99,state.copies+1);render()};
+$('#prev').onclick=()=>{state.page=Math.max(0,state.page-1);renderPreview()};
+$('#next').onclick=()=>{state.page=Math.min(DOCS[state.doc].n-1,state.page+1);renderPreview()};
+const curZoom=()=>parseFloat($('#zoomVal').textContent)/100;
+$('#zIn').onclick=()=>{state.zoom=Math.min(3,curZoom()*1.2);renderPreview()};
+$('#zOut').onclick=()=>{state.zoom=Math.max(.15,curZoom()/1.2);renderPreview()};
+$('#zFit').onclick=()=>{state.zoom=null;renderPreview()};
+addEventListener('resize',renderPreview);
+$('#drawerBtn').onclick=()=>document.body.classList.add('drawer');
+$('#scrim').onclick=()=>document.body.classList.remove('drawer');
+
+/* Menus */
+const menu=$('#menu');let menuFor=null;
+const MENUS={
+  printer:()=>Object.entries(PRINTERS).map(([k,p])=>[k,p.name,p.sub]),
+  paper:()=>Object.entries(PAPER).map(([k,p])=>[k,k,p.sub]),
+  media:()=>Object.entries(MEDIA).map(([k,m])=>[k,m.t,m.sub]),
+  pages:()=>Object.entries(PAGES).map(([k,m])=>[k,m.t,'']),
+};
+function openMenu(btn){
+  if(menuFor===btn){closeMenu();return}
+  closeMenu();menuFor=btn;const key=btn.dataset.menu;
+  menu.innerHTML=MENUS[key]().map(([v,t,sub])=>`<button role="menuitemradio" aria-checked="${state[key]===v}" data-v="${v}"><svg class="i sm check"><use href="#i-check"/></svg><span class="m-main"><span class="m-title">${t}</span>${sub?`<span class="sub">${sub}</span>`:''}</span></button>`).join('');
+  const r=btn.getBoundingClientRect();
+  menu.style.left=Math.min(r.left,innerWidth-240)+'px';menu.style.top=r.bottom+6+'px';
+  btn.setAttribute('aria-expanded','true');menu.classList.add('open');
+  (menu.querySelector('[aria-checked="true"]')||menu.querySelector('button')).focus({preventScroll:true});
+  menu.onclick=e=>{const b=e.target.closest('button');if(!b)return;state[key]=b.dataset.v;if(key==='printer'){const p=b.dataset.v;if(p==='selphy'){state.paper='4×6';state.media='photo'}if(p==='zebra'){state.paper='4×6';state.media='labels';state.color='mono'}}closeMenu(true);render()};
+}
+function closeMenu(refocus){if(!menuFor)return;menuFor.setAttribute('aria-expanded','false');if(refocus)menuFor.focus();menuFor=null;menu.classList.remove('open')}
+$$('[data-menu]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openMenu(b)}));
+document.addEventListener('click',e=>{if(!menu.contains(e.target))closeMenu()});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeMenu(true);document.body.classList.remove('drawer')}
+  if(menuFor&&(e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();const items=[...menu.querySelectorAll('button')];let i=items.indexOf(document.activeElement);i=(i+(e.key==='ArrowDown'?1:-1)+items.length)%items.length;items[i].focus()}
+  if((e.metaKey||e.ctrlKey)&&e.key==='p'){e.preventDefault();doPrint()}
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();$('#q').focus()}
+});
+
+/* Liquid metal: highlight follows the pointer */
+document.addEventListener('pointermove',e=>{
+  $$('.metal,.seg .thumb').forEach(el=>{const r=el.getBoundingClientRect();el.style.setProperty('--mx',((e.clientX-r.left)/r.width*100).toFixed(1)+'%');el.style.setProperty('--my',((e.clientY-r.top)/r.height*100).toFixed(1)+'%')});
+},{passive:true});
+
+/* Print */
+let printing=false;
+function doPrint(){
+  if(printing)return;
+  const btn=$('#printBtn'),label=btn.querySelector('.label'),fill=btn.querySelector('.fill');
+  if(!PRINTERS[state.printer].ok){label.textContent='Printer offline';setTimeout(()=>label.textContent='Print',1800);return}
+  printing=true;btn.classList.add('sending');label.textContent='Sending';
+  let p=0;const tick=setInterval(()=>{p=Math.min(1,p+.07+Math.random()*.06);fill.style.width=`calc((100% - 6px) * ${p})`;if(p>=1){clearInterval(tick);finish()}},120);
+  function finish(){
+    setTimeout(()=>{
+      btn.classList.remove('sending');fill.style.transition='none';fill.style.width='0';requestAnimationFrame(()=>fill.style.transition='');
+      label.innerHTML=`${icon('check')} Sent`;
+      const sheet=$('#sheet');sheet.classList.remove('flash');void sheet.offsetWidth;sheet.classList.add('flash');
+      const d=new Date(),id='n'+d.getTime();
+      JOBS.unshift({id,doc:state.doc,day:'Today',time:d.toTimeString().slice(0,5),status:'printing',progress:`1 of ${state.copies}`,fresh:true,s:{printer:state.printer,paper:state.paper,media:state.media,color:state.color,orient:state.orient,sides:state.sides,copies:state.copies},v:JOBS.find(j=>j.id===state.job)?.v});
+      state.job=id;renderHistory();renderPrinter();
+      setTimeout(()=>{const j=JOBS.find(x=>x.id===id);if(j){j.status='done';renderHistory();renderPrinter()}},5200);
+      setTimeout(()=>{label.textContent='Print';printing=false},1600);
+    },180);
+  }
+}
+$('#printBtn').onclick=doPrint;
+
+/* demo: the in-flight job finishes on its own */
+setTimeout(()=>{const j=JOBS.find(x=>x.id==='j0');j.progress='2 of 2';renderHistory()},3500);
+setTimeout(()=>{const j=JOBS.find(x=>x.id==='j0');j.status='done';renderHistory();renderPrinter()},8000);
+
+if(!matchMedia('(prefers-reduced-motion: reduce)').matches)document.querySelector('.mark-shape').setAttribute('filter','url(#liquid)');
+renderHistory();render();
+document.fonts?.ready.then(renderPreview);
+</script>
+</body>
+</html>

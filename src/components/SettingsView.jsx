@@ -1,55 +1,56 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Check, CircleCheck, LogOut, Monitor, Moon, RefreshCw, Save, Sun } from "lucide-react";
+import { Check, LogOut, Monitor, Moon, RefreshCw, Sun } from "lucide-react";
 import { api } from "../api/client.js";
 import { PALETTES } from "../hooks/appearance.js";
 import { BASE_SETTINGS, pickDefaults, reconcile } from "../lib/settings.js";
-import { formatBytes, formatDate, initials } from "../lib/format.js";
-import { Field, Key, Segmented } from "./controls.jsx";
-import { OptionControls } from "./ToolPane.jsx";
-import { Gauge, queueLabel } from "./PrinterGauge.jsx";
+import { formatBytes, formatDate } from "../lib/format.js";
+import { Button, IconKey, Row, Segmented, Stepper, Tip, ease } from "./controls.jsx";
+import { OptionRows } from "./Options.jsx";
+import { PrinterLine } from "./PrinterStatus.jsx";
+import { Avatar } from "./Sidebar.jsx";
+import { setLocalePref, t, tn, useLocalePref } from "../i18n/index.js";
 
-const section = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0 },
-};
-
-function Section({ title, description, children, i = 0 }) {
+function Section({ title, tools, children, i = 0 }) {
   return (
-    <motion.section className="card settings__section" {...section} transition={{ duration: 0.28, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] }}>
-      <header className="settings__head">
+    <motion.section className="section" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.26, delay: i * 0.04, ease }}>
+      <header className="section__head">
         <h2>{title}</h2>
-        {description && <p>{description}</p>}
+        {tools && <div className="section__tools">{tools}</div>}
       </header>
       {children}
     </motion.section>
   );
 }
 
-const EXT_NAMES = { "application/pdf": "PDF", "image/jpeg": "JPEG", "image/png": "PNG", "text/plain": "Text" };
+const EXT_NAMES = { "application/pdf": "PDF", "image/jpeg": "JPEG", "image/png": "PNG", "text/plain": "Text" }; // shown through t()
 
-export function SettingsView({ user, appearance, setAppearance, choices, prefs, printer, capabilities, onLogout }) {
+export function SettingsView({ user, appearance, setAppearance, choices, prefs, printer, capabilities, onLogout, lead }) {
   const saved = prefs.prefs?.print_defaults;
-  const [draft, setDraft] = useState(() => reconcile({ ...BASE_SETTINGS, ...(saved || {}) }, choices));
+  const base = useMemo(() => reconcile({ ...BASE_SETTINGS, ...(saved || {}) }, choices), [saved, choices]);
+  const [draft, setDraft] = useState(base);
   const [state, setState] = useState("idle");
   const [health, setHealth] = useState(null);
+  const localePref = useLocalePref();
+
+  useEffect(() => setDraft(base), [base]);
 
   useEffect(() => {
-    setDraft(reconcile({ ...BASE_SETTINGS, ...(saved || {}) }, choices));
-  }, [saved, choices]);
-
-  useEffect(() => {
-    api.health().then(setHealth).catch(() => setHealth({ status: "unreachable" }));
+    api
+      .health()
+      .then(setHealth)
+      .catch(() => setHealth({ status: "unreachable" }));
   }, []);
 
-  const dirty = useMemo(() => JSON.stringify(pickDefaults(draft)) !== JSON.stringify(pickDefaults(reconcile({ ...BASE_SETTINGS, ...(saved || {}) }, choices))), [draft, saved, choices]);
+  const dirty = JSON.stringify(pickDefaults(draft)) !== JSON.stringify(pickDefaults(base));
+  const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
 
   async function saveDefaults() {
     setState("saving");
     try {
       await prefs.save({ print_defaults: pickDefaults(draft) });
       setState("saved");
-      setTimeout(() => setState("idle"), 1800);
+      setTimeout(() => setState("idle"), 1600);
     } catch {
       setState("error");
     }
@@ -57,129 +58,132 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
 
   const raw = printer.raw;
   const formats = [
-    ...(capabilities?.native_mime_types || []).map((m) => EXT_NAMES[m] || m),
+    ...(capabilities?.native_mime_types || []).map((m) => (EXT_NAMES[m] ? t(EXT_NAMES[m]) : m)),
     ...(capabilities?.office?.available ? capabilities.office.formats.filter((f) => f.available).map((f) => f.extension.toUpperCase()) : []),
   ];
 
+  const facts = [
+    [t("Server"), health ? (health.status === "ok" ? t("Online") : health.status) : t("Checking")],
+    [t("Address"), raw?.network?.host],
+    [t("Accepts"), formats.join(", ")],
+    [t("Max upload"), capabilities && formatBytes(capabilities.max_upload_bytes)],
+    [t("Office"), capabilities && (capabilities.office?.available ? tn(capabilities.office.max_pages, "Up to {n} page", "Up to {n} pages") : t("Unavailable"))],
+  ];
+
   return (
-    <div className="settings">
-      <div className="settings__inner">
-        <h1 className="view-title">Settings</h1>
+    <div className="page">
+      <div className="bar">
+        {lead}
+        <h1 className="bar__title bar__title--lg">{t("Settings")}</h1>
+      </div>
+      <div className="settings">
+        <div className="settings__inner">
+          <Section title={t("Appearance")} i={0}>
+            <Row label={t("Theme")}>
+              <Segmented
+                label={t("Theme")}
+                layoutKey="settings-theme"
+                value={appearance.theme}
+                onChange={(v) => setAppearance({ theme: v })}
+                options={[
+                  { value: "light", label: t("Light"), icon: Sun },
+                  { value: "dark", label: t("Dark"), icon: Moon },
+                  { value: "system", label: t("System"), icon: Monitor },
+                ]}
+              />
+            </Row>
+            <Row label={t("Language")}>
+              {/* Language names stay in their own language so anyone can find theirs. */}
+              <Segmented
+                label={t("Language")}
+                layoutKey="settings-language"
+                value={localePref}
+                onChange={setLocalePref}
+                options={[
+                  { value: "system", label: t("System"), icon: Monitor },
+                  { value: "en", label: "English" },
+                  { value: "pl", label: "Polski" },
+                ]}
+              />
+            </Row>
+            <Row label={t("Accent")}>
+              <div className="swatches" role="radiogroup" aria-label={t("Accent")}>
+                {PALETTES.map((p) => {
+                  const on = appearance.palette === p.id;
+                  return (
+                    <Tip key={p.id} label={t(p.label)}>
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        aria-label={t(p.label)}
+                        className={`swatch ${on ? "is-on" : ""}`}
+                        data-palette={p.id}
+                        onClick={() => setAppearance({ palette: p.id })}
+                      >
+                        {on && <Check size={12} strokeWidth={2.2} aria-hidden />}
+                      </button>
+                    </Tip>
+                  );
+                })}
+              </div>
+            </Row>
+          </Section>
 
-        <Section title="Appearance" description="Saved in this browser, so each device can look its own way." i={0}>
-          <Field label="Theme">
-            <Segmented
-              label="Theme"
-              layoutKey="settings-theme"
-              value={appearance.theme}
-              onChange={(v) => setAppearance({ theme: v })}
-              options={[
-                { value: "light", label: "Light", icon: Sun },
-                { value: "dark", label: "Dark", icon: Moon },
-                { value: "system", label: "System", icon: Monitor },
-              ]}
-            />
-          </Field>
-          <Field label="Accent">
-            <div className="swatches" role="radiogroup" aria-label="Accent color">
-              {PALETTES.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={appearance.palette === p.id}
-                  className={`swatch ${appearance.palette === p.id ? "is-active" : ""}`}
-                  data-palette={p.id}
-                  onClick={() => setAppearance({ palette: p.id })}
+          <Section
+            title={t("Print defaults")}
+            i={1}
+            tools={
+              <>
+                {state === "error" && <span className="section__note is-error">{t("Not saved")}</span>}
+                <Button variant="quiet" className="btn--sm" onClick={() => setDraft(reconcile(BASE_SETTINGS, choices))}>
+                  {t("Reset")}
+                </Button>
+                <Button
+                  variant={dirty || state === "error" ? "raised" : "quiet"}
+                  className="btn--sm"
+                  onClick={saveDefaults}
+                  disabled={(!dirty && state !== "error") || state === "saving"}
                 >
-                  <span className="swatch__dot" aria-hidden>
-                    {appearance.palette === p.id && <Check size={14} strokeWidth={2.6} />}
-                  </span>
-                  <span className="swatch__label">{p.label}</span>
-                </button>
+                  {state === "saved" && <Check size={14} strokeWidth={2} aria-hidden />}
+                  {state === "saved" ? t("Saved") : state === "saving" ? t("Saving") : t("Save")}
+                </Button>
+              </>
+            }
+          >
+            <Row label={t("Copies")}>
+              <Stepper label={t("Copies")} decLabel={t("Fewer copies")} incLabel={t("More copies")} value={draft.copies} onChange={(v) => set("copies", v)} />
+            </Row>
+            <OptionRows settings={draft} set={set} choices={choices} idPrefix="def" />
+          </Section>
+
+          <Section title={t("Printer")} i={2} tools={<IconKey label={t("Check now")} icon={RefreshCw} size="sm" onClick={printer.refresh} />}>
+            <PrinterLine printer={printer} className="settings__printer" />
+            {printer.info.detail && <p className="settings__detail">{printer.info.detail}</p>}
+            <dl className="facts">
+              {facts.map(([k, v]) => (
+                <div key={k} className="facts__row">
+                  <dt>{k}</dt>
+                  <dd>{v || "–"}</dd>
+                </div>
               ))}
-            </div>
-          </Field>
-        </Section>
+            </dl>
+          </Section>
 
-        <Section title="Print defaults" description="Every new print starts with these. They follow your account to any device." i={1}>
-          <div className="settings__grid">
-            <OptionControls settings={draft} set={(k, v) => setDraft((d) => ({ ...d, [k]: v }))} choices={choices} idPrefix="def" />
-          </div>
-          <div className="settings__actions">
-            {state === "error" && <span className="field-error">Couldn't save. Try again.</span>}
-            <Key variant="ghost" size="sm" onClick={() => setDraft(reconcile(BASE_SETTINGS, choices))}>
-              Reset to factory
-            </Key>
-            <Key variant="accent" size="sm" icon={state === "saved" ? CircleCheck : Save} onClick={saveDefaults} disabled={(!dirty && state !== "error") || state === "saving"}>
-              {state === "saved" ? "Saved" : "Save defaults"}
-            </Key>
-          </div>
-        </Section>
-
-        <Section title="Printer" description="Status comes straight from the print server on this network." i={2}>
-          <div className="printer-panel">
-            <Gauge tone={printer.info.tone} size={64} />
-            <div className="printer-panel__text">
-              <p className="printer-panel__name">{queueLabel(raw)}</p>
-              <p className={`printer-panel__state tone-${printer.info.tone}`}>
-                <span className="led" aria-hidden />
-                {printer.info.label}
-              </p>
-              {printer.info.detail && <p className="printer-panel__detail">{printer.info.detail}</p>}
+          <Section title={t("Account")} i={3}>
+            <div className="account">
+              <Avatar user={user} size="lg" />
+              <div className="account__text">
+                <p className="account__name">{user.display_name || user.username}</p>
+                <p className="account__meta">{t("{username} · since {date}", { username: user.username, date: formatDate(user.created_at) })}</p>
+              </div>
+              <Button variant="quiet" className="btn--sm" onClick={onLogout}>
+                <LogOut size={14} strokeWidth={1.6} aria-hidden />
+                {t("Sign out")}
+              </Button>
             </div>
-            <Key variant="raised" size="sm" icon={RefreshCw} onClick={printer.refresh}>
-              Check now
-            </Key>
-          </div>
-          <dl className="facts facts--two">
-            <div className="facts__row">
-              <dt>Print server</dt>
-              <dd>{health ? (health.status === "ok" ? "Online" : health.status) : "Checking"}</dd>
-            </div>
-            <div className="facts__row">
-              <dt>Accepting jobs</dt>
-              <dd>{raw ? (raw.accepting_jobs ? "Yes" : "No") : "–"}</dd>
-            </div>
-            <div className="facts__row">
-              <dt>Address</dt>
-              <dd>{raw?.network?.host || "–"}</dd>
-            </div>
-            <div className="facts__row">
-              <dt>Queue</dt>
-              <dd>{raw?.queue_name || "–"}</dd>
-            </div>
-            <div className="facts__row facts__row--wide">
-              <dt>File types</dt>
-              <dd>{formats.length ? formats.join(", ") : "–"}</dd>
-            </div>
-            <div className="facts__row">
-              <dt>Largest upload</dt>
-              <dd>{capabilities ? formatBytes(capabilities.max_upload_bytes) : "–"}</dd>
-            </div>
-            <div className="facts__row">
-              <dt>Office conversion</dt>
-              <dd>{capabilities ? (capabilities.office?.available ? `Up to ${capabilities.office.max_pages} pages` : "Unavailable") : "–"}</dd>
-            </div>
-          </dl>
-        </Section>
-
-        <Section title="Account" i={3}>
-          <div className="account">
-            <span className="avatar avatar--lg" aria-hidden>
-              {initials(user)}
-            </span>
-            <div className="account__text">
-              <p className="account__name">{user.display_name || user.username}</p>
-              <p className="account__meta">
-                Signed in as {user.username}, member since {formatDate(user.created_at)}
-              </p>
-            </div>
-            <Key variant="raised" size="sm" icon={LogOut} onClick={onLogout}>
-              Sign out
-            </Key>
-          </div>
-        </Section>
+          </Section>
+        </div>
       </div>
     </div>
   );

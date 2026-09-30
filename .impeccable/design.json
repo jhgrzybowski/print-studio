@@ -1,0 +1,828 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-30T02:36:44.674Z",
+  "title": "Design System: Print Studio",
+  "extensions": {
+    "colorMeta": {
+      "accent-cobalt": {
+        "role": "primary",
+        "displayName": "Cobalt Signal (dark)",
+        "canonical": "oklch(0.76 0.13 250)",
+        "tonalRamp": [
+          "oklch(0.15 0.13 250)",
+          "oklch(0.264 0.13 250)",
+          "oklch(0.379 0.13 250)",
+          "oklch(0.493 0.13 250)",
+          "oklch(0.607 0.13 250)",
+          "oklch(0.721 0.13 250)",
+          "oklch(0.836 0.13 250)",
+          "oklch(0.95 0.13 250)"
+        ],
+        "purpose": "Accent on graphite: focus rings, caret, selected thumbnail ring, active-job text. Hue and chroma follow the chosen palette."
+      },
+      "accent-cobalt-light": {
+        "role": "primary",
+        "displayName": "Cobalt Signal (light)",
+        "canonical": "oklch(0.52 0.13 250)",
+        "tonalRamp": [
+          "oklch(0.15 0.13 250)",
+          "oklch(0.264 0.13 250)",
+          "oklch(0.379 0.13 250)",
+          "oklch(0.493 0.13 250)",
+          "oklch(0.607 0.13 250)",
+          "oklch(0.721 0.13 250)",
+          "oklch(0.836 0.13 250)",
+          "oklch(0.95 0.13 250)"
+        ],
+        "purpose": "Accent on steel grey, L 0.52."
+      },
+      "chrome-highlight": {
+        "role": "secondary",
+        "displayName": "Chrome Highlight",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.264 0 0)",
+          "oklch(0.379 0 0)",
+          "oklch(0.493 0 0)",
+          "oklch(0.607 0 0)",
+          "oklch(0.721 0 0)",
+          "oklch(0.836 0 0)",
+          "oklch(0.95 0 0)"
+        ],
+        "purpose": "Top stop of the liquid chrome gradient."
+      },
+      "chrome-body": {
+        "role": "secondary",
+        "displayName": "Chrome Body",
+        "canonical": "oklch(0.82 0.008 250)",
+        "tonalRamp": [
+          "oklch(0.15 0.008 250)",
+          "oklch(0.264 0.008 250)",
+          "oklch(0.379 0.008 250)",
+          "oklch(0.493 0.008 250)",
+          "oklch(0.607 0.008 250)",
+          "oklch(0.721 0.008 250)",
+          "oklch(0.836 0.008 250)",
+          "oklch(0.95 0.008 250)"
+        ],
+        "purpose": "Mid stops of the liquid chrome gradient; the representative chrome tone."
+      },
+      "chrome-horizon": {
+        "role": "secondary",
+        "displayName": "Chrome Horizon",
+        "canonical": "oklch(0.66 0.01 250)",
+        "tonalRamp": [
+          "oklch(0.15 0.01 250)",
+          "oklch(0.264 0.01 250)",
+          "oklch(0.379 0.01 250)",
+          "oklch(0.493 0.01 250)",
+          "oklch(0.607 0.01 250)",
+          "oklch(0.721 0.01 250)",
+          "oklch(0.836 0.01 250)",
+          "oklch(0.95 0.01 250)"
+        ],
+        "purpose": "The darkest stop at the 50 % mirror horizon."
+      },
+      "chrome-ink": {
+        "role": "secondary",
+        "displayName": "Chrome Ink",
+        "canonical": "oklch(0.172 0.005 248.1)",
+        "tonalRamp": [
+          "oklch(0.15 0.005 248.1)",
+          "oklch(0.264 0.005 248.1)",
+          "oklch(0.379 0.005 248.1)",
+          "oklch(0.493 0.005 248.1)",
+          "oklch(0.607 0.005 248.1)",
+          "oklch(0.721 0.005 248.1)",
+          "oklch(0.836 0.005 248.1)",
+          "oklch(0.95 0.005 248.1)"
+        ],
+        "purpose": "Text and icons on chrome."
+      },
+      "graphite-ground": {
+        "role": "neutral",
+        "displayName": "Graphite Ground",
+        "canonical": "oklch(0.154 0.005 264.4)",
+        "tonalRamp": [
+          "oklch(0.15 0.005 264.4)",
+          "oklch(0.264 0.005 264.4)",
+          "oklch(0.379 0.005 264.4)",
+          "oklch(0.493 0.005 264.4)",
+          "oklch(0.607 0.005 264.4)",
+          "oklch(0.721 0.005 264.4)",
+          "oklch(0.836 0.005 264.4)",
+          "oklch(0.95 0.005 264.4)"
+        ],
+        "purpose": "Dark theme neutral."
+      },
+      "graphite-sidebar": {
+        "role": "neutral",
+        "displayName": "Graphite Sidebar",
+        "canonical": "oklch(0.182 0.006 271.1)",
+        "tonalRamp": [
+          "oklch(0.15 0.006 271.1)",
+          "oklch(0.264 0.006 271.1)",
+          "oklch(0.379 0.006 271.1)",
+          "oklch(0.493 0.006 271.1)",
+          "oklch(0.607 0.006 271.1)",
+          "oklch(0.721 0.006 271.1)",
+          "oklch(0.836 0.006 271.1)",
+          "oklch(0.95 0.006 271.1)"
+        ],
+        "purpose": "Dark theme neutral."
+      },
+      "graphite-panel": {
+        "role": "neutral",
+        "displayName": "Graphite Panel",
+        "canonical": "oklch(0.204 0.007 258.4)",
+        "tonalRamp": [
+          "oklch(0.15 0.007 258.4)",
+          "oklch(0.264 0.007 258.4)",
+          "oklch(0.379 0.007 258.4)",
+          "oklch(0.493 0.007 258.4)",
+          "oklch(0.607 0.007 258.4)",
+          "oklch(0.721 0.007 258.4)",
+          "oklch(0.836 0.007 258.4)",
+          "oklch(0.95 0.007 258.4)"
+        ],
+        "purpose": "Dark theme neutral."
+      },
+      "graphite-raise": {
+        "role": "neutral",
+        "displayName": "Graphite Raise",
+        "canonical": "oklch(0.239 0.008 264.4)",
+        "tonalRamp": [
+          "oklch(0.15 0.008 264.4)",
+          "oklch(0.264 0.008 264.4)",
+          "oklch(0.379 0.008 264.4)",
+          "oklch(0.493 0.008 264.4)",
+          "oklch(0.607 0.008 264.4)",
+          "oklch(0.721 0.008 264.4)",
+          "oklch(0.836 0.008 264.4)",
+          "oklch(0.95 0.008 264.4)"
+        ],
+        "purpose": "Dark theme neutral."
+      },
+      "graphite-well": {
+        "role": "neutral",
+        "displayName": "Graphite Well",
+        "canonical": "oklch(0.159 0.005 264.4)",
+        "tonalRamp": [
+          "oklch(0.15 0.005 264.4)",
+          "oklch(0.264 0.005 264.4)",
+          "oklch(0.379 0.005 264.4)",
+          "oklch(0.493 0.005 264.4)",
+          "oklch(0.607 0.005 264.4)",
+          "oklch(0.721 0.005 264.4)",
+          "oklch(0.836 0.005 264.4)",
+          "oklch(0.95 0.005 264.4)"
+        ],
+        "purpose": "Dark theme neutral."
+      },
+      "graphite-menu": {
+        "role": "neutral",
+        "displayName": "Graphite Menu",
+        "canonical": "oklch(0.23 0.008 264.4)",
+        "tonalRamp": [
+          "oklch(0.15 0.008 264.4)",
+          "oklch(0.264 0.008 264.4)",
+          "oklch(0.379 0.008 264.4)",
+          "oklch(0.493 0.008 264.4)",
+          "oklch(0.607 0.008 264.4)",
+          "oklch(0.721 0.008 264.4)",
+          "oklch(0.836 0.008 264.4)",
+          "oklch(0.95 0.008 264.4)"
+        ],
+        "purpose": "Dark theme neutral."
+      },
+      "graphite-text": {
+        "role": "neutral",
+        "displayName": "Graphite Text",
+        "canonical": "oklch(0.948 0.003 247.9)",
+        "tonalRamp": [
+          "oklch(0.15 0.003 247.9)",
+          "oklch(0.264 0.003 247.9)",
+          "oklch(0.379 0.003 247.9)",
+          "oklch(0.493 0.003 247.9)",
+          "oklch(0.607 0.003 247.9)",
+          "oklch(0.721 0.003 247.9)",
+          "oklch(0.836 0.003 247.9)",
+          "oklch(0.95 0.003 247.9)"
+        ],
+        "purpose": "Dark theme neutral."
+      },
+      "graphite-text-2": {
+        "role": "neutral",
+        "displayName": "Graphite Text 2",
+        "canonical": "oklch(0.735 0.012 252.1)",
+        "tonalRamp": [
+          "oklch(0.15 0.012 252.1)",
+          "oklch(0.264 0.012 252.1)",
+          "oklch(0.379 0.012 252.1)",
+          "oklch(0.493 0.012 252.1)",
+          "oklch(0.607 0.012 252.1)",
+          "oklch(0.721 0.012 252.1)",
+          "oklch(0.836 0.012 252.1)",
+          "oklch(0.95 0.012 252.1)"
+        ],
+        "purpose": "Dark theme neutral."
+      },
+      "graphite-text-3": {
+        "role": "neutral",
+        "displayName": "Graphite Text 3",
+        "canonical": "oklch(0.634 0.014 255.5)",
+        "tonalRamp": [
+          "oklch(0.15 0.014 255.5)",
+          "oklch(0.264 0.014 255.5)",
+          "oklch(0.379 0.014 255.5)",
+          "oklch(0.493 0.014 255.5)",
+          "oklch(0.607 0.014 255.5)",
+          "oklch(0.721 0.014 255.5)",
+          "oklch(0.836 0.014 255.5)",
+          "oklch(0.95 0.014 255.5)"
+        ],
+        "purpose": "Dark theme neutral."
+      },
+      "steel-ground": {
+        "role": "neutral",
+        "displayName": "Steel Ground",
+        "canonical": "oklch(0.924 0.005 258.3)",
+        "tonalRamp": [
+          "oklch(0.15 0.005 258.3)",
+          "oklch(0.264 0.005 258.3)",
+          "oklch(0.379 0.005 258.3)",
+          "oklch(0.493 0.005 258.3)",
+          "oklch(0.607 0.005 258.3)",
+          "oklch(0.721 0.005 258.3)",
+          "oklch(0.836 0.005 258.3)",
+          "oklch(0.95 0.005 258.3)"
+        ],
+        "purpose": "Light theme neutral."
+      },
+      "steel-sidebar": {
+        "role": "neutral",
+        "displayName": "Steel Sidebar",
+        "canonical": "oklch(0.902 0.006 255.5)",
+        "tonalRamp": [
+          "oklch(0.15 0.006 255.5)",
+          "oklch(0.264 0.006 255.5)",
+          "oklch(0.379 0.006 255.5)",
+          "oklch(0.493 0.006 255.5)",
+          "oklch(0.607 0.006 255.5)",
+          "oklch(0.721 0.006 255.5)",
+          "oklch(0.836 0.006 255.5)",
+          "oklch(0.95 0.006 255.5)"
+        ],
+        "purpose": "Light theme neutral."
+      },
+      "steel-panel": {
+        "role": "neutral",
+        "displayName": "Steel Panel",
+        "canonical": "oklch(0.948 0.003 247.9)",
+        "tonalRamp": [
+          "oklch(0.15 0.003 247.9)",
+          "oklch(0.264 0.003 247.9)",
+          "oklch(0.379 0.003 247.9)",
+          "oklch(0.493 0.003 247.9)",
+          "oklch(0.607 0.003 247.9)",
+          "oklch(0.721 0.003 247.9)",
+          "oklch(0.836 0.003 247.9)",
+          "oklch(0.95 0.003 247.9)"
+        ],
+        "purpose": "Light theme neutral."
+      },
+      "steel-raise": {
+        "role": "neutral",
+        "displayName": "Steel Raise",
+        "canonical": "oklch(0.967 0.003 264.5)",
+        "tonalRamp": [
+          "oklch(0.15 0.003 264.5)",
+          "oklch(0.264 0.003 264.5)",
+          "oklch(0.379 0.003 264.5)",
+          "oklch(0.493 0.003 264.5)",
+          "oklch(0.607 0.003 264.5)",
+          "oklch(0.721 0.003 264.5)",
+          "oklch(0.836 0.003 264.5)",
+          "oklch(0.95 0.003 264.5)"
+        ],
+        "purpose": "Light theme neutral."
+      },
+      "steel-well": {
+        "role": "neutral",
+        "displayName": "Steel Well",
+        "canonical": "oklch(0.881 0.008 253.9)",
+        "tonalRamp": [
+          "oklch(0.15 0.008 253.9)",
+          "oklch(0.264 0.008 253.9)",
+          "oklch(0.379 0.008 253.9)",
+          "oklch(0.493 0.008 253.9)",
+          "oklch(0.607 0.008 253.9)",
+          "oklch(0.721 0.008 253.9)",
+          "oklch(0.836 0.008 253.9)",
+          "oklch(0.95 0.008 253.9)"
+        ],
+        "purpose": "Light theme neutral."
+      },
+      "steel-menu": {
+        "role": "neutral",
+        "displayName": "Steel Menu",
+        "canonical": "oklch(0.976 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.264 0 0)",
+          "oklch(0.379 0 0)",
+          "oklch(0.493 0 0)",
+          "oklch(0.607 0 0)",
+          "oklch(0.721 0 0)",
+          "oklch(0.836 0 0)",
+          "oklch(0.95 0 0)"
+        ],
+        "purpose": "Light theme neutral."
+      },
+      "steel-text": {
+        "role": "neutral",
+        "displayName": "Steel Text",
+        "canonical": "oklch(0.208 0.007 258.4)",
+        "tonalRamp": [
+          "oklch(0.15 0.007 258.4)",
+          "oklch(0.264 0.007 258.4)",
+          "oklch(0.379 0.007 258.4)",
+          "oklch(0.493 0.007 258.4)",
+          "oklch(0.607 0.007 258.4)",
+          "oklch(0.721 0.007 258.4)",
+          "oklch(0.836 0.007 258.4)",
+          "oklch(0.95 0.007 258.4)"
+        ],
+        "purpose": "Light theme neutral."
+      },
+      "steel-text-2": {
+        "role": "neutral",
+        "displayName": "Steel Text 2",
+        "canonical": "oklch(0.44 0.015 255.6)",
+        "tonalRamp": [
+          "oklch(0.15 0.015 255.6)",
+          "oklch(0.264 0.015 255.6)",
+          "oklch(0.379 0.015 255.6)",
+          "oklch(0.493 0.015 255.6)",
+          "oklch(0.607 0.015 255.6)",
+          "oklch(0.721 0.015 255.6)",
+          "oklch(0.836 0.015 255.6)",
+          "oklch(0.95 0.015 255.6)"
+        ],
+        "purpose": "Light theme neutral."
+      },
+      "steel-text-3": {
+        "role": "neutral",
+        "displayName": "Steel Text 3",
+        "canonical": "oklch(0.487 0.015 255.6)",
+        "tonalRamp": [
+          "oklch(0.15 0.015 255.6)",
+          "oklch(0.264 0.015 255.6)",
+          "oklch(0.379 0.015 255.6)",
+          "oklch(0.493 0.015 255.6)",
+          "oklch(0.607 0.015 255.6)",
+          "oklch(0.721 0.015 255.6)",
+          "oklch(0.836 0.015 255.6)",
+          "oklch(0.95 0.015 255.6)"
+        ],
+        "purpose": "Light theme neutral."
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "oklch(0.988 0.003 106.4)",
+        "tonalRamp": [
+          "oklch(0.15 0.003 106.4)",
+          "oklch(0.264 0.003 106.4)",
+          "oklch(0.379 0.003 106.4)",
+          "oklch(0.493 0.003 106.4)",
+          "oklch(0.607 0.003 106.4)",
+          "oklch(0.721 0.003 106.4)",
+          "oklch(0.836 0.003 106.4)",
+          "oklch(0.95 0.003 106.4)"
+        ]
+      },
+      "paper-light": {
+        "role": "neutral",
+        "displayName": "Paper Light",
+        "canonical": "oklch(1 0 0)",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.264 0 0)",
+          "oklch(0.379 0 0)",
+          "oklch(0.493 0 0)",
+          "oklch(0.607 0 0)",
+          "oklch(0.721 0 0)",
+          "oklch(0.836 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "ok": {
+        "role": "neutral",
+        "displayName": "Ok",
+        "canonical": "oklch(0.804 0.103 155.9)",
+        "tonalRamp": [
+          "oklch(0.15 0.103 155.9)",
+          "oklch(0.264 0.103 155.9)",
+          "oklch(0.379 0.103 155.9)",
+          "oklch(0.493 0.103 155.9)",
+          "oklch(0.607 0.103 155.9)",
+          "oklch(0.721 0.103 155.9)",
+          "oklch(0.836 0.103 155.9)",
+          "oklch(0.95 0.103 155.9)"
+        ]
+      },
+      "warn": {
+        "role": "neutral",
+        "displayName": "Warn",
+        "canonical": "oklch(0.826 0.108 83.2)",
+        "tonalRamp": [
+          "oklch(0.15 0.108 83.2)",
+          "oklch(0.264 0.108 83.2)",
+          "oklch(0.379 0.108 83.2)",
+          "oklch(0.493 0.108 83.2)",
+          "oklch(0.607 0.108 83.2)",
+          "oklch(0.721 0.108 83.2)",
+          "oklch(0.836 0.108 83.2)",
+          "oklch(0.95 0.108 83.2)"
+        ]
+      },
+      "error": {
+        "role": "neutral",
+        "displayName": "Error",
+        "canonical": "oklch(0.765 0.14 29.2)",
+        "tonalRamp": [
+          "oklch(0.15 0.14 29.2)",
+          "oklch(0.264 0.14 29.2)",
+          "oklch(0.379 0.14 29.2)",
+          "oklch(0.493 0.14 29.2)",
+          "oklch(0.607 0.14 29.2)",
+          "oklch(0.721 0.14 29.2)",
+          "oklch(0.836 0.14 29.2)",
+          "oklch(0.95 0.14 29.2)"
+        ]
+      },
+      "ok-light": {
+        "role": "neutral",
+        "displayName": "Ok Light",
+        "canonical": "oklch(0.566 0.119 154.1)",
+        "tonalRamp": [
+          "oklch(0.15 0.119 154.1)",
+          "oklch(0.264 0.119 154.1)",
+          "oklch(0.379 0.119 154.1)",
+          "oklch(0.493 0.119 154.1)",
+          "oklch(0.607 0.119 154.1)",
+          "oklch(0.721 0.119 154.1)",
+          "oklch(0.836 0.119 154.1)",
+          "oklch(0.95 0.119 154.1)"
+        ]
+      },
+      "warn-light-text": {
+        "role": "neutral",
+        "displayName": "Warn Light Text",
+        "canonical": "oklch(0.514 0.106 75.4)",
+        "tonalRamp": [
+          "oklch(0.15 0.106 75.4)",
+          "oklch(0.264 0.106 75.4)",
+          "oklch(0.379 0.106 75.4)",
+          "oklch(0.493 0.106 75.4)",
+          "oklch(0.607 0.106 75.4)",
+          "oklch(0.721 0.106 75.4)",
+          "oklch(0.836 0.106 75.4)",
+          "oklch(0.95 0.106 75.4)"
+        ]
+      },
+      "error-light": {
+        "role": "neutral",
+        "displayName": "Error Light",
+        "canonical": "oklch(0.555 0.174 30.5)",
+        "tonalRamp": [
+          "oklch(0.15 0.14 30.5)",
+          "oklch(0.264 0.14 30.5)",
+          "oklch(0.379 0.14 30.5)",
+          "oklch(0.493 0.14 30.5)",
+          "oklch(0.607 0.14 30.5)",
+          "oklch(0.721 0.14 30.5)",
+          "oklch(0.836 0.14 30.5)",
+          "oklch(0.95 0.14 30.5)"
+        ]
+      }
+    },
+    "themes": {
+      "note": "Neutrals are defined per theme in src/styles/tokens.css under :root/[data-theme=dark] (graphite) and [data-theme=light] (steel). Accent hue/chroma come from [data-palette]: cobalt 250/0.13, iris 292/0.13, jade 166/0.10, ember 45/0.14, graphite 250/0.012.",
+      "chromeGradient": "linear-gradient(180deg, var(--c0) 0%, var(--c1) 13%, var(--c2) 40%, var(--c4) 50%, var(--c3) 53%, var(--c1) 78%, var(--c2) 100%)",
+      "stage": {
+        "dark": "radial-gradient(ellipse 55% 60% at 50% 40%, #202226, #141518 55%, #0e0f11)",
+        "light": "radial-gradient(ellipse 55% 60% at 50% 40%, #f1f2f4, #e2e4e8 55%, #d6d9de)"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Empty-stage prompt and sign-in title."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Large page-bar titles."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Page-bar titles, Settings section heads, account and menu names."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "\"Print Studio\" beside the chrome drop mark."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default copy; tabular numerals throughout."
+      },
+      "control": {
+        "displayName": "Control",
+        "purpose": "Field values, segment labels, row labels, button text (Print at 620)."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Meta lines, history group labels, menu labels, tooltips."
+      }
+    },
+    "shadows": [
+      {
+        "name": "field",
+        "value": "var(--field-shadow)",
+        "dark": "inset 0 1px 0 rgb(255 255 255 / 0.07), 0 0 0 1px rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.5)",
+        "light": "inset 0 1px 0 #fff, 0 0 0 1px rgb(20 24 30 / 0.1), 0 1px 2px rgb(20 24 30 / 0.12)",
+        "purpose": "Raised value keys, toggled icon keys, glyph tiles, disabled Print."
+      },
+      {
+        "name": "well",
+        "value": "var(--well-shadow)",
+        "dark": "inset 0 1px 2px rgb(0 0 0 / 0.6), 0 1px 0 rgb(255 255 255 / 0.04)",
+        "light": "inset 0 1px 2px rgb(20 24 30 / 0.18), 0 1px 0 rgb(255 255 255 / 0.7)",
+        "purpose": "Segmented controls, steppers, inputs, search, theme switcher, sending Print."
+      },
+      {
+        "name": "float",
+        "value": "var(--float-shadow)",
+        "dark": "inset 0 1px 0 rgb(255 255 255 / 0.06), 0 0 0 1px rgb(255 255 255 / 0.07), 0 12px 32px -8px rgb(0 0 0 / 0.7), 0 2px 6px rgb(0 0 0 / 0.4)",
+        "light": "inset 0 1px 0 #fff, 0 0 0 1px rgb(20 24 30 / 0.09), 0 12px 32px -10px rgb(20 24 30 / 0.28), 0 2px 6px rgb(20 24 30 / 0.1)",
+        "purpose": "Menus, tooltips, notices, job and document chips, stage bar."
+      },
+      {
+        "name": "chrome",
+        "value": "var(--chrome-shadow)",
+        "dark": "inset 0 1px 0 #fff, inset 0 -1px 0 rgb(0 0 0 / 0.3), 0 1px 1px rgb(0 0 0 / 0.55), 0 10px 20px -10px rgb(0 0 0 / 0.9)",
+        "light": "inset 0 1px 0 #fff, inset 0 -1px 0 rgb(0 0 0 / 0.18), 0 0 0 1px rgb(20 24 30 / 0.14), 0 1px 1px rgb(20 24 30 / 0.2), 0 8px 16px -8px rgb(20 24 30 / 0.45)",
+        "purpose": "Every liquid chrome surface."
+      },
+      {
+        "name": "sheet",
+        "value": "var(--sheet-shadow)",
+        "dark": "0 1px 0 rgb(255 255 255 / 0.5) inset, 0 0 0 0.5px rgb(0 0 0 / 0.3), 0 2px 4px rgb(0 0 0 / 0.35), 0 18px 40px -12px rgb(0 0 0 / 0.75), 0 50px 90px -30px rgb(0 0 0 / 0.6)",
+        "light": "0 0 0 0.5px rgb(20 24 30 / 0.14), 0 2px 4px rgb(20 24 30 / 0.1), 0 18px 40px -14px rgb(20 24 30 / 0.3), 0 50px 90px -34px rgb(20 24 30 / 0.28)",
+        "purpose": "The preview sheet only; the one deep shadow."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Default ease-out for presses, menus, tooltips, the segment thumb and Motion transitions."
+      },
+      {
+        "name": "ease-drawer",
+        "value": "cubic-bezier(0.32, 0.72, 0, 1)",
+        "purpose": "Narrow-screen drawer and the Print sending fill."
+      },
+      {
+        "name": "t-press",
+        "value": "140ms",
+        "purpose": "Press scale (.94 to .98) on every pressable."
+      },
+      {
+        "name": "t-fast",
+        "value": "160ms",
+        "purpose": "Hover washes and colour changes."
+      },
+      {
+        "name": "t-mid",
+        "value": "200ms",
+        "purpose": "Segment thumb slide, chevron rotation, Print label swap."
+      },
+      {
+        "name": "tooltip-in",
+        "value": "140ms scale(.97) + fade",
+        "purpose": "Tooltip open; subsequent tooltips open instantly (data-state=instant-open)."
+      },
+      {
+        "name": "menu-in",
+        "value": "170ms scale(.96) translateY(-2px) + fade, from the trigger's transform origin",
+        "purpose": "Menu, select and popover open."
+      },
+      {
+        "name": "menu-out",
+        "value": "120ms scale(.98) + fade",
+        "purpose": "Menu close."
+      },
+      {
+        "name": "specular-trail",
+        "value": "260ms on --mx / --my",
+        "purpose": "Chrome highlight trails the pointer."
+      },
+      {
+        "name": "print-sheen",
+        "value": "7s linear infinite",
+        "purpose": "Slow sheen across the Print slab; off under reduced motion."
+      },
+      {
+        "name": "print-fill",
+        "value": "2.4s ease-drawer to scaleX(.92)",
+        "purpose": "Chrome fills the emptied Print well while sending."
+      },
+      {
+        "name": "theme-switch",
+        "value": "300ms",
+        "purpose": "Cross-fade of colours and shadows when the theme changes."
+      },
+      {
+        "name": "keyboard",
+        "value": "html[data-kbd] => no animation",
+        "purpose": "Menus, tooltips and the segment thumb change instantly when the last input was a key press."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "fade only",
+        "purpose": "Menus and tooltips fade; press scale, sheen, pulse and shimmer stop; MotionConfig reducedMotion=user."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "toolbar-compact",
+        "value": "1480px",
+        "purpose": "Collapsible fields go icon-only."
+      },
+      {
+        "name": "rail-slim",
+        "value": "1080px",
+        "purpose": "Page rail narrows to 92 px."
+      },
+      {
+        "name": "narrow",
+        "value": "860px",
+        "purpose": "Sidebar becomes a drawer; rail hides; detail stacks."
+      },
+      {
+        "name": "phone",
+        "value": "520px",
+        "purpose": "Print becomes a square; zoom leaves the stage bar."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Print",
+      "kind": "button",
+      "refersTo": "button-print",
+      "description": "The chrome slab: the single commit, pinned right in the toolbar and on history detail.",
+      "html": "<button class=\"ds-print ds-metal\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M6 9V3h12v6\"/><path d=\"M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2\"/><rect x=\"6\" y=\"14\" width=\"12\" height=\"8\" rx=\"1\"/></svg><span>Print</span><kbd class=\"ds-print__kbd\">⌘P</kbd></button>",
+      "css": ".ds-metal { position: relative; isolation: isolate; background: var(--chrome); color: var(--ink); box-shadow: var(--chrome-shadow); } .ds-metal::after { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: radial-gradient(90px 46px at var(--mx, 50%) var(--my, -40%), rgb(255 255 255 / 0.95), transparent 70%); mix-blend-mode: overlay; pointer-events: none; } .ds-print { display: inline-flex; align-items: center; gap: 10px; height: 38px; padding: 0 14px 0 16px; border: 0; border-radius: var(--r-md); overflow: hidden; font: 620 14px/1 var(--font); letter-spacing: 0.005em; cursor: pointer; transition: transform var(--t-press) var(--ease); } .ds-print:active { transform: scale(0.97); } .ds-print:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-print__kbd { padding: 2px 5px; border-radius: 5px; background: rgb(0 0 0 / 0.08); box-shadow: inset 0 1px 1px rgb(0 0 0 / 0.14), 0 1px 0 rgb(255 255 255 / 0.5); color: rgb(14 16 18 / 0.62); font: 500 11px var(--font); }"
+    },
+    {
+      "name": "New print",
+      "kind": "button",
+      "refersTo": "button-new-print",
+      "description": "32 px chrome square in the sidebar head.",
+      "html": "<button class=\"ds-newprint ds-metal\" aria-label=\"New print\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\"/></svg></button>",
+      "css": ".ds-metal { position: relative; isolation: isolate; background: var(--chrome); color: var(--ink); box-shadow: var(--chrome-shadow); } .ds-metal::after { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: radial-gradient(90px 46px at var(--mx, 50%) var(--my, -40%), rgb(255 255 255 / 0.95), transparent 70%); mix-blend-mode: overlay; pointer-events: none; } .ds-newprint { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: var(--r-sm); cursor: pointer; transition: transform var(--t-press) var(--ease); } .ds-newprint:active { transform: scale(0.94); } .ds-newprint:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }"
+    },
+    {
+      "name": "Icon key",
+      "kind": "button",
+      "refersTo": "icon-key",
+      "description": "The default control: transparent 36 px key with a lucide icon; toggled state is raised with an accent icon.",
+      "html": "<div style=\"display:flex;gap:4px\"><button class=\"ds-ikey\" aria-label=\"Fit to page\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m12 2 10 5-10 5L2 7z\"/><path d=\"m2 17 10 5 10-5\"/><path d=\"m2 12 10 5 10-5\"/></svg></button><button class=\"ds-ikey is-on\" aria-pressed=\"true\" aria-label=\"Fit to page, on\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m12 2 10 5-10 5L2 7z\"/><path d=\"m2 17 10 5 10-5\"/><path d=\"m2 12 10 5 10-5\"/></svg></button></div>",
+      "css": ".ds-ikey { display: inline-grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: var(--r-sm); background: none; color: var(--text-2); cursor: pointer; transition: background-color var(--t-fast) ease, color var(--t-fast) ease, transform var(--t-press) var(--ease); } .ds-ikey:hover { background: var(--hover); color: var(--text); } .ds-ikey:active { transform: scale(0.94); background: var(--press); } .ds-ikey:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-ikey.is-on { background: var(--field); box-shadow: var(--field-shadow); color: var(--text); } .ds-ikey.is-on svg { color: var(--accent); }"
+    },
+    {
+      "name": "Value field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "A raised dark key that carries a value and opens a menu.",
+      "html": "<button class=\"ds-field\"><span class=\"ds-field__lead\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z\"/><path d=\"M14 2v5h6\"/></svg></span><span>A4</span><span class=\"ds-field__chev\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg></span></button>",
+      "css": ".ds-field { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px 0 11px; border: 0; border-radius: var(--r-sm); background: var(--field); box-shadow: var(--field-shadow); color: var(--text); font: 500 14px var(--font); cursor: pointer; transition: background var(--t-fast) ease, transform var(--t-press) var(--ease); } .ds-field:hover { background: var(--field-hover); } .ds-field:active { transform: scale(0.97); } .ds-field:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-field__lead, .ds-field__chev { display: grid; color: var(--text-3); }"
+    },
+    {
+      "name": "Segmented control",
+      "kind": "custom",
+      "refersTo": "segmented",
+      "description": "An inset well; the chosen option rises out of it as a chrome thumb.",
+      "html": "<div class=\"ds-seg\" role=\"radiogroup\" aria-label=\"Sides\"><button class=\"ds-seg__opt is-active ds-metal\" role=\"radio\" aria-checked=\"true\">One-sided</button><button class=\"ds-seg__opt\" role=\"radio\" aria-checked=\"false\">Two-sided</button></div>",
+      "css": ".ds-metal { position: relative; isolation: isolate; background: var(--chrome); color: var(--ink); box-shadow: var(--chrome-shadow); } .ds-metal::after { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: radial-gradient(90px 46px at var(--mx, 50%) var(--my, -40%), rgb(255 255 255 / 0.95), transparent 70%); mix-blend-mode: overlay; pointer-events: none; } .ds-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--r-sm); background: var(--well); box-shadow: var(--well-shadow); } .ds-seg__opt { height: 30px; min-width: 34px; padding: 0 10px; border: 0; border-radius: var(--r-xs); background: none; color: var(--text-3); font: 500 14px var(--font); cursor: pointer; transition: color var(--t-fast) ease, transform var(--t-press) var(--ease); } .ds-seg__opt:hover:not(.is-active) { color: var(--text); } .ds-seg__opt:active { transform: scale(0.95); } .ds-seg__opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-seg__opt.is-active { background: var(--chrome); color: var(--ink); box-shadow: var(--chrome-shadow); }"
+    },
+    {
+      "name": "Text input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "A well; focus adds a 1.5 px accent ring.",
+      "html": "<input class=\"ds-input\" placeholder=\"Search prints\" aria-label=\"Search prints\">",
+      "css": ".ds-input { width: 240px; height: 36px; padding: 0 12px; border: 0; border-radius: var(--r-sm); background: var(--well); box-shadow: var(--well-shadow); color: var(--text); caret-color: var(--accent); font: 420 14px var(--font); outline: none; transition: box-shadow var(--t-fast) ease; } .ds-input::placeholder { color: var(--text-3); } .ds-input:focus-visible { box-shadow: var(--well-shadow), 0 0 0 1.5px var(--accent); }"
+    },
+    {
+      "name": "Menu",
+      "kind": "custom",
+      "refersTo": "menu",
+      "description": "Floating menu with 34 px items and an accent check.",
+      "html": "<div class=\"ds-menu\" role=\"menu\"><div class=\"ds-menu__item\" role=\"menuitemradio\" aria-checked=\"true\"><span class=\"ds-menu__check\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"/></svg></span>A4</div><div class=\"ds-menu__item\" role=\"menuitemradio\" aria-checked=\"false\">Letter</div><div class=\"ds-menu__item\" role=\"menuitemradio\" aria-checked=\"false\">4 × 6 in</div></div>",
+      "css": ".ds-menu { width: 200px; padding: 5px; border-radius: var(--r-md); background: var(--menu-bg); box-shadow: var(--float-shadow); animation: ds-menu-in 170ms var(--ease); } @keyframes ds-menu-in { from { opacity: 0; transform: scale(0.96) translateY(-2px); } } .ds-menu__item { position: relative; display: flex; align-items: center; min-height: 34px; padding: 6px 10px 6px 32px; border-radius: 8px; color: var(--text); font: 460 14px var(--font); cursor: pointer; } .ds-menu__item:hover, .ds-menu__item:focus-visible { background: var(--hover); outline: none; } .ds-menu__check { position: absolute; left: 10px; display: grid; color: var(--accent); }"
+    },
+    {
+      "name": "History row",
+      "kind": "nav",
+      "refersTo": "history-row",
+      "description": "Sidebar entry: paper thumbnail, name, toned meta line, status mark.",
+      "html": "<ul class=\"ds-hlist\"><li><button class=\"ds-hrow is-selected\"><span class=\"ds-hthumb\"></span><span class=\"ds-hrow__text\"><span class=\"ds-hrow__name\">Quarterly report.pdf</span><span class=\"ds-hrow__meta ds-active\">Printing · 00:34</span></span></button></li><li><button class=\"ds-hrow\"><span class=\"ds-hthumb\"></span><span class=\"ds-hrow__text\"><span class=\"ds-hrow__name\">Boarding pass.pdf</span><span class=\"ds-hrow__meta\">2 p · A4 · 23:58</span></span></button></li></ul>",
+      "css": ".ds-hlist { display: grid; gap: 1px; width: 272px; margin: 0; padding: 8px; list-style: none; background: var(--side); } .ds-hrow { display: flex; align-items: center; gap: 11px; width: 100%; min-height: 50px; padding: 7px 10px 7px 8px; border: 0; border-radius: var(--r-md); background: none; color: var(--text); text-align: left; font: 420 14px var(--font); cursor: pointer; transition: background-color var(--t-fast) ease, transform var(--t-press) var(--ease); } .ds-hrow:hover { background: var(--hover); } .ds-hrow:active { transform: scale(0.98); } .ds-hrow:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-hrow.is-selected { background: var(--raise); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 0 0 1px var(--line); } .ds-hthumb { flex: none; width: 30px; height: 38px; border-radius: 3px; background: var(--paper); box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.3), 0 2px 5px rgb(0 0 0 / 0.35); } .ds-hrow__text { display: grid; gap: 1px; min-width: 0; } .ds-hrow__name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-hrow__meta { color: var(--text-3); font-size: 12px; } .ds-hrow__meta.ds-active { color: var(--accent); }"
+    },
+    {
+      "name": "Stage bar",
+      "kind": "custom",
+      "refersTo": "stage-bar",
+      "description": "Floating translucent bar under the sheet: verdict, pager, zoom.",
+      "html": "<div class=\"ds-stagebar\"><span class=\"ds-dot\"></span><span class=\"ds-stagebar__verdict\">6 pages · 6 sheets</span><span class=\"ds-stagebar__sep\"></span><span class=\"ds-stagebar__pager\">1 / 6</span></div>",
+      "css": ".ds-stagebar { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px; border-radius: var(--r-lg); background: color-mix(in srgb, var(--menu-bg) 86%, transparent); box-shadow: var(--float-shadow); backdrop-filter: blur(16px); color: var(--text); font: 500 14px var(--font); font-variant-numeric: tabular-nums; } .ds-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); } .ds-stagebar__sep { width: 1px; height: 18px; background: var(--line-2); } .ds-stagebar__pager { min-width: 48px; text-align: center; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Chrome Key on a Graphite Desk",
+    "overview": "Print Studio is a dark graphite instrument with one lit object in it: the sheet of paper about to be printed. The ground is flat and quiet, the controls are low dark keys and sunken wells that carry values, and a single material, polished liquid chrome with a highlight that follows the pointer, marks the few things that commit or select. Light mode keeps the same structure on a cool neutral steel grey; it is never cream.\n\nDensity is high but calm. Every print preference lives in one 60 px toolbar row of icon keys, wells and value fields; the sidebar is a history list; the rest of the screen is a lit stage where the page floats. Structure comes from tone steps and 1 px hairlines, not boxes. Words are few and sentence case, set in Funnel Sans, with Funnel Display reserved for titles and the wordmark.\n\nMotion is quick and quiet: a strong ease-out, presses that give slightly under the finger, menus that grow from their trigger, and nothing that moves when the keyboard is driving.",
+    "keyCharacteristics": [
+      "Graphite ground (dark) or cool steel grey (light), with a radial-lit stage behind the paper.",
+      "Liquid chrome is a signal, not a finish: Print, the selected segment, New print, the avatar bezel, the checked theme and the empty-state drop mark.",
+      "Two control families: raised dark keys that hold a value, and inset wells that hold a choice.",
+      "The paper sheet is the only object with deep, layered shadow.",
+      "Funnel Display for titles and the wordmark, Funnel Sans for everything else, tabular numerals throughout.",
+      "Ease-out `cubic-bezier(.23,1,.32,1)`, 140 ms presses, 170 ms origin-aware menus, no motion under keyboard control."
+    ],
+    "rules": [
+      {
+        "name": "The Chrome Is a Signal Rule",
+        "body": "Chrome marks what commits or what is chosen: Print (and the Sign in button, which is the Print slab), the selected segment thumb, New print, the avatar bezel, the checked theme item and the empty-state drop mark. Nothing else gets the chrome gradient; a new surface earns it only by being the single commit or current selection in its group.",
+        "section": "colors"
+      },
+      {
+        "name": "The Accent Is a Line Rule",
+        "body": "The accent appears as a 1.5 to 2 px ring, a caret, a check or a small glyph. It never fills a button or a panel.",
+        "section": "colors"
+      },
+      {
+        "name": "The Never Colour Alone Rule",
+        "body": "Every status tone sits next to a word or a shape: a dot plus \"Ready\", a meta line reading \"Failed · 23:38\".",
+        "section": "colors"
+      },
+      {
+        "name": "The Display Is for Names Rule",
+        "body": "Funnel Display is used only for titles, names and the wordmark. Controls, labels and numbers are always Funnel Sans.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sentence Case Rule",
+        "body": "Labels are sentence case at their natural tracking. No uppercase tracking, no monospace, no italics.",
+        "section": "typography"
+      },
+      {
+        "name": "The Only Deep Shadow Is Paper Rule",
+        "body": "The sheet is the one object lifted high off the stage. Everything else stays within 1 to 2 px of the plane, or floats with the single Float shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Keys Up, Choices Down Rule",
+        "body": "A control that holds a value (select trigger, text button) is raised; a control that holds a choice among options (segments, stepper, input) is an inset well, and the chosen option rises out of it in chrome.",
+        "section": "elevation"
+      },
+      {
+        "name": "The No Pill Rule",
+        "body": "Buttons and controls are never capsules. A 38 px Print slab is 12 px round, not 19.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do give chrome only to the commit or the current selection in a group, and keep text on it in chrome ink.",
+      "Do put a new print preference in the toolbar as an icon key, value field or segmented well at 36 px, with a tooltip and an accessible name.",
+      "Do separate regions with 1 px inset hairlines (6 % white dark, 8 % ink light) and tone steps, not borders or cards.",
+      "Do use the accent only as a 1.5 to 2 px ring, a caret, a check or a small glyph.",
+      "Do pair every status colour with a word or a shape.",
+      "Do press with a .94 to .98 scale over 140 ms on `cubic-bezier(.23,1,.32,1)`, and skip animation when `html[data-kbd]` is set.",
+      "Do define every new surface in both the graphite and the steel theme."
+    ],
+    "donts": [
+      "Don't use cream or off-white for any background; the only near-white is paper.",
+      "Don't make buttons or controls pill-shaped.",
+      "Don't fill buttons or panels with the accent colour.",
+      "Don't give anything other than the paper sheet a deep, layered drop shadow.",
+      "Don't set controls, labels or numbers in Funnel Display, or use uppercase tracking, monospace or italics for labels.",
+      "Don't nest a boxed pane inside another pane in the workspace.",
+      "Don't animate movement under reduced motion; keep fades only."
+    ]
+  }
+}
