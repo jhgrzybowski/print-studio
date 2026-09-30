@@ -93,9 +93,11 @@
     background-color var(--t-fast) ease,
     transform var(--t-press) var(--ease);
 }
-.auth__reveal:hover {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) {
+  .auth__reveal:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 .auth__reveal:active {
   transform: scale(0.95);
@@ -119,8 +121,10 @@
     color var(--t-fast) ease,
     transform var(--t-press) var(--ease);
 }
-.auth__switch:hover {
-  color: var(--text);
+@media (hover: hover) {
+  .auth__switch:hover {
+    color: var(--text);
+  }
 }
 .auth__switch:active {
   transform: scale(0.97);

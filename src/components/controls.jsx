@@ -7,7 +7,9 @@ import { t, tn } from "../i18n/index.js";
 // Strong ease-out: instant response, long soft landing.
 export const ease = [0.23, 1, 0.32, 1];
 export const tween = { duration: 0.2, ease };
-export const drawerEase = [0.32, 0.72, 0, 1];
+// Critically damped spring for surfaces the finger can grab. It starts from the live value and
+// velocity, so a flick or a grab mid-flight continues without a seam.
+export const glide = { type: "spring", visualDuration: 0.34, bounce: 0 };
 
 export const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 export const MOD = IS_MAC ? "⌘" : "Ctrl ";
@@ -21,14 +23,27 @@ export function useLiquidMetal() {
     if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
     let frame = 0;
     let last = null;
+    const written = new WeakMap();
     const paint = () => {
       frame = 0;
-      for (const el of document.querySelectorAll(".metal")) {
-        const r = el.getBoundingClientRect();
-        if (!r.width) continue;
-        el.style.setProperty("--mx", `${(((last.x - r.left) / r.width) * 100).toFixed(1)}%`);
-        el.style.setProperty("--my", `${(((last.y - r.top) / r.height) * 100).toFixed(1)}%`);
-      }
+      // Read every rect first, then write, so a frame costs one layout rather than one per element.
+      const els = [...document.querySelectorAll(".metal")];
+      const rects = els.map((el) => el.getBoundingClientRect());
+      els.forEach((el, i) => {
+        const r = rects[i];
+        if (!r.width) return;
+        // Past the highlight's reach the light parks just outside the edge nearest the pointer,
+        // so distant surfaces stop repainting but the light still enters from the right side.
+        const x = Math.min(Math.max(last.x, r.left - 70), r.right + 70);
+        const y = Math.min(Math.max(last.y, r.top - 40), r.bottom + 40);
+        const mx = `${(((x - r.left) / r.width) * 100).toFixed(1)}%`;
+        const my = `${(((y - r.top) / r.height) * 100).toFixed(1)}%`;
+        const prev = written.get(el);
+        if (prev && prev[0] === mx && prev[1] === my) return;
+        written.set(el, [mx, my]);
+        el.style.setProperty("--mx", mx);
+        el.style.setProperty("--my", my);
+      });
     };
     const onMove = (e) => {
       last = { x: e.clientX, y: e.clientY };

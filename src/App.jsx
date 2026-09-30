@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, animate, motion, useIsPresent, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { Tooltip } from "radix-ui";
 import { Menu, RefreshCw, WifiOff, X } from "lucide-react";
 import { api } from "./api/client.js";
@@ -19,9 +19,12 @@ import { docLine, JobStrip } from "./components/Dock.jsx";
 import { FileGlyph } from "./components/FileGlyph.jsx";
 import { HistoryDetail } from "./components/HistoryDetail.jsx";
 import { SettingsView } from "./components/SettingsView.jsx";
-import { Button, Dot, IconKey, drawerEase, tween, useLiquidMetal } from "./components/controls.jsx";
+import { Button, Dot, IconKey, ease, glide, tween, useLiquidMetal } from "./components/controls.jsx";
 
 const ACCEPT = ".pdf,.png,.jpg,.jpeg,.txt,.docx,.xlsx,.pptx,.odt,.ods,.odp,application/pdf,image/png,image/jpeg,text/plain";
+
+// Views swap like a native sidebar app: the new one arrives with a short fade and never waits on an exit.
+const fadeIn = { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.14, ease } };
 
 export default function App() {
   const session = useSession();
@@ -39,18 +42,10 @@ export default function App() {
 
   return (
     <Tooltip.Provider delayDuration={450} skipDelayDuration={300}>
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={session.status === "authed" ? "authed" : session.status}
-          className="root-fade"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.22 }}
-        >
-          {body}
-        </motion.div>
-      </AnimatePresence>
+      {/* The next screen fades in at once; waiting for the old one to fade out first only adds latency. */}
+      <motion.div key={session.status === "authed" ? "authed" : session.status} className="root-fade" {...fadeIn}>
+        {body}
+      </motion.div>
     </Tooltip.Provider>
   );
 }
@@ -73,6 +68,67 @@ function ServerDown({ onRetry, message }) {
         <Button onClick={onRetry}>{t("Try again")}</Button>
       </div>
     </div>
+  );
+}
+
+/**
+ * The phone sidebar. It tracks the finger when swiped left and closes on a short flick. The
+ * scrim is driven by the same value, so it dims with the drawer's position rather than on a timer.
+ */
+// Matches `.drawer { width: min(320px, 86vw) }`.
+const drawerWidth = () => Math.min(320, window.innerWidth * 0.86);
+
+function Drawer({ onClose, children }) {
+  const [width, setWidth] = useState(drawerWidth);
+  const size = useRef(width);
+  const x = useMotionValue(-width);
+  const scrim = useTransform(x, (v) => Math.min(1, Math.max(0, 1 + v / size.current)));
+  // A rotation changes the drawer's width, and with it how far the drawer travels to close.
+  useEffect(() => {
+    const fit = () => setWidth((size.current = drawerWidth()));
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
+  const dragged = useRef(false);
+  const reduce = useReducedMotion();
+  // The spring's last pixels settle well after the drawer looks gone; taps meanwhile go to the app.
+  const taps = useIsPresent() ? undefined : "none";
+  return (
+    <>
+      <motion.div className="scrim" style={{ opacity: scrim, pointerEvents: taps }} onClick={onClose} />
+      <motion.div
+        className="drawer"
+        style={{ x, pointerEvents: taps }}
+        animate={{ x: 0 }}
+        exit={{ x: -width }}
+        // MotionConfig already skips transforms under reduced motion; saying so here keeps the drawer
+        // correct on its own, as the sheet is.
+        transition={reduce ? { duration: 0 } : glide}
+        drag="x"
+        dragDirectionLock
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={{ left: 1, right: 0.04 }}
+        onPointerDownCapture={() => (dragged.current = false)}
+        onDragStart={() => (dragged.current = true)}
+        onDragEnd={(_, info) => {
+          const close = info.offset.x < -width * 0.3 || info.velocity.x < -400;
+          // Replace the constraint's snap-back in the same frame, so a flick keeps its speed instead
+          // of bouncing back for the few frames React takes to start the exit.
+          const to = close ? -width : 0;
+          if (reduce) x.jump(to);
+          else animate(x, to, { ...glide, velocity: info.velocity.x });
+          if (close) onClose();
+        }}
+        // A swipe that ends over a history row must not also open it.
+        onClickCapture={(e) => {
+          if (!dragged.current) return;
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
+        {children}
+      </motion.div>
+    </>
   );
 }
 
@@ -251,12 +307,26 @@ function Shell({ session, printer, appearance, setAppearance }) {
     }
   }
 
-  async function reprint(entry) {
-    setTracked(null);
-    goCompose();
-    const ok = await flow.openExisting(entry);
-    if (ok) flash(t("Loaded with the settings you used last time"));
-  }
+  // Stable handlers keep the memoised history rows from re-rendering on every upload tick.
+  const { openExisting } = flow;
+  const reprint = useCallback(
+    async (entry) => {
+      setTracked(null);
+      goCompose();
+      const ok = await openExisting(entry);
+      if (ok) flash(t("Loaded with the settings you used last time"));
+    },
+    [goCompose, openExisting, flash],
+  );
+  const selectHistory = useCallback((h) => {
+    setView({ kind: "history", id: h.id });
+    setDrawer(false);
+  }, []);
+  const openSettings = useCallback(() => {
+    setView({ kind: "settings" });
+    setDrawer(false);
+  }, []);
+  const closeDrawer = useCallback(() => setDrawer(false), []);
 
   const trackedEntry = useMemo(() => {
     if (!tracked) return null;
@@ -278,17 +348,11 @@ function Shell({ session, printer, appearance, setAppearance }) {
       history={history}
       view={view}
       drawer={narrow}
-      onClose={() => setDrawer(false)}
+      onClose={closeDrawer}
       onNew={newPrint}
-      onSelectHistory={(h) => {
-        setView({ kind: "history", id: h.id });
-        setDrawer(false);
-      }}
+      onSelectHistory={selectHistory}
       onReprint={reprint}
-      onSettings={() => {
-        setView({ kind: "settings" });
-        setDrawer(false);
-      }}
+      onSettings={openSettings}
       onLogout={session.logout}
       appearance={appearance}
       setAppearance={setAppearance}
@@ -318,33 +382,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
 
   return (
     <div className={`app ${narrow ? "is-narrow" : ""}`} {...dragProps}>
-      {narrow ? (
-        <AnimatePresence>
-          {drawer && (
-            <>
-              <motion.div
-                className="scrim"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3, ease: drawerEase }}
-                onClick={() => setDrawer(false)}
-              />
-              <motion.div
-                className="drawer"
-                initial={{ transform: "translateX(-100%)" }}
-                animate={{ transform: "translateX(0%)" }}
-                exit={{ transform: "translateX(-100%)" }}
-                transition={{ duration: 0.3, ease: drawerEase }}
-              >
-                {sidebar}
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-      ) : (
-        sidebar
-      )}
+      {narrow ? <AnimatePresence>{drawer && <Drawer onClose={closeDrawer}>{sidebar}</Drawer>}</AnimatePresence> : sidebar}
 
       <main className={`main ${dragging ? "is-dragging" : ""}`}>
         <div className="notices" aria-live="polite">
@@ -383,14 +421,55 @@ function Shell({ session, printer, appearance, setAppearance }) {
           }}
         />
 
-        <AnimatePresence mode="wait" initial={false}>
-          {view.kind === "compose" && (
-            <motion.div key="compose" className="page" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={tween}>
-              <Toolbar
-                lead={drawerKey}
-                narrow={narrow}
-                printer={printer}
-                onPrinter={() => setView({ kind: "settings" })}
+        {view.kind === "compose" && (
+          <motion.div key="compose" className="page" {...fadeIn}>
+            <Toolbar
+              lead={drawerKey}
+              narrow={narrow}
+              printer={printer}
+              onPrinter={() => setView({ kind: "settings" })}
+              flow={flow}
+              choices={choices}
+              disabled={!hasChoices}
+              printDisabled={printDisabled}
+              onPrint={print}
+              onSaveDefaults={saveDefaults}
+              onResetDefaults={resetToDefaults}
+              defaultsState={defaultsState}
+            />
+            <div className="compose">
+              <motion.div key={loaded ? "loaded" : "empty"} className="compose__body" {...fadeIn}>
+                {loaded ? (
+                  <PreviewStage
+                    doc={flow.doc}
+                    settings={flow.settings}
+                    pageCount={flow.pageCount}
+                    onPagesChange={(v) => flow.set("pages", v)}
+                    head={docHead}
+                    feedKey={flow.printing.state === "sent" ? flow.printing.result?.job_id || "sent" : null}
+                    status={narrow ? null : verdict}
+                  />
+                ) : (
+                  <DropZone dragging={dragging} onBrowse={browse} doc={flow.doc} capabilities={capabilities} touch={narrow} />
+                )}
+              </motion.div>
+              <div className="compose__corner">
+                <AnimatePresence>
+                  {trackedEntry && (
+                    <JobStrip
+                      key={trackedEntry.id}
+                      entry={trackedEntry}
+                      cancelling={cancelling}
+                      onCancel={() => cancelTracked(trackedEntry)}
+                      onDismiss={() => setTracked(null)}
+                      onOpen={() => setView({ kind: "history", id: trackedEntry.id })}
+                    />
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+            {narrow && loaded && (
+              <PrintDock
                 flow={flow}
                 choices={choices}
                 disabled={!hasChoices}
@@ -399,83 +478,31 @@ function Shell({ session, printer, appearance, setAppearance }) {
                 onSaveDefaults={saveDefaults}
                 onResetDefaults={resetToDefaults}
                 defaultsState={defaultsState}
+                status={verdict}
               />
-              <div className="compose">
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
-                    key={loaded ? "loaded" : "empty"}
-                    className="compose__body"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.18 }}
-                  >
-                    {loaded ? (
-                      <PreviewStage
-                        doc={flow.doc}
-                        settings={flow.settings}
-                        pageCount={flow.pageCount}
-                        onPagesChange={(v) => flow.set("pages", v)}
-                        head={docHead}
-                        feedKey={flow.printing.state === "sent" ? flow.printing.result?.job_id || "sent" : null}
-                        status={narrow ? null : verdict}
-                      />
-                    ) : (
-                      <DropZone dragging={dragging} onBrowse={browse} doc={flow.doc} capabilities={capabilities} touch={narrow} />
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-                <div className="compose__corner">
-                  <AnimatePresence>
-                    {trackedEntry && (
-                      <JobStrip
-                        key={trackedEntry.id}
-                        entry={trackedEntry}
-                        cancelling={cancelling}
-                        onCancel={() => cancelTracked(trackedEntry)}
-                        onDismiss={() => setTracked(null)}
-                        onOpen={() => setView({ kind: "history", id: trackedEntry.id })}
-                      />
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-              {narrow && loaded && (
-                <PrintDock
-                  flow={flow}
-                  choices={choices}
-                  disabled={!hasChoices}
-                  printDisabled={printDisabled}
-                  onPrint={print}
-                  onSaveDefaults={saveDefaults}
-                  onResetDefaults={resetToDefaults}
-                  defaultsState={defaultsState}
-                  status={verdict}
-                />
-              )}
-            </motion.div>
-          )}
-          {view.kind === "history" && (
-            <motion.div key={`h-${view.id}`} className="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={tween}>
-              <HistoryDetail id={view.id} history={history} onReprint={reprint} onOpenCompose={newPrint} onStatusLine={flash} lead={drawerKey} />
-            </motion.div>
-          )}
-          {view.kind === "settings" && (
-            <motion.div key="settings" className="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={tween}>
-              <SettingsView
-                lead={drawerKey}
-                user={session.user}
-                appearance={appearance}
-                setAppearance={setAppearance}
-                choices={choices}
-                prefs={prefs}
-                printer={printer}
-                capabilities={capabilities}
-                onLogout={session.logout}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
+          </motion.div>
+        )}
+        {view.kind === "history" && (
+          <div key={`h-${view.id}`} className="view">
+            <HistoryDetail id={view.id} history={history} onReprint={reprint} onOpenCompose={newPrint} onStatusLine={flash} lead={drawerKey} />
+          </div>
+        )}
+        {view.kind === "settings" && (
+          <motion.div key="settings" className="view" {...fadeIn}>
+            <SettingsView
+              lead={drawerKey}
+              user={session.user}
+              appearance={appearance}
+              setAppearance={setAppearance}
+              choices={choices}
+              prefs={prefs}
+              printer={printer}
+              capabilities={capabilities}
+              onLogout={session.logout}
+            />
+          </motion.div>
+        )}
       </main>
     </div>
   );
