@@ -8,10 +8,12 @@ export function formatBytes(n) {
   return `${Number.isInteger(mb) ? mb : mb.toFixed(1)} MB`;
 }
 
-const timeFmt = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" });
-const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: "long" });
-const dateFmt = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
-const fullFmt = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+// The interface is English; a fixed locale keeps dates from mixing languages with the browser's.
+const LOCALE = "en-GB";
+const timeFmt = new Intl.DateTimeFormat(LOCALE, { hour: "2-digit", minute: "2-digit" });
+const dayFmt = new Intl.DateTimeFormat(LOCALE, { weekday: "long" });
+const dateFmt = new Intl.DateTimeFormat(LOCALE, { day: "numeric", month: "short" });
+const fullFmt = new Intl.DateTimeFormat(LOCALE, { dateStyle: "medium", timeStyle: "short" });
 
 export const formatTime = (d) => timeFmt.format(new Date(d));
 export const formatDateTime = (d) => fullFmt.format(new Date(d));
@@ -105,9 +107,7 @@ export function paperMM(v) {
 export function paperGroups(choices = []) {
   const set = new Set(choices);
   const common = PAPER_COMMON.filter((c) => set.has(c));
-  const rest = choices
-    .filter((c) => !common.includes(c))
-    .sort((a, b) => paperName(a).localeCompare(paperName(b), undefined, { numeric: true }));
+  const rest = choices.filter((c) => !common.includes(c)).sort((a, b) => paperName(a).localeCompare(paperName(b), undefined, { numeric: true }));
   return { common, rest };
 }
 
@@ -175,7 +175,7 @@ const REASONS = {
   "offline-report": "Printer reports offline",
   paused: "Queue paused",
   "connecting-to-device": "Connecting to printer",
-  "other": "Printer needs attention",
+  other: "Printer needs attention",
 };
 
 export function reasonText(r) {
@@ -193,5 +193,5 @@ export function fileKind(mime = "", name = "") {
   return "doc";
 }
 
-const longDateFmt = new Intl.DateTimeFormat(undefined, { dateStyle: "long" });
+const longDateFmt = new Intl.DateTimeFormat(LOCALE, { dateStyle: "long" });
 export const formatDate = (d) => longDateFmt.format(new Date(d));

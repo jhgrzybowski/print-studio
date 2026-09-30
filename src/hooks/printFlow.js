@@ -31,7 +31,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     if (!doc && hasChoices) setSettings(reconcile({ ...BASE_SETTINGS, ...(defaults || {}) }, choices));
   }, [defaults, choices, hasChoices, doc]);
 
-  const loadPreview = useCallback(async (file, token) => {
+  const loadPreview = useCallback(async (file, token, text) => {
     let pages = [];
     if (file.preview_available !== false) {
       try {
@@ -42,7 +42,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
       }
     }
     if (token !== seq.current) return;
-    setDoc({ phase: "ready", file, pages, name: file.original_filename, kind: fileKind(file.detected_mime, file.original_filename) });
+    setDoc({ phase: "ready", file, pages, text, name: file.original_filename, kind: fileKind(file.detected_mime, file.original_filename) });
   }, []);
 
   const attach = useCallback(
@@ -62,6 +62,15 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
       const ext = f.name.split(".").pop()?.toLowerCase();
       const isOffice = OFFICE_EXT.includes(ext);
       setDoc({ phase: "uploading", name: f.name, size: f.size, kind, progress: 0, office: isOffice });
+      // The server has no preview for plain text, so the page shows the start of the file itself.
+      const text =
+        f.type === "text/plain" || ext === "txt"
+          ? await f
+              .slice(0, 24000)
+              .text()
+              .catch(() => undefined)
+          : undefined;
+      if (token !== seq.current) return;
 
       const ctl = new AbortController();
       uploadCtl.current = ctl;
@@ -71,16 +80,12 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
             signal: ctl.signal,
             onProgress: (p) => {
               if (token !== seq.current) return;
-              setDoc((d) =>
-                d && d.phase !== "ready"
-                  ? { ...d, progress: p, phase: p >= 1 && isOffice ? "converting" : "uploading" }
-                  : d,
-              );
+              setDoc((d) => (d && d.phase !== "ready" ? { ...d, progress: p, phase: p >= 1 && isOffice ? "converting" : "uploading" } : d));
             },
           });
           if (token !== seq.current) return;
           setDoc((d) => ({ ...d, phase: "loading", progress: 1 }));
-          await loadPreview(file, token);
+          await loadPreview(file, token, text);
           return;
         } catch (e) {
           if (token !== seq.current || e.name === "AbortError") return;
@@ -117,10 +122,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
           phase: "error",
           name: entry.original_filename,
           kind: fileKind(entry.detected_mime, entry.original_filename),
-          message:
-            e.status === 404
-              ? "This upload has expired. Files are kept for 7 days, so attach it again to reprint."
-              : e.message,
+          message: e.status === 404 ? "This upload has expired. Files are kept for 7 days, so attach it again to reprint." : e.message,
         });
         return false;
       }

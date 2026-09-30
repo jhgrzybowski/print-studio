@@ -12,7 +12,7 @@ React 19 and Vite in plain JavaScript (JSX). Motion (`motion/react`) handles ani
 
 ## Users
 
-Everyone in one household, on any device on the home network. Each person has their own account, history and saved defaults. Most sessions are short: open, drop a file, check it, print, leave.
+Everyone in one household, on any device on the home network. Each person has their own account, history and saved defaults. Most sessions are short: open, drop a file, check it, print, leave. Many of them start on a phone, with a file that just arrived in a chat or a mail, so printing from a phone must be as quick as from a desk.
 
 ## Product Purpose
 
@@ -38,9 +38,10 @@ Print one file to the Canon PIXMA MG5350 without guessing. Before printing, the 
 
 - Sign up, sign in, restore the session, and sign out.
 - Upload with a progress bar, wait while the file converts, and retry automatically on 503.
-- Page previews and a PDF download.
-- Settings: copies, page range and print options, all checked by a dry run.
-- Print, then track the job live. Cancel an active job, or clear a finished one from the queue.
+- Page previews and a PDF download. Text files preview as monospace text.
+- Settings: copies, page range and print options, all checked by a dry run. Pages can be skipped by toggling their thumbnails, and a range that doesn't fit the file is flagged before printing.
+- On phones and narrow tablets, a print dock (settings summary plus a large Print button) and a settings sheet that can be swiped away.
+- Print, then track the job live in a job chip. Cancel an active job, or clear a finished one from the queue.
 - Browse and search history, and reprint any upload that hasn't expired.
 - Per-user print defaults stored on the server. Theme and accent are stored per browser.
 
@@ -49,12 +50,16 @@ Print one file to the Canon PIXMA MG5350 without guessing. Before printing, the 
 These come from the user:
 
 - **Name.** Print Studio.
-- **Material.** Soft neumorphic surfaces with liquid-metal detail, light and dark themes, and a changeable accent palette.
-- **Composition.**
-  - A history sidebar on the left, with the profile and settings at its foot.
-  - A main workspace for dropping, previewing and setting up a print.
-  - The workspace takes cues from AI chat apps, but it is not a copy of one.
-- **Feel.** Clean, calm and premium. Motion is subtle, smooth and deliberate.
+- **Material.** A modern liquid-metal printing studio: polished chrome on a graphite desk (a cool steel grey in light mode), light and dark themes, and a changeable accent palette.
+- **Composition.** It should feel like a studio app.
+  - A print-history sidebar on the left, with the printer status and profile at its foot.
+  - A main pane with the print preview.
+  - A toolbar of printing preferences above the preview.
+  - Phones keep the same order: a top bar, the preview, and a print dock at the bottom.
+- **Type.** A distinctive typeface: Funnel Display for titles and the wordmark, Funnel Sans for everything else.
+- **Identity.** A chrome drop as the brand mark, a designed sign-in screen, and an initials avatar in a chrome bezel as the account icon.
+- **Feel.** Clean, calm and premium. Motion is refined, subtle, smooth and deliberate.
+- **Components.** Minimal components and icons.
 - **Density.** Few words. Icon-only controls wherever an icon is clear, and every icon has a tooltip and an accessible name. No pane-inside-pane stacking.
 - **Bans.**
   - Cream or off-white backgrounds.
@@ -70,6 +75,7 @@ These come from the user:
 2. **The preview is the truth.** Paper, orientation, color and copies change the sheet on screen, and the dry run confirms it.
 3. **One surface.** The workspace is a single plane. Structure comes from space and alignment, not boxes.
 4. **Quiet failures with a way out.** Each error says what happened and what to do next, in one sentence.
+5. **Phone printing is first-class.** On a phone, the path from file to print is two taps, Print is always within thumb reach, and every setting is one tap away in the sheet.
 
 ## Accessibility
 
@@ -78,3 +84,4 @@ These come from the user:
 - Status is never shown by color alone.
 - Reduced motion is respected.
 - Works down to 360 px wide.
+- On touch screens, tap targets are at least 40 px, and the dock and sheet respect the device safe areas.

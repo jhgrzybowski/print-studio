@@ -1,0 +1,21 @@
+# Vite dev server on the printer host, next to the production container on :80.
+# Run from the repo root:  docker compose -f deploy/docker-compose.dev.yml up -d
+name: print-studio-dev
+services:
+  print-studio-dev:
+    image: node:22-alpine
+    container_name: print-studio-dev
+    restart: unless-stopped
+    working_dir: /app
+    command: sh -c "npm ci --no-audit --no-fund && npx vite --host 0.0.0.0 --port 5173 --strictPort"
+    ports:
+      # LAN only, like production.
+      - "192.168.100.99:5173:5173"
+    environment:
+      PRINTER_API_TARGET: ${PRINTER_API_TARGET:-http://192.168.100.99:8000}
+    volumes:
+      - ..:/app
+      # Keep the container's Linux node_modules apart from the source tree.
+      - node_modules:/app/node_modules
+volumes:
+  node_modules:

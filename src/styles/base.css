@@ -12,11 +12,11 @@ body,
 
 body {
   margin: 0;
-  background: var(--plane);
+  background: var(--bg);
   color: var(--text);
   font-family: var(--font);
   font-size: var(--fs-14);
-  font-weight: 450;
+  font-weight: 420;
   line-height: 1.45;
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
@@ -34,8 +34,9 @@ p {
 h1,
 h2,
 h3 {
-  font-weight: 600;
-  letter-spacing: -0.015em;
+  font-family: var(--font-display);
+  font-weight: 560;
+  letter-spacing: -0.01em;
   text-wrap: balance;
 }
 
@@ -64,6 +65,12 @@ img {
   max-width: 100%;
 }
 
+kbd {
+  font-family: var(--font);
+  font-size: var(--fs-11);
+  font-weight: 500;
+}
+
 ::selection {
   background: var(--accent-soft);
 }
@@ -79,7 +86,7 @@ input {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in oklch, var(--text-3) 30%, transparent) transparent;
+  scrollbar-color: var(--line-2) transparent;
 }
 
 .root-fade {
@@ -95,10 +102,6 @@ input {
   white-space: nowrap;
 }
 
-.nowrap {
-  white-space: nowrap;
-}
-
 .collapse {
   overflow: hidden;
 }
@@ -106,15 +109,15 @@ input {
 .theme-switching,
 .theme-switching * {
   transition:
-    background-color 320ms var(--ease),
-    color 320ms var(--ease),
-    border-color 320ms var(--ease),
-    box-shadow 320ms var(--ease),
-    fill 320ms var(--ease),
-    stroke 320ms var(--ease) !important;
+    background-color 300ms var(--ease),
+    color 300ms var(--ease),
+    border-color 300ms var(--ease),
+    box-shadow 300ms var(--ease),
+    fill 300ms var(--ease),
+    stroke 300ms var(--ease) !important;
 }
 
-/* ---------- Tones ---------- */
+/* ---------- Tones: never colour alone; every tone sits beside a word or a shape ---------- */
 .tone-ok {
   --tone: var(--ok);
 }
@@ -133,7 +136,7 @@ input {
   --tone: var(--text-3);
 }
 .tone-quiet {
-  --tone: color-mix(in oklch, var(--text-3) 40%, transparent);
+  --tone: var(--line-2);
 }
 
 .dot {
@@ -144,44 +147,65 @@ input {
   background: var(--tone, var(--text-3));
 }
 .dot--pulse {
-  animation: pulse 1.6s var(--ease) infinite;
+  animation: breathe 1.6s ease-in-out infinite;
 }
-@keyframes pulse {
+@keyframes breathe {
   50% {
     opacity: 0.35;
   }
 }
 
+/* A ring that expands off an active job. */
+.pulse {
+  position: relative;
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 var(--accent-soft);
+  animation: ring 1.8s var(--ease) infinite;
+}
+@keyframes ring {
+  0% {
+    box-shadow: 0 0 0 0 var(--accent-soft);
+  }
+  80%,
+  100% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
 /* ---------- File kinds ---------- */
 .kind-pdf {
-  color: oklch(0.6 0.17 27);
+  color: oklch(0.74 0.13 27);
 }
 .kind-image {
-  color: oklch(0.58 0.15 300);
+  color: oklch(0.76 0.11 300);
 }
 .kind-sheet {
-  color: oklch(0.58 0.13 150);
+  color: oklch(0.76 0.11 150);
 }
 .kind-slides {
-  color: oklch(0.64 0.15 55);
+  color: oklch(0.78 0.12 62);
 }
 .kind-doc {
-  color: oklch(0.56 0.13 250);
+  color: oklch(0.76 0.1 250);
 }
-[data-theme="dark"] .kind-pdf {
-  color: oklch(0.72 0.14 27);
+[data-theme="light"] .kind-pdf {
+  color: oklch(0.55 0.17 27);
 }
-[data-theme="dark"] .kind-image {
-  color: oklch(0.74 0.12 300);
+[data-theme="light"] .kind-image {
+  color: oklch(0.52 0.15 300);
 }
-[data-theme="dark"] .kind-sheet {
-  color: oklch(0.74 0.12 150);
+[data-theme="light"] .kind-sheet {
+  color: oklch(0.52 0.13 150);
 }
-[data-theme="dark"] .kind-slides {
-  color: oklch(0.76 0.13 60);
+[data-theme="light"] .kind-slides {
+  color: oklch(0.58 0.15 55);
 }
-[data-theme="dark"] .kind-doc {
-  color: oklch(0.74 0.11 250);
+[data-theme="light"] .kind-doc {
+  color: oklch(0.52 0.13 250);
 }
 
 /* ---------- Skeletons ---------- */
@@ -199,10 +223,10 @@ input {
   border-radius: 0;
 }
 .skel--sheet {
-  width: min(52%, 340px);
+  width: min(46%, 340px);
   height: auto;
   aspect-ratio: 0.707;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 @keyframes skel {
   to {
@@ -210,12 +234,39 @@ input {
   }
 }
 
+/* Reduced motion keeps fades and state, drops movement and loops. */
+/* Keyboard-opened menus and tips appear without motion. */
+[data-kbd] .menu,
+[data-kbd] .tip {
+  animation: none !important;
+}
+
+/* Reduced motion: no movement, fades stay. */
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 1ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
+  .menu,
+  .tip {
+    animation-name: fade !important;
+  }
+  .menu[data-state="closed"] {
+    animation-name: fade-out !important;
+  }
+  :active {
+    transform: none !important;
+    scale: none !important;
+  }
+  .pulse,
+  .skel,
+  .track.is-running::after {
+    animation: none !important;
   }
 }

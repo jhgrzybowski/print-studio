@@ -1,13 +1,48 @@
 import { forwardRef, useEffect, useId, useRef, useState } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Select as RSelect, Tooltip as RTooltip } from "radix-ui";
 import { Check, ChevronDown, Minus, Plus } from "lucide-react";
 
-export const ease = [0.25, 1, 0.5, 1];
-export const tween = { duration: 0.22, ease };
+// Strong ease-out: instant response, long soft landing.
+export const ease = [0.23, 1, 0.32, 1];
+export const tween = { duration: 0.2, ease };
+export const drawerEase = [0.32, 0.72, 0, 1];
+
+export const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+export const MOD = IS_MAC ? "⌘" : "Ctrl ";
+
+/**
+ * Liquid metal: one passive listener moves the specular highlight on every `.metal`
+ * surface. The CSS registers --mx/--my so the highlight trails the pointer.
+ */
+export function useLiquidMetal() {
+  useEffect(() => {
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    let frame = 0;
+    let last = null;
+    const paint = () => {
+      frame = 0;
+      for (const el of document.querySelectorAll(".metal")) {
+        const r = el.getBoundingClientRect();
+        if (!r.width) continue;
+        el.style.setProperty("--mx", `${(((last.x - r.left) / r.width) * 100).toFixed(1)}%`);
+        el.style.setProperty("--my", `${(((last.y - r.top) / r.height) * 100).toFixed(1)}%`);
+      }
+    };
+    const onMove = (e) => {
+      last = { x: e.clientX, y: e.clientY };
+      if (!frame) frame = requestAnimationFrame(paint);
+    };
+    document.addEventListener("pointermove", onMove, { passive: true });
+    return () => {
+      document.removeEventListener("pointermove", onMove);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+}
 
 /* ---------- Tooltip ---------- */
-export function Tip({ label, side = "top", children, disabled }) {
+export function Tip({ label, side = "bottom", children, disabled }) {
   if (disabled || !label) return children;
   return (
     <RTooltip.Root>
@@ -22,30 +57,20 @@ export function Tip({ label, side = "top", children, disabled }) {
 }
 
 /* ---------- Icon key: the default control ---------- */
-export const IconKey = forwardRef(function IconKey(
-  { label, icon: Icon, variant = "plain", size = "md", pressed, tipSide, className = "", ...rest },
-  ref,
-) {
+export const IconKey = forwardRef(function IconKey({ label, icon: Icon, variant = "plain", size = "md", pressed, tipSide, className = "", ...rest }, ref) {
   return (
     <Tip label={label} side={tipSide}>
-      <button
-        ref={ref}
-        type="button"
-        aria-label={label}
-        aria-pressed={pressed}
-        className={`ikey ikey--${variant} ikey--${size} ${pressed ? "is-on" : ""} ${className}`}
-        {...rest}
-      >
+      <button ref={ref} type="button" aria-label={label} aria-pressed={pressed} className={`ikey ikey--${variant} ikey--${size} ${pressed ? "is-on" : ""} ${className}`} {...rest}>
         <Icon size={size === "sm" ? 16 : 18} strokeWidth={1.5} aria-hidden />
       </button>
     </Tip>
   );
 });
 
-/* ---------- Text button, kept for the few places a word is clearer than an icon ---------- */
+/* ---------- Text button, for the few places a word is clearer than an icon ---------- */
 export const Button = forwardRef(function Button({ variant = "raised", children, className = "", busy, ...rest }, ref) {
   return (
-    <button ref={ref} type="button" className={`btn btn--${variant} ${busy ? "is-busy" : ""} ${className}`} {...rest}>
+    <button ref={ref} type="button" className={`btn btn--${variant} ${variant === "metal" ? "metal" : ""} ${busy ? "is-busy" : ""} ${className}`} {...rest}>
       {children}
     </button>
   );
@@ -56,8 +81,8 @@ export function Dot({ tone = "muted", pulse }) {
   return <span className={`dot tone-${tone} ${pulse ? "dot--pulse" : ""}`} aria-hidden />;
 }
 
-/* ---------- Segmented control ---------- */
-export function Segmented({ value, onChange, options, label, disabled, iconOnly, layoutKey }) {
+/* ---------- Segmented control: an inset well with a chrome slug ---------- */
+export function Segmented({ value, onChange, options, label, disabled, iconOnly, layoutKey, className = "" }) {
   const autoId = useId();
   const group = layoutKey || autoId;
   const refs = useRef([]);
@@ -80,7 +105,7 @@ export function Segmented({ value, onChange, options, label, disabled, iconOnly,
       role="radiogroup"
       aria-label={label}
       aria-disabled={disabled || undefined}
-      className={`seg ${iconOnly ? "seg--icons" : ""} ${disabled ? "is-disabled" : ""}`}
+      className={`seg ${iconOnly ? "seg--icons" : ""} ${disabled ? "is-disabled" : ""} ${className}`}
       onKeyDown={onKeyDown}
     >
       {options.map((o, i) => {
@@ -93,16 +118,28 @@ export function Segmented({ value, onChange, options, label, disabled, iconOnly,
             type="button"
             role="radio"
             aria-checked={active}
-            aria-label={iconOnly ? o.label : undefined}
+            aria-label={iconOnly || o.short ? o.label : undefined}
             tabIndex={active ? 0 : -1}
             disabled={disabled || o.disabled}
             className={`seg__opt ${active ? "is-active" : ""}`}
             onClick={() => onChange(o.value)}
           >
-            {active && <motion.span layoutId={`seg-${group}`} className="seg__thumb" transition={tween} aria-hidden />}
+            {active && (
+              <motion.span
+                layoutId={`seg-${group}`}
+                className="seg__thumb metal"
+                transition={document.documentElement.dataset.kbd != null ? { duration: 0 } : { duration: 0.2, ease }}
+                aria-hidden
+              />
+            )}
             <span className="seg__content">
               {Icon && <Icon size={17} strokeWidth={1.5} aria-hidden />}
-              {!iconOnly && <span>{o.label}</span>}
+              {!iconOnly && <span className={o.short ? "seg__text seg__text--full" : "seg__text"}>{o.label}</span>}
+              {!iconOnly && o.short && (
+                <span className="seg__text seg__text--short" aria-hidden>
+                  {o.short}
+                </span>
+              )}
             </span>
           </button>
         );
@@ -119,7 +156,7 @@ export function Segmented({ value, onChange, options, label, disabled, iconOnly,
 }
 
 /* ---------- Stepper ---------- */
-export function Stepper({ value, onChange, min = 1, max = 99, label = "Copies", disabled }) {
+export function Stepper({ value, onChange, min = 1, max = 99, label = "Copies", icon: Icon, disabled }) {
   const [draft, setDraft] = useState(String(value));
   useEffect(() => setDraft(String(value)), [value]);
 
@@ -129,8 +166,9 @@ export function Stepper({ value, onChange, min = 1, max = 99, label = "Copies", 
     if (n !== value) onChange(n);
   }
 
-  return (
+  const body = (
     <div className={`stepper ${disabled ? "is-disabled" : ""}`} role="group" aria-label={label}>
+      {Icon && <Icon className="stepper__lead" size={16} strokeWidth={1.5} aria-hidden />}
       <button type="button" className="stepper__key" aria-label={`Fewer ${label.toLowerCase()}`} disabled={disabled || value <= min} onClick={() => commit(value - 1)}>
         <Minus size={14} strokeWidth={1.6} aria-hidden />
       </button>
@@ -153,32 +191,45 @@ export function Stepper({ value, onChange, min = 1, max = 99, label = "Copies", 
       </button>
     </div>
   );
+  return Icon ? <Tip label={label}>{body}</Tip> : body;
 }
 
-/* ---------- Select ---------- */
-export function Select({ value, onChange, groups, label, disabled, placeholder = "Choose" }) {
-  // groups: [{ label?, items: [{ value, label }] }]
+/* ---------- Select: a raised field that opens a dark menu ---------- */
+export function Select({ value, onChange, groups, label, disabled, placeholder = "Choose", icon, collapse, className = "" }) {
+  // groups: [{ label?, items: [{ value, label, sub?, icon? }] }]
   const current = groups.flatMap((g) => g.items).find((i) => i.value === value);
+  // Items that carry their own glyph lend it to the trigger, so the field shows what is chosen.
+  const Icon = current?.icon || icon;
+  const trigger = (
+    <RSelect.Trigger className={`field ${collapse ? `field--${collapse === true ? "collapse" : collapse}` : ""} ${className}`} aria-label={label}>
+      {Icon && <Icon className="field__lead" size={17} strokeWidth={1.5} aria-hidden />}
+      <span className="field__val">
+        <RSelect.Value placeholder={placeholder}>{current?.label}</RSelect.Value>
+      </span>
+      <RSelect.Icon className="field__chev">
+        <ChevronDown size={14} strokeWidth={1.6} />
+      </RSelect.Icon>
+    </RSelect.Trigger>
+  );
   return (
     <RSelect.Root value={value ?? undefined} onValueChange={onChange} disabled={disabled}>
-      <RSelect.Trigger className="select" aria-label={label}>
-        <RSelect.Value placeholder={placeholder}>{current?.label}</RSelect.Value>
-        <RSelect.Icon className="select__chev">
-          <ChevronDown size={14} strokeWidth={1.6} />
-        </RSelect.Icon>
-      </RSelect.Trigger>
+      {Icon ? <Tip label={label}>{trigger}</Tip> : trigger}
       <RSelect.Portal>
-        <RSelect.Content className="menu" position="popper" sideOffset={6} align="end" collisionPadding={12}>
+        <RSelect.Content className="menu" position="popper" sideOffset={6} align="start" collisionPadding={12}>
           <RSelect.Viewport className="menu__viewport">
             {groups.map((g, gi) => (
               <RSelect.Group key={gi}>
                 {g.label && <RSelect.Label className="menu__label">{g.label}</RSelect.Label>}
                 {g.items.map((it) => (
-                  <RSelect.Item key={it.value} value={it.value} className="menu__item">
-                    <RSelect.ItemText>{it.label}</RSelect.ItemText>
+                  <RSelect.Item key={it.value} value={it.value} className="menu__item menu__item--check">
                     <RSelect.ItemIndicator className="menu__check">
                       <Check size={14} strokeWidth={1.8} />
                     </RSelect.ItemIndicator>
+                    {it.icon && <it.icon className="menu__glyph" size={16} strokeWidth={1.5} aria-hidden />}
+                    <span className="menu__main">
+                      <RSelect.ItemText>{it.label}</RSelect.ItemText>
+                      {it.sub && <span className="menu__sub">{it.sub}</span>}
+                    </span>
                   </RSelect.Item>
                 ))}
                 {gi < groups.length - 1 && <RSelect.Separator className="menu__sep" />}
@@ -191,41 +242,96 @@ export function Select({ value, onChange, groups, label, disabled, placeholder =
   );
 }
 
+/* ---------- Switch: a chrome bead that slides along an inset track ---------- */
+export function Switch({ checked, onChange, label, disabled }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={!!checked}
+      aria-label={label}
+      className={`switch ${checked ? "is-on" : ""}`}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+    >
+      <span className="switch__bead metal" aria-hidden />
+    </button>
+  );
+}
+
 /* ---------- Row: label left, control right ---------- */
-export function Row({ label, htmlFor, children, className = "" }) {
+export function Row({ label, hint, htmlFor, children, className = "" }) {
+  const text = hint ? (
+    <span className="row__text">
+      {label}
+      <span className="row__hint">{hint}</span>
+    </span>
+  ) : (
+    label
+  );
   return (
     <div className={`row ${className}`}>
       {htmlFor ? (
         <label className="row__label" htmlFor={htmlFor}>
-          {label}
+          {text}
         </label>
       ) : (
-        <span className="row__label">{label}</span>
+        <span className="row__label">{text}</span>
       )}
       <div className="row__control">{children}</div>
     </div>
   );
 }
 
-/* ---------- Print key: the only liquid-metal object ---------- */
-export function PrintKey({ icon: Icon, label, onClick, disabled, working, size = 48 }) {
+/**
+ * The print slab: polished chrome with a drifting sheen. While sending it becomes a dark
+ * well that fills with mercury; on success it shows a check for a moment.
+ */
+export function PrintButton({ label = "Print", icon: Icon, onClick, disabled, state = "idle", shortcut, className = "" }) {
+  const [flash, setFlash] = useState(false);
+  const prev = useRef(state);
+  useEffect(() => {
+    if (prev.current === "sending" && state === "sent") {
+      setFlash(true);
+      const t = setTimeout(() => setFlash(false), 1700);
+      prev.current = state;
+      return () => clearTimeout(t);
+    }
+    prev.current = state;
+  }, [state]);
+
+  const sending = state === "sending";
+  const text = sending ? "Sending" : flash ? "Sent" : label;
+  const Lead = flash ? Check : Icon;
+
   return (
-    <Tip label={label}>
-      <motion.button
-        type="button"
-        aria-label={label}
-        className={`print-key ${working ? "is-working" : ""}`}
-        style={{ "--size": `${size}px` }}
-        onClick={onClick}
-        disabled={disabled}
-        whileTap={disabled ? undefined : { scale: 0.95 }}
-        transition={{ duration: 0.12, ease }}
-      >
-        <span className="print-key__rim" aria-hidden />
-        <span className="print-key__core" aria-hidden>
-          <Icon size={Math.round(size * 0.4)} strokeWidth={1.5} />
-        </span>
-      </motion.button>
-    </Tip>
+    <button
+      type="button"
+      className={`print metal ${sending ? "is-sending" : ""} ${flash ? "is-sent" : ""} ${className}`}
+      onClick={onClick}
+      disabled={disabled && !sending}
+      aria-disabled={sending || undefined}
+      aria-live="polite"
+    >
+      <span className="print__fill" aria-hidden />
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span
+          key={text}
+          className="print__label"
+          initial={{ opacity: 0, filter: "blur(3px)", y: 5 }}
+          animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+          exit={{ opacity: 0, filter: "blur(3px)", y: -5 }}
+          transition={{ duration: 0.2, ease }}
+        >
+          {Lead && <Lead size={16} strokeWidth={flash ? 2 : 1.6} aria-hidden />}
+          {text}
+        </motion.span>
+      </AnimatePresence>
+      {shortcut && !sending && !flash && (
+        <kbd className="print__kbd" aria-hidden>
+          {shortcut}
+        </kbd>
+      )}
+    </button>
   );
 }

@@ -1,21 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Tooltip } from "radix-ui";
-import { Menu, RefreshCw, WifiOff } from "lucide-react";
+import { Menu, RefreshCw, WifiOff, X } from "lucide-react";
 import { api } from "./api/client.js";
 import { useAppearance } from "./hooks/appearance.js";
 import { useHistory, useMedia, usePreferences, usePrinter, usePrinterOptions, useSession } from "./hooks/data.js";
 import { usePrintFlow } from "./hooks/printFlow.js";
 import { BASE_SETTINGS, pickDefaults, reconcile } from "./lib/settings.js";
+import { formatTime } from "./lib/format.js";
 import { AuthScreen } from "./components/AuthScreen.jsx";
 import { Sidebar, Wordmark } from "./components/Sidebar.jsx";
 import { DropZone } from "./components/DropZone.jsx";
 import { PreviewStage } from "./components/PreviewStage.jsx";
-import { Inspector } from "./components/Inspector.jsx";
-import { Dock, JobStrip } from "./components/Dock.jsx";
+import { Toolbar, Verdict } from "./components/Toolbar.jsx";
+import { PrintDock } from "./components/PrintSheet.jsx";
+import { docLine, JobStrip } from "./components/Dock.jsx";
+import { FileGlyph } from "./components/FileGlyph.jsx";
 import { HistoryDetail } from "./components/HistoryDetail.jsx";
 import { SettingsView } from "./components/SettingsView.jsx";
-import { Button, Dot, IconKey, ease, tween } from "./components/controls.jsx";
+import { Button, Dot, IconKey, drawerEase, tween, useLiquidMetal } from "./components/controls.jsx";
 
 const ACCEPT = ".pdf,.png,.jpg,.jpeg,.txt,.docx,.xlsx,.pptx,.odt,.ods,.odp,application/pdf,image/png,image/jpeg,text/plain";
 
@@ -23,6 +26,7 @@ export default function App() {
   const session = useSession();
   const printer = usePrinter();
   const [appearance, setAppearance] = useAppearance();
+  useLiquidMetal();
 
   let body;
   if (session.status === "loading") body = <Splash key="splash" />;
@@ -31,7 +35,7 @@ export default function App() {
   else body = <Shell key={`shell-${session.user.id}`} session={session} printer={printer} appearance={appearance} setAppearance={setAppearance} />;
 
   return (
-    <Tooltip.Provider delayDuration={450} skipDelayDuration={200}>
+    <Tooltip.Provider delayDuration={450} skipDelayDuration={300}>
       <AnimatePresence mode="wait">
         <motion.div
           key={session.status === "authed" ? "authed" : session.status}
@@ -51,7 +55,7 @@ export default function App() {
 function Splash() {
   return (
     <div className="splash" aria-busy="true" aria-label="Loading">
-      <Wordmark />
+      <Wordmark size={30} />
     </div>
   );
 }
@@ -82,6 +86,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
   const [notice, setNotice] = useState(null);
   const narrow = useMedia("(max-width: 860px)");
   const fileInput = useRef(null);
+  const searchRef = useRef(null);
   const dragDepth = useRef(0);
 
   const defaults = prefs.prefs?.print_defaults || null;
@@ -155,11 +160,18 @@ function Shell({ session, printer, appearance, setAppearance }) {
     if (flow.canPrint && canSend && flow.printing.state !== "sending") flow.print();
   }, [flow, canSend]);
 
-  // Keyboard: Ctrl/Cmd+Enter or Ctrl/Cmd+P prints the loaded document.
+  // Keyboard: Ctrl/Cmd+Enter or Ctrl/Cmd+P prints the loaded document; Ctrl/Cmd+K searches history.
   useEffect(() => {
     const onKey = (e) => {
       const mod = e.ctrlKey || e.metaKey;
       if (!mod) return;
+      if (e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (narrow) setDrawer(true);
+        // The drawer mounts its sidebar on open; focus once it exists.
+        requestAnimationFrame(() => searchRef.current?.focus());
+        return;
+      }
       if (e.key === "Enter" || e.key.toLowerCase() === "p") {
         if (view.kind !== "compose" || flow.doc?.phase !== "ready") return;
         e.preventDefault();
@@ -168,7 +180,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [print, view.kind, flow.doc?.phase]);
+  }, [print, view.kind, flow.doc?.phase, narrow]);
 
   // Paste an image or file from the clipboard.
   useEffect(() => {
@@ -176,7 +188,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
       const f = e.clipboardData?.files?.[0];
       if (f) {
         e.preventDefault();
-        attach(f.name && f.name !== "image.png" ? f : new File([f], `Pasted image ${new Date().toLocaleTimeString()}.png`, { type: f.type }));
+        attach(f.name && f.name !== "image.png" ? f : new File([f], `Pasted image ${formatTime(Date.now())}.png`, { type: f.type }));
       }
     };
     window.addEventListener("paste", onPaste);
@@ -210,6 +222,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
     try {
       await prefs.save({ print_defaults: pickDefaults(flow.settings) });
       setDefaultsState("saved");
+      flash("Saved as your defaults");
       setTimeout(() => setDefaultsState("idle"), 1800);
     } catch (e) {
       setDefaultsState("idle");
@@ -248,9 +261,15 @@ function Shell({ session, printer, appearance, setAppearance }) {
   }, [tracked, history.items, flow.doc?.name]);
 
   const loaded = flow.doc?.phase === "ready";
+  const printDisabled = !loaded || !flow.canPrint || !canSend || flow.printing.state === "sending" || (flow.validation.result && !flow.validation.result.valid);
+  const line = docLine({ flow, printer, canSend });
+  const verdict = <Verdict validation={flow.validation} settings={flow.settings} rangeError={flow.rangeError} printerReady={canSend} />;
+
+  const drawerKey = narrow ? <IconKey label="Open sidebar" icon={Menu} onClick={() => setDrawer(true)} className="bar__menu" /> : null;
 
   const sidebar = (
     <Sidebar
+      ref={searchRef}
       user={session.user}
       printer={printer}
       history={history}
@@ -262,6 +281,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
         setView({ kind: "history", id: h.id });
         setDrawer(false);
       }}
+      onReprint={reprint}
       onSettings={() => {
         setView({ kind: "settings" });
         setDrawer(false);
@@ -272,19 +292,47 @@ function Shell({ session, printer, appearance, setAppearance }) {
     />
   );
 
+  const docHead = flow.doc && (
+    <div className="docmeta">
+      <span className={`docmeta__glyph kind-${flow.doc.kind}`}>
+        <FileGlyph kind={flow.doc.kind} size={16} />
+      </span>
+      <div className="docmeta__text">
+        <p className="docmeta__name">{flow.doc.name}</p>
+        {line && (
+          <p className={`docmeta__sub ${line.quiet ? "" : `tone-${line.tone}`}`} aria-live="polite">
+            {!line.quiet && <Dot tone={line.tone} pulse={line.pulse} />}
+            <span>{line.sub}</span>
+          </p>
+        )}
+      </div>
+      <Button variant="quiet" className="btn--sm" onClick={browse} aria-label="Change file">
+        Change
+      </Button>
+      <IconKey label="Remove file" icon={X} size="sm" onClick={flow.clear} />
+    </div>
+  );
+
   return (
     <div className={`app ${narrow ? "is-narrow" : ""}`} {...dragProps}>
       {narrow ? (
         <AnimatePresence>
           {drawer && (
             <>
-              <motion.div className="scrim" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDrawer(false)} />
+              <motion.div
+                className="scrim"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, ease: drawerEase }}
+                onClick={() => setDrawer(false)}
+              />
               <motion.div
                 className="drawer"
-                initial={{ x: "-104%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "-104%" }}
-                transition={{ duration: 0.28, ease }}
+                initial={{ transform: "translateX(-100%)" }}
+                animate={{ transform: "translateX(0%)" }}
+                exit={{ transform: "translateX(-100%)" }}
+                transition={{ duration: 0.3, ease: drawerEase }}
               >
                 {sidebar}
               </motion.div>
@@ -296,13 +344,6 @@ function Shell({ session, printer, appearance, setAppearance }) {
       )}
 
       <main className={`main ${dragging ? "is-dragging" : ""}`}>
-        {narrow && (
-          <header className="topbar">
-            <IconKey label="Open sidebar" icon={Menu} onClick={() => setDrawer(true)} tipSide="bottom" />
-            <Wordmark size={22} />
-          </header>
-        )}
-
         <div className="notices" aria-live="polite">
           <AnimatePresence>
             {notice && (
@@ -310,9 +351,9 @@ function Shell({ session, printer, appearance, setAppearance }) {
                 key={notice.id}
                 className={`notice tone-${notice.tone}`}
                 role="status"
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
+                initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 6, scale: 0.98 }}
                 transition={tween}
               >
                 <Dot tone={notice.tone} />
@@ -341,21 +382,47 @@ function Shell({ session, printer, appearance, setAppearance }) {
 
         <AnimatePresence mode="wait" initial={false}>
           {view.kind === "compose" && (
-            <motion.div
-              key={loaded ? "compose-loaded" : "compose-empty"}
-              className={`workspace ${loaded ? "workspace--split" : ""}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={tween}
-            >
-              <div className="canvas">
-                {loaded ? (
-                  <PreviewStage doc={flow.doc} settings={flow.settings} pageCount={flow.pageCount} onPagesChange={(v) => flow.set("pages", v)} />
-                ) : (
-                  <DropZone dragging={dragging} onBrowse={browse} doc={flow.doc} capabilities={capabilities} />
-                )}
-                <div className="dock-area">
+            <motion.div key="compose" className="page" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={tween}>
+              <Toolbar
+                lead={drawerKey}
+                narrow={narrow}
+                printer={printer}
+                onPrinter={() => setView({ kind: "settings" })}
+                flow={flow}
+                choices={choices}
+                disabled={!hasChoices}
+                printDisabled={printDisabled}
+                onPrint={print}
+                onSaveDefaults={saveDefaults}
+                onResetDefaults={resetToDefaults}
+                defaultsState={defaultsState}
+              />
+              <div className="compose">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={loaded ? "loaded" : "empty"}
+                    className="compose__body"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    {loaded ? (
+                      <PreviewStage
+                        doc={flow.doc}
+                        settings={flow.settings}
+                        pageCount={flow.pageCount}
+                        onPagesChange={(v) => flow.set("pages", v)}
+                        head={docHead}
+                        feedKey={flow.printing.state === "sent" ? flow.printing.result?.job_id || "sent" : null}
+                        status={narrow ? null : verdict}
+                      />
+                    ) : (
+                      <DropZone dragging={dragging} onBrowse={browse} doc={flow.doc} capabilities={capabilities} touch={narrow} />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+                <div className="compose__corner">
                   <AnimatePresence>
                     {trackedEntry && (
                       <JobStrip
@@ -368,30 +435,32 @@ function Shell({ session, printer, appearance, setAppearance }) {
                       />
                     )}
                   </AnimatePresence>
-                  <Dock flow={flow} printer={printer} canSend={canSend} onBrowse={browse} onPrint={print} />
                 </div>
               </div>
-              {loaded && (
-                <Inspector
+              {narrow && loaded && (
+                <PrintDock
                   flow={flow}
                   choices={choices}
-                  printerReady={canSend}
                   disabled={!hasChoices}
+                  printDisabled={printDisabled}
+                  onPrint={print}
                   onSaveDefaults={saveDefaults}
                   onResetDefaults={resetToDefaults}
                   defaultsState={defaultsState}
+                  status={verdict}
                 />
               )}
             </motion.div>
           )}
           {view.kind === "history" && (
             <motion.div key={`h-${view.id}`} className="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={tween}>
-              <HistoryDetail id={view.id} history={history} onReprint={reprint} onOpenCompose={newPrint} onStatusLine={flash} />
+              <HistoryDetail id={view.id} history={history} onReprint={reprint} onOpenCompose={newPrint} onStatusLine={flash} lead={drawerKey} />
             </motion.div>
           )}
           {view.kind === "settings" && (
             <motion.div key="settings" className="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={tween}>
               <SettingsView
+                lead={drawerKey}
                 user={session.user}
                 appearance={appearance}
                 setAppearance={setAppearance}

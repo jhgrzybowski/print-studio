@@ -1,174 +1,172 @@
-/* One quiet plane. Colours are OKLCH; the neutral hue follows the accent so greys never fight it. */
+/* Liquid metal studio. Dark graphite by default, brushed aluminium in light.
+   Chrome is reserved for what commits: Print, the selected segment, the mark. */
+
+@property --mx {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 50%;
+}
+@property --my {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: -40%;
+}
 
 :root {
-  --font: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font: "Funnel Sans Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Funnel Display Variable", var(--font);
 
+  --fs-11: 11px;
   --fs-12: 12px;
   --fs-13: 13px;
   --fs-14: 14px;
-  --fs-15: 15px;
-  --fs-18: 18px;
-  --fs-24: 24px;
+  --fs-16: 16px;
+  --fs-20: 20px;
+  --fs-28: 28px;
+  --fs-40: 40px;
 
-  --r-sm: 8px;
-  --r-md: 10px;
-  --r-lg: 20px;
+  --r-xs: 7px;
+  --r-sm: 10px;
+  --r-md: 12px;
+  --r-lg: 14px;
+  --r-xl: 18px;
 
-  --ease: cubic-bezier(0.25, 1, 0.5, 1);
-  --t-fast: 150ms;
-  --t-mid: 220ms;
-  --t-slow: 320ms;
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-move: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --t-press: 140ms;
+  --t-fast: 160ms;
+  --t-mid: 200ms;
 
-  --sidebar-w: 248px;
-  --inspector-w: 296px;
+  --sidebar-w: 292px;
+  --bar-h: 60px;
 
-  /* Palette: hue and chroma of the accent. */
-  --a-h: 256;
-  --a-c: 0.15;
-  --n-h: var(--a-h);
+  /* Accent: hue and chroma. */
+  --a-h: 250;
+  --a-c: 0.13;
 }
 
 [data-palette="cobalt"] {
-  --a-h: 256;
-  --a-c: 0.15;
+  --a-h: 250;
+  --a-c: 0.13;
 }
 [data-palette="iris"] {
   --a-h: 292;
-  --a-c: 0.15;
+  --a-c: 0.13;
 }
 [data-palette="jade"] {
   --a-h: 166;
-  --a-c: 0.11;
+  --a-c: 0.1;
 }
 [data-palette="ember"] {
-  --a-h: 42;
-  --a-c: 0.16;
+  --a-h: 45;
+  --a-c: 0.14;
 }
 [data-palette="graphite"] {
-  --a-h: 262;
-  --a-c: 0.018;
+  --a-h: 250;
+  --a-c: 0.012;
 }
 
-/* ---------- Light ---------- */
+/* ---------- Dark: graphite ---------- */
 :root,
-[data-theme="light"] {
-  color-scheme: light;
-
-  --plane: oklch(0.94 0.006 var(--n-h));
-  --side: oklch(0.918 0.007 var(--n-h));
-  --key: oklch(0.965 0.004 var(--n-h));
-  --well: oklch(0.912 0.007 var(--n-h));
-  --well-side: oklch(0.895 0.008 var(--n-h));
-  --menu-bg: oklch(0.975 0.003 var(--n-h));
-  --hover: oklch(0.3 0.02 var(--n-h) / 0.055);
-  --hair: oklch(0.3 0.02 var(--n-h) / 0.1);
-  --hair-strong: oklch(0.3 0.02 var(--n-h) / 0.16);
-
-  --text: oklch(0.24 0.012 var(--n-h));
-  --text-2: oklch(0.44 0.012 var(--n-h));
-  --text-3: oklch(0.57 0.01 var(--n-h));
-
-  --hi: oklch(1 0 0 / 0.9);
-  --lo: oklch(0.42 0.03 var(--n-h) / 0.2);
-  --raise: -3px -3px 7px var(--hi), 3px 3px 8px var(--lo), inset 0 1px 0 oklch(1 0 0 / 0.6);
-  --raise-sm: -2px -2px 4px var(--hi), 2px 2px 5px var(--lo), inset 0 1px 0 oklch(1 0 0 / 0.6);
-  --raise-xs: 0 1px 2px oklch(0.4 0.03 var(--n-h) / 0.16), 0 0 0 0.5px var(--hair), inset 0 1px 0 oklch(1 0 0 / 0.7);
-  --sunk: inset 2px 2px 5px var(--lo), inset -2px -2px 5px var(--hi);
-  --sunk-sm: inset 1px 1px 2.5px oklch(0.42 0.03 var(--n-h) / 0.16), inset -1px -1px 2px var(--hi);
-  --float: inset 0 1px 0 oklch(1 0 0 / 0.75), 0 0 0 0.5px var(--hair), 0 4px 12px -6px oklch(0.3 0.03 var(--n-h) / 0.16),
-    0 22px 44px -18px oklch(0.3 0.03 var(--n-h) / 0.26);
-
-  --paper: oklch(0.995 0.001 var(--n-h));
-  --paper-shadow: oklch(0.3 0.03 var(--n-h) / 0.26);
-
-  --accent: oklch(0.56 var(--a-c) var(--a-h));
-  --accent-text: oklch(0.5 var(--a-c) var(--a-h));
-  --accent-soft: oklch(0.56 var(--a-c) var(--a-h) / 0.13);
-  --on-accent: oklch(0.99 0 0);
-
-  --ok: oklch(0.63 0.13 152);
-  --warn: oklch(0.74 0.15 72);
-  --warn-text: oklch(0.52 0.12 62);
-  --error: oklch(0.57 0.19 26);
-  --error-soft: oklch(0.57 0.19 26 / 0.1);
-
-  --tip-bg: oklch(0.26 0.012 var(--n-h));
-  --tip-text: oklch(0.97 0.003 var(--n-h));
-  --scrim: oklch(0.2 0.02 var(--n-h) / 0.28);
-  --skel: oklch(0.3 0.02 var(--n-h) / 0.07);
-  --skel-hi: oklch(0.3 0.02 var(--n-h) / 0.12);
-
-  /* The metal of the print key. */
-  --metal-1: oklch(0.99 0.002 var(--n-h));
-  --metal-2: oklch(0.87 0.006 var(--n-h));
-  --metal-3: oklch(0.72 0.01 var(--n-h));
-  --metal-4: oklch(0.6 0.012 var(--n-h));
-  --metal-ink: oklch(0.27 0.012 var(--n-h));
-}
-
-/* ---------- Dark ---------- */
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --plane: oklch(0.19 0.008 var(--n-h));
-  --side: oklch(0.166 0.008 var(--n-h));
-  --key: oklch(0.235 0.009 var(--n-h));
-  --well: oklch(0.158 0.008 var(--n-h));
-  --well-side: oklch(0.14 0.008 var(--n-h));
-  --menu-bg: oklch(0.24 0.009 var(--n-h));
-  --hover: oklch(1 0 0 / 0.05);
-  --hair: oklch(1 0 0 / 0.07);
-  --hair-strong: oklch(1 0 0 / 0.12);
+  --bg: #0b0c0e;
+  --side: #111215;
+  --panel: #15171a;
+  --raise: #1d1f23;
+  --raise-2: #24272c;
+  --well: #0c0d0f;
+  --menu-bg: #1b1d21;
+  --line: rgb(255 255 255 / 0.06);
+  --line-2: rgb(255 255 255 / 0.1);
+  --hover: rgb(255 255 255 / 0.045);
+  --press: rgb(255 255 255 / 0.07);
 
-  --text: oklch(0.93 0.005 var(--n-h));
-  --text-2: oklch(0.75 0.008 var(--n-h));
-  --text-3: oklch(0.6 0.01 var(--n-h));
+  --text: #eceef0;
+  --text-2: #a4aab1;
+  --text-3: #858b93;
+  --ink: #0e1012;
 
-  --hi: oklch(1 0 0 / 0.045);
-  --lo: oklch(0 0 0 / 0.45);
-  --raise: -2px -2px 6px var(--hi), 3px 3px 9px var(--lo), inset 0 1px 0 oklch(1 0 0 / 0.06);
-  --raise-sm: -1px -1px 4px var(--hi), 2px 2px 6px var(--lo), inset 0 1px 0 oklch(1 0 0 / 0.06);
-  --raise-xs: 0 1px 3px oklch(0 0 0 / 0.4), inset 0 1px 0 oklch(1 0 0 / 0.07);
-  --sunk: inset 2px 2px 5px oklch(0 0 0 / 0.45), inset -1px -1px 3px var(--hi);
-  --sunk-sm: inset 1px 1px 3px oklch(0 0 0 / 0.38), inset -1px -1px 1px oklch(1 0 0 / 0.035);
-  --float: inset 0 1px 0 oklch(1 0 0 / 0.06), 0 0 0 0.5px oklch(1 0 0 / 0.08), 0 4px 12px -6px oklch(0 0 0 / 0.5),
-    0 24px 48px -18px oklch(0 0 0 / 0.6);
+  --accent: oklch(0.76 var(--a-c) var(--a-h));
+  --accent-soft: oklch(0.76 var(--a-c) var(--a-h) / 0.22);
+  --ok: #86d3a3;
+  --warn: #e8c071;
+  --warn-text: #e8c071;
+  --error: #ff8e7e;
 
-  --paper: oklch(0.965 0.002 var(--n-h));
-  --paper-shadow: oklch(0 0 0 / 0.55);
+  /* Chrome, with a mirror horizon at 50 %; the lightest stops pick up the accent faintly. */
+  --c0: #ffffff;
+  --c1: oklch(0.95 0.004 var(--a-h));
+  --c2: oklch(0.82 0.008 var(--a-h));
+  --c3: oklch(0.86 0.006 var(--a-h));
+  --c4: oklch(0.66 0.01 var(--a-h));
+  --chrome: linear-gradient(180deg, var(--c0) 0%, var(--c1) 13%, var(--c2) 40%, var(--c4) 50%, var(--c3) 53%, var(--c1) 78%, var(--c2) 100%);
+  --chrome-shadow: inset 0 1px 0 #fff, inset 0 -1px 0 rgb(0 0 0 / 0.3), 0 1px 1px rgb(0 0 0 / 0.55), 0 10px 20px -10px rgb(0 0 0 / 0.9);
 
-  --accent: oklch(0.7 var(--a-c) var(--a-h));
-  --accent-text: oklch(0.78 calc(var(--a-c) * 0.85) var(--a-h));
-  --accent-soft: oklch(0.7 var(--a-c) var(--a-h) / 0.16);
-  --on-accent: oklch(0.18 0.02 var(--a-h));
+  --field: linear-gradient(180deg, #202327, #1a1c20);
+  --field-hover: linear-gradient(180deg, #25282d, #1e2025);
+  --field-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07), 0 0 0 1px rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.5);
+  --well-shadow: inset 0 1px 2px rgb(0 0 0 / 0.6), 0 1px 0 rgb(255 255 255 / 0.04);
+  --float-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 0 0 1px rgb(255 255 255 / 0.07), 0 12px 32px -8px rgb(0 0 0 / 0.7), 0 2px 6px rgb(0 0 0 / 0.4);
 
-  --ok: oklch(0.72 0.14 152);
-  --warn: oklch(0.8 0.14 78);
-  --warn-text: oklch(0.82 0.12 78);
-  --error: oklch(0.7 0.17 26);
-  --error-soft: oklch(0.7 0.17 26 / 0.14);
+  --stage: radial-gradient(ellipse 55% 60% at 50% 40%, #202226, #141518 55%, #0e0f11);
+  --paper: #fbfbf9;
+  --paper-ghost: #e6e6e3;
+  --sheet-shadow: 0 1px 0 rgb(255 255 255 / 0.5) inset, 0 0 0 0.5px rgb(0 0 0 / 0.3), 0 2px 4px rgb(0 0 0 / 0.35), 0 18px 40px -12px rgb(0 0 0 / 0.75),
+    0 50px 90px -30px rgb(0 0 0 / 0.6);
 
-  --tip-bg: oklch(0.9 0.005 var(--n-h));
-  --tip-text: oklch(0.2 0.01 var(--n-h));
-  --scrim: oklch(0 0 0 / 0.45);
-  --skel: oklch(1 0 0 / 0.05);
-  --skel-hi: oklch(1 0 0 / 0.09);
-
-  --metal-1: oklch(0.97 0.003 var(--n-h));
-  --metal-2: oklch(0.82 0.006 var(--n-h));
-  --metal-3: oklch(0.64 0.01 var(--n-h));
-  --metal-4: oklch(0.5 0.012 var(--n-h));
-  --metal-ink: oklch(0.22 0.012 var(--n-h));
+  --skel: rgb(255 255 255 / 0.05);
+  --skel-hi: rgb(255 255 255 / 0.1);
 }
 
-/* Graphite has almost no chroma, so it leans on contrast instead. */
-[data-theme="light"][data-palette="graphite"] {
-  --accent: oklch(0.32 0.014 var(--a-h));
-  --accent-text: oklch(0.3 0.014 var(--a-h));
-  --accent-soft: oklch(0.32 0.014 var(--a-h) / 0.1);
-}
-[data-theme="dark"][data-palette="graphite"] {
-  --accent: oklch(0.88 0.008 var(--a-h));
-  --accent-text: oklch(0.9 0.008 var(--a-h));
-  --accent-soft: oklch(0.88 0.008 var(--a-h) / 0.12);
+/* ---------- Light: brushed aluminium ---------- */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #e4e6e9;
+  --side: #dcdfe3;
+  --panel: #eceef0;
+  --raise: #f3f4f6;
+  --raise-2: #fafbfc;
+  --well: #d4d8dd;
+  --menu-bg: #f6f7f8;
+  --line: rgb(20 24 30 / 0.08);
+  --line-2: rgb(20 24 30 / 0.13);
+  --hover: rgb(20 24 30 / 0.05);
+  --press: rgb(20 24 30 / 0.08);
+
+  --text: #16181b;
+  --text-2: #4d535b;
+  --text-3: #5a6068;
+  --ink: #16181b;
+
+  --accent: oklch(0.52 var(--a-c) var(--a-h));
+  --accent-soft: oklch(0.52 var(--a-c) var(--a-h) / 0.18);
+  --ok: #2f8a55;
+  --warn: #b27a12;
+  --warn-text: #8a5d06;
+  --error: #c43d2c;
+
+  --c0: #ffffff;
+  --c1: oklch(0.96 0.004 var(--a-h));
+  --c2: oklch(0.84 0.008 var(--a-h));
+  --c3: oklch(0.88 0.006 var(--a-h));
+  --c4: oklch(0.7 0.01 var(--a-h));
+  --chrome-shadow: inset 0 1px 0 #fff, inset 0 -1px 0 rgb(0 0 0 / 0.18), 0 0 0 1px rgb(20 24 30 / 0.14), 0 1px 1px rgb(20 24 30 / 0.2), 0 8px 16px -8px rgb(20 24 30 / 0.45);
+
+  --field: linear-gradient(180deg, #fbfbfc, #eef0f2);
+  --field-hover: linear-gradient(180deg, #ffffff, #f3f4f6);
+  --field-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgb(20 24 30 / 0.1), 0 1px 2px rgb(20 24 30 / 0.12);
+  --well-shadow: inset 0 1px 2px rgb(20 24 30 / 0.18), 0 1px 0 rgb(255 255 255 / 0.7);
+  --float-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgb(20 24 30 / 0.09), 0 12px 32px -10px rgb(20 24 30 / 0.28), 0 2px 6px rgb(20 24 30 / 0.1);
+
+  --stage: radial-gradient(ellipse 55% 60% at 50% 40%, #f1f2f4, #e2e4e8 55%, #d6d9de);
+  --paper: #ffffff;
+  --paper-ghost: #f1f1ef;
+  --sheet-shadow: 0 0 0 0.5px rgb(20 24 30 / 0.14), 0 2px 4px rgb(20 24 30 / 0.1), 0 18px 40px -14px rgb(20 24 30 / 0.3), 0 50px 90px -34px rgb(20 24 30 / 0.28);
+
+  --skel: rgb(20 24 30 / 0.06);
+  --skel-hi: rgb(20 24 30 / 0.11);
 }

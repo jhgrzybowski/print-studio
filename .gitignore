@@ -8,3 +8,5 @@ dist
 .codex/
 handoff.md
 .claude/
+.impeccable/hook.cache.json
+.playwright-mcp/

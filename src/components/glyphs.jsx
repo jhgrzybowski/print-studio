@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 // Print-specific glyphs drawn on lucide's 24px grid and stroke, so they sit beside lucide icons unnoticed.
 
 function glyph(name, draw) {
@@ -87,14 +89,37 @@ export const DraftGlyph = glyph("DraftGlyph", bars(1));
 export const StandardGlyph = glyph("StandardGlyph", bars(2));
 export const HighGlyph = glyph("HighGlyph", bars(3));
 
-/** The Print Studio mark: a sheet leaving a slot. */
-export function Mark({ size = 26 }) {
+/**
+ * The Print Studio mark: a drop of liquid chrome. A slow turbulence field makes its edge
+ * wobble; reduced motion keeps it still.
+ */
+export function Mark({ size = 26, liquid = true }) {
+  const id = useId().replace(/:/g, "");
+  const still = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   return (
     <svg className="mark" width={size} height={size} viewBox="0 0 32 32" aria-hidden>
-      <rect x="2" y="2" width="28" height="28" rx="9" className="mark__tile" />
-      <path d="M9 19.5h14" className="mark__slot" />
-      <path d="M11.5 19.5V9.5a1.5 1.5 0 0 1 1.5-1.5h6a1.5 1.5 0 0 1 1.5 1.5v10" className="mark__sheet" />
-      <path d="M11.5 23.5h9" className="mark__slot mark__slot--soft" />
+      <defs>
+        <linearGradient id={`g${id}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="var(--c0)" />
+          <stop offset=".3" stopColor="var(--c2)" />
+          <stop offset=".5" stopColor="var(--c4)" />
+          <stop offset=".54" stopColor="var(--c2)" />
+          <stop offset=".85" stopColor="var(--c1)" />
+          <stop offset="1" stopColor="var(--c3)" />
+        </linearGradient>
+        {liquid && !still && (
+          <filter id={`f${id}`} x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="4" result="n">
+              <animate attributeName="baseFrequency" dur="9s" values="0.03;0.05;0.03" repeatCount="indefinite" />
+            </feTurbulence>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="3.2" />
+          </filter>
+        )}
+      </defs>
+      <g filter={liquid && !still ? `url(#f${id})` : undefined}>
+        <path className="mark__drop" d="M16 3.5c5.6 6.3 9.5 11.2 9.5 16a9.5 9.5 0 0 1-19 0c0-4.8 3.9-9.7 9.5-16z" fill={`url(#g${id})`} />
+        <path d="M11.3 20.2c.3 2.4 2 4.3 4.4 4.8" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" opacity=".85" />
+      </g>
     </svg>
   );
 }

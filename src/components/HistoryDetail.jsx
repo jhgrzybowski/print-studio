@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Ban, CircleAlert, Eraser, ExternalLink, RotateCw } from "lucide-react";
+import { DropdownMenu } from "radix-ui";
+import { CircleAlert, Ellipsis, Eraser, ExternalLink, RotateCw } from "lucide-react";
 import { api } from "../api/client.js";
 import { PreviewStage } from "./PreviewStage.jsx";
-import { jobTone, Progress } from "./Dock.jsx";
-import { Button, Dot, IconKey, PrintKey } from "./controls.jsx";
+import { jobTone } from "./Dock.jsx";
+import { Button, Dot, PrintButton, Tip } from "./controls.jsx";
 import { FileGlyph } from "./FileGlyph.jsx";
 import { BASE_SETTINGS, fromRequested } from "../lib/settings.js";
 import {
@@ -24,7 +25,7 @@ import {
 } from "../lib/format.js";
 import { meaningfulWarnings } from "../hooks/printFlow.js";
 
-export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusLine }) {
+export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusLine, lead }) {
   const cached = history.items.find((h) => h.id === id);
   const [entry, setEntry] = useState(cached || null);
   const [file, setFile] = useState({ state: "loading" });
@@ -65,17 +66,21 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
 
   if (error) {
     return (
-      <div className="notice-view">
-        <CircleAlert size={22} strokeWidth={1.5} aria-hidden />
-        <p>{error}</p>
-        <Button onClick={onOpenCompose}>New print</Button>
+      <div className="page">
+        <div className="bar">{lead}</div>
+        <div className="notice-view">
+          <CircleAlert size={22} strokeWidth={1.5} aria-hidden />
+          <p>{error}</p>
+          <Button onClick={onOpenCompose}>New print</Button>
+        </div>
       </div>
     );
   }
   if (!entry)
     return (
-      <div className="workspace">
-        <div className="canvas">
+      <div className="page">
+        <div className="bar">{lead}</div>
+        <div className="stage stage--center">
           <span className="skel skel--sheet" />
         </div>
       </div>
@@ -130,10 +135,70 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
   ].filter(Boolean);
 
   const expired = file.state === "expired";
+  const pdf = file.state === "ready" && file.file.pdf_url;
+  const forgettable = terminal && entry.cups_job_id;
 
   return (
-    <motion.div className="workspace workspace--split" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-      <div className="canvas">
+    <motion.div className="page page--detail" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+      <div className="bar">
+        {lead}
+        <span className={`bar__glyph kind-${kind}`}>
+          <FileGlyph kind={kind} size={17} />
+        </span>
+        <div className="bar__text">
+          <h1 className="bar__title">{entry.original_filename}</h1>
+          <p className={`bar__sub tone-${jobTone(entry.status)}`}>
+            <Dot tone={jobTone(entry.status)} pulse={active} />
+            <span>
+              {st.label} · {shortWhen(entry.created_at)}
+            </span>
+          </p>
+        </div>
+        <span className="bar__spacer" />
+        <div className="bar__tools">
+          {active && entry.cups_job_id && (
+            <Button variant="quiet" className="btn--danger" onClick={cancel} disabled={busy === "cancel" || entry.status === "cancel-requested"}>
+              {entry.status === "cancel-requested" ? (
+                "Cancelling"
+              ) : (
+                <>
+                  Cancel<span className="bar__long"> job</span>
+                </>
+              )}
+            </Button>
+          )}
+          {(pdf || forgettable) && (
+            <DropdownMenu.Root>
+              <Tip label="More">
+                <DropdownMenu.Trigger asChild>
+                  <button type="button" className="ikey ikey--plain ikey--md" aria-label="More">
+                    <Ellipsis size={18} strokeWidth={1.5} aria-hidden />
+                  </button>
+                </DropdownMenu.Trigger>
+              </Tip>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content className="menu" side="bottom" align="end" sideOffset={6} collisionPadding={12}>
+                  {pdf && (
+                    <DropdownMenu.Item className="menu__item" onSelect={() => window.open(api.pdfUrl(entry.file_id), "_blank", "noopener")}>
+                      <ExternalLink size={16} strokeWidth={1.5} aria-hidden />
+                      Open PDF
+                    </DropdownMenu.Item>
+                  )}
+                  {forgettable && (
+                    <DropdownMenu.Item className="menu__item" onSelect={forget} disabled={busy === "forget"}>
+                      <Eraser size={16} strokeWidth={1.5} aria-hidden />
+                      Clear from printer queue
+                    </DropdownMenu.Item>
+                  )}
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          )}
+        </div>
+        <PrintButton icon={RotateCw} label={expired ? "Upload expired" : "Print again"} onClick={() => onReprint(entry)} disabled={expired} />
+      </div>
+
+      <div className="detail">
         {file.state === "ready" ? (
           <PreviewStage doc={{ file: file.file, pages: file.pages, kind }} settings={settings} pageCount={file.file.page_count} readOnly onPagesChange={() => {}} />
         ) : file.state === "loading" ? (
@@ -149,61 +214,29 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
           </div>
         )}
 
-        <div className="dock-area">
-          <div className="dock">
-            <div className="dock__body">
-              <span className={`dock__glyph kind-${kind}`}>
-                <FileGlyph kind={kind} size={18} />
-              </span>
-              <div className="dock__text">
-                <p className="dock__title">{entry.original_filename}</p>
-                <p className={`dock__sub tone-${jobTone(entry.status)}`}>
-                  <Dot tone={jobTone(entry.status)} pulse={active} />
-                  <span>
-                    {st.label} · {shortWhen(entry.created_at)}
-                  </span>
-                </p>
+        <aside className="facts-panel" aria-label="Print details">
+          <header className="facts-panel__head">
+            <h2>Details</h2>
+          </header>
+          <dl className="facts">
+            {rows.map(([k, v]) => (
+              <div key={k} className="facts__row">
+                <dt>{k}</dt>
+                <dd>{v}</dd>
               </div>
-            </div>
-            <div className="dock__tools">
-              {file.state === "ready" && file.file.pdf_url && (
-                <IconKey label="Open PDF" icon={ExternalLink} size="sm" onClick={() => window.open(api.pdfUrl(entry.file_id), "_blank", "noopener")} />
-              )}
-              {active && entry.cups_job_id && (
-                <IconKey label="Cancel job" icon={Ban} size="sm" variant="danger" onClick={cancel} disabled={busy === "cancel" || entry.status === "cancel-requested"} />
-              )}
-              {terminal && entry.cups_job_id && <IconKey label="Clear from queue" icon={Eraser} size="sm" onClick={forget} disabled={busy === "forget"} />}
-            </div>
-            <PrintKey icon={RotateCw} label={expired ? "Upload expired" : "Print again"} onClick={() => onReprint(entry)} disabled={expired} />
-          </div>
-        </div>
-      </div>
-
-      <aside className="inspector" aria-label="Print details">
-        <header className="inspector__head">
-          <h2 className="inspector__title">Details</h2>
-          <Progress status={entry.status} />
-        </header>
-        <dl className="facts">
-          {rows.map(([k, v]) => (
-            <div key={k} className="facts__row">
-              <dt>{k}</dt>
-              <dd>{v}</dd>
-            </div>
-          ))}
-        </dl>
-        {warnings.length > 0 && (
-          <footer className="inspector__foot">
-            <div className="verdict">
+            ))}
+          </dl>
+          {warnings.length > 0 && (
+            <div className="facts-panel__notes">
               {warnings.map((w) => (
                 <p key={w} className="verdict__note">
                   {w}
                 </p>
               ))}
             </div>
-          </footer>
-        )}
-      </aside>
+          )}
+        </aside>
+      </div>
     </motion.div>
   );
 }
