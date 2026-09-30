@@ -13,7 +13,7 @@ import { setLocalePref, t, tn, useLocalePref } from "../i18n/index.js";
 
 function Section({ title, tools, children, i = 0 }) {
   return (
-    <motion.section className="section" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.26, delay: i * 0.04, ease }}>
+    <motion.section className="section" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, delay: i * 0.025, ease }}>
       <header className="section__head">
         <h2>{title}</h2>
         {tools && <div className="section__tools">{tools}</div>}

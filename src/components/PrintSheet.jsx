@@ -1,8 +1,8 @@
-import { useEffect, useId, useRef, useState } from "react";
-import { AnimatePresence, motion, useDragControls } from "motion/react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { AnimatePresence, animate, motion, useDragControls, useMotionValue, usePresence, useReducedMotion, useTransform } from "motion/react";
 import { Dialog } from "radix-ui";
 import { Printer, SlidersHorizontal, X } from "lucide-react";
-import { Button, IconKey, PrintButton, Row, Segmented, Stepper, drawerEase } from "./controls.jsx";
+import { Button, IconKey, PrintButton, Row, Segmented, Stepper, glide } from "./controls.jsx";
 import { OptionRows } from "./Options.jsx";
 import { paperName } from "../lib/format.js";
 import { t, tn } from "../i18n/index.js";
@@ -85,7 +85,7 @@ function PagesRow({ value, onChange, pageCount, error }) {
  */
 export function PrintDock({ flow, choices, disabled, printDisabled, onPrint, onSaveDefaults, onResetDefaults, defaultsState, status }) {
   const [open, setOpen] = useState(false);
-  const drag = useDragControls();
+  const summaryRef = useRef(null);
   const { settings, set, pageCount, rangeError, printing } = flow;
   const loaded = flow.doc?.phase === "ready";
   const summary = settingsSummary(settings, pageCount);
@@ -99,7 +99,7 @@ export function PrintDock({ flow, choices, disabled, printDisabled, onPrint, onS
     <div className="pdock">
       {status && <div className="pdock__status">{status}</div>}
       <div className="pdock__row">
-        <button type="button" className={`pdock__summary ${rangeError ? "is-invalid" : ""}`} onClick={() => setOpen(true)} disabled={!loaded && disabled}>
+        <button ref={summaryRef} type="button" className={`pdock__summary ${rangeError ? "is-invalid" : ""}`} onClick={() => setOpen(true)} disabled={!loaded && disabled}>
           <SlidersHorizontal size={18} strokeWidth={1.5} aria-hidden />
           <span className="pdock__text">
             <span className="pdock__label">{t("Print settings")}</span>
@@ -113,72 +113,146 @@ export function PrintDock({ flow, choices, disabled, printDisabled, onPrint, onS
         <AnimatePresence>
           {open && (
             <Dialog.Portal forceMount>
-              <Dialog.Overlay asChild forceMount>
-                <motion.div
-                  className="scrim scrim--sheet"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.32, ease: drawerEase }}
-                />
-              </Dialog.Overlay>
-              <Dialog.Content asChild forceMount aria-describedby={undefined} onOpenAutoFocus={(e) => e.preventDefault()}>
-                <motion.div
-                  className="sheet-panel"
-                  initial={{ transform: "translateY(100%)" }}
-                  animate={{ transform: "translateY(0%)" }}
-                  exit={{ transform: "translateY(100%)" }}
-                  transition={{ duration: 0.36, ease: drawerEase }}
-                  drag="y"
-                  dragConstraints={{ top: 0, bottom: 0 }}
-                  dragElastic={{ top: 0.04, bottom: 0.6 }}
-                  dragListener={false}
-                  dragControls={drag}
-                  onDragEnd={(_, info) => {
-                    if (info.offset.y > 110 || info.velocity.y > 500) setOpen(false);
-                  }}
-                >
-                  <SheetGrip onClose={() => setOpen(false)} controls={drag} />
-                  <div className="sheet-panel__head">
+              <SheetLayers
+                trigger={summaryRef}
+                onClose={() => setOpen(false)}
+                head={
+                  <>
                     <Dialog.Title className="sheet-panel__title">{t("Print settings")}</Dialog.Title>
                     <Dialog.Close asChild>
                       <IconKey label={t("Close")} icon={X} size="sm" />
                     </Dialog.Close>
+                  </>
+                }
+              >
+                <div className="sheet-panel__body">
+                  <div className="rows">
+                    <Row label={t("Copies")}>
+                      <Stepper
+                        label={t("Copies")}
+                        decLabel={t("Fewer copies")}
+                        incLabel={t("More copies")}
+                        value={settings.copies}
+                        onChange={(v) => set("copies", v)}
+                        disabled={disabled}
+                      />
+                    </Row>
+                    {pageCount > 1 && <PagesRow value={settings.pages} onChange={(v) => set("pages", v)} pageCount={pageCount} error={rangeError} />}
+                    <OptionRows settings={settings} set={set} choices={choices} disabled={disabled} idPrefix="sheet" />
                   </div>
-                  <div className="sheet-panel__body">
-                    <div className="rows">
-                      <Row label={t("Copies")}>
-                        <Stepper
-                          label={t("Copies")}
-                          decLabel={t("Fewer copies")}
-                          incLabel={t("More copies")}
-                          value={settings.copies}
-                          onChange={(v) => set("copies", v)}
-                          disabled={disabled}
-                        />
-                      </Row>
-                      {pageCount > 1 && <PagesRow value={settings.pages} onChange={(v) => set("pages", v)} pageCount={pageCount} error={rangeError} />}
-                      <OptionRows settings={settings} set={set} choices={choices} disabled={disabled} idPrefix="sheet" />
-                    </div>
-                    <div className="sheet-panel__defaults">
-                      <Button variant="quiet" onClick={onResetDefaults}>
-                        {t("Use my defaults")}
-                      </Button>
-                      <Button variant="quiet" onClick={onSaveDefaults} disabled={defaultsState === "saving"}>
-                        {defaultsState === "saved" ? t("Saved") : t("Save as defaults")}
-                      </Button>
-                    </div>
+                  <div className="sheet-panel__defaults">
+                    <Button variant="quiet" onClick={onResetDefaults}>
+                      {t("Use my defaults")}
+                    </Button>
+                    <Button variant="quiet" onClick={onSaveDefaults} disabled={defaultsState === "saving"}>
+                      {defaultsState === "saved" ? t("Saved") : t("Save as defaults")}
+                    </Button>
                   </div>
-                  <div className="sheet-panel__foot">
-                    <PrintButton icon={Printer} onClick={printFromSheet} disabled={printDisabled} state={printing.state} className="print--dock" />
-                  </div>
-                </motion.div>
-              </Dialog.Content>
+                </div>
+                <div className="sheet-panel__foot">
+                  <PrintButton icon={Printer} onClick={printFromSheet} disabled={printDisabled} state={printing.state} className="print--dock" />
+                </div>
+              </SheetLayers>
             </Dialog.Portal>
           )}
         </AnimatePresence>
       </Dialog.Root>
     </div>
+  );
+}
+
+/**
+ * The scrim and the sheet, both driven by one offset. The sheet springs from wherever it is with
+ * whatever speed the finger left it, so a flick carries straight into the close and a sheet
+ * grabbed on its way out follows the finger again. The scrim dims with the sheet's position.
+ */
+function SheetLayers({ trigger, onClose, head, children }) {
+  const panel = useRef(null);
+  const drag = useDragControls();
+  const height = useRef(window.innerHeight);
+  const y = useMotionValue(height.current);
+  const scrim = useTransform(y, (v) => Math.min(1, Math.max(0, 1 - v / height.current)));
+  const [isPresent, safeToRemove] = usePresence();
+  const reduce = useReducedMotion();
+
+  // Without a velocity the spring inherits the value's current one, so a retarget never stalls.
+  const move = useCallback(
+    (to, options) => {
+      if (!reduce) return animate(y, to, { ...glide, ...options });
+      y.jump(to);
+      return { stop() {}, then: (done) => Promise.resolve().then(done) };
+    },
+    [reduce, y],
+  );
+
+  useLayoutEffect(() => {
+    height.current = panel.current.offsetHeight;
+    y.jump(height.current);
+  }, [y]);
+
+  // Up while present, down while leaving. Reopened mid-close, the sheet turns around from where it is.
+  useLayoutEffect(() => {
+    if (isPresent) {
+      const a = move(0);
+      return () => a.stop();
+    }
+    height.current = panel.current?.offsetHeight || height.current;
+    let live = true;
+    // Done once it is out of sight, not when the spring's last pixel settles, so the dialog's
+    // scroll lock lifts as the sheet disappears.
+    const a = move(height.current, { restDelta: 2, restSpeed: 60 });
+    a.then(() => live && safeToRemove());
+    return () => {
+      live = false;
+      a.stop();
+    };
+  }, [isPresent, move, safeToRemove]);
+
+  const grab = (e) => {
+    if (e.target.closest("button")) return;
+    drag.start(e);
+  };
+
+  // While closing, taps pass through to the app rather than landing on a scrim that is nearly gone.
+  const taps = isPresent ? "auto" : "none";
+
+  return (
+    <>
+      <Dialog.Overlay asChild forceMount>
+        <motion.div className="scrim scrim--sheet" style={{ opacity: scrim, pointerEvents: taps }} />
+      </Dialog.Overlay>
+      <Dialog.Content
+        asChild
+        forceMount
+        aria-describedby={undefined}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        // A tap on the summary reopens a sheet still sliding away; it is not a tap outside that closes it again.
+        onPointerDownOutside={(e) => trigger.current?.contains(e.target) && e.preventDefault()}
+      >
+        <motion.div
+          ref={panel}
+          className="sheet-panel"
+          style={{ y, pointerEvents: taps }}
+          drag="y"
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={{ top: 0.04, bottom: 1 }}
+          dragListener={false}
+          dragControls={drag}
+          onDragEnd={(_, info) => {
+            const close = info.offset.y > height.current * 0.3 || info.velocity.y > 500;
+            // Take over from the constraint's snap-back in the same frame, carrying the finger's speed.
+            move(close ? height.current : 0, { velocity: info.velocity.y });
+            if (close) onClose();
+          }}
+        >
+          <SheetGrip onClose={onClose} controls={drag} />
+          <div className="sheet-panel__head" onPointerDown={grab}>
+            {head}
+          </div>
+          {children}
+        </motion.div>
+      </Dialog.Content>
+    </>
   );
 }
 
