@@ -43,6 +43,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     }
     if (token !== seq.current) return;
     setDoc({ phase: "ready", file, pages, text, source, name: file.original_filename, kind: fileKind(file.detected_mime, file.original_filename) });
+    return pages;
   }, []);
 
   const attach = useCallback(
@@ -122,10 +123,17 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
       setSettings(reconcile({ ...BASE_SETTINGS, ...(defaults || {}), ...fromRequested(entry.requested_options) }, choices));
       try {
         const file = await api.file(entry.file_id);
-        await loadPreview(file, token);
-        // Upside-down prints used to be a reverse orientation; they come back as turned pages.
-        if (token === seq.current && /^reverse/.test(entry.requested_options?.orientation || "") && file.pdf_url && file.page_count) {
-          setRotations(Object.fromEntries(Array.from({ length: file.page_count }, (_, i) => [i + 1, 180])));
+        const pages = await loadPreview(file, token);
+        // Upside-down prints used to be a reverse orientation; they come back as turned pages. A file
+        // whose pages can't be turned here (an image from history, a PDF without a preview) keeps
+        // the reverse orientation, so it still prints the way it did.
+        const reverse = entry.requested_options?.orientation || "";
+        if (token === seq.current && /^reverse-/.test(reverse)) {
+          if (file.pdf_url && file.page_count && pages?.length) {
+            setRotations(Object.fromEntries(Array.from({ length: file.page_count }, (_, i) => [i + 1, 180])));
+          } else if (!choices.orientation?.length || choices.orientation.includes(reverse)) {
+            setSettings((s) => ({ ...s, orientation: reverse }));
+          }
         }
         return true;
       } catch (e) {
@@ -211,12 +219,16 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
   const print = useCallback(async () => {
     if (!payload || printing.state === "sending") return;
     setPrinting({ state: "sending" });
+    // Turning and uploading can take a while; if the document changes meanwhile, this print is off.
+    const token = seq.current;
     let body = payload;
     if (canRotate && hasRotation(rotations)) {
       try {
         const turned = await api.upload(await rotatedFile(doc, rotations));
+        if (token !== seq.current) return;
         body = { ...payload, file_id: turned.file_id };
       } catch (e) {
+        if (token !== seq.current) return;
         setPrinting({ state: "error", error: e instanceof ApiError ? printMessage(e) : t("Couldn't turn the pages. Try again, or print them unturned.") });
         return;
       }
