@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Archive, ChevronRight, FolderOpen, Plus, RotateCw } from "lucide-react";
 import { Mark } from "./glyphs.jsx";
@@ -52,12 +52,18 @@ export function HomeView({ narrow, lead, printer, onPrinter, history, archive, c
   const { items, total, loadMore, loadingMore } = history;
   const short = !loading && recent.length < RECENT && items.length < total;
   const asked = useRef(-1);
+  const [retries, setRetries] = useState(0);
   useEffect(() => {
-    // One request per list length, so a failing page isn't asked for in a loop.
+    // One request per list length; a failed one is tried again after a pause, not in a loop.
     if (!short || loadingMore || asked.current === items.length) return;
     asked.current = items.length;
-    loadMore().catch(() => {});
-  }, [short, loadingMore, loadMore, items.length]);
+    loadMore().catch(() => {
+      setTimeout(() => {
+        asked.current = -1;
+        setRetries((n) => n + 1);
+      }, 5000);
+    });
+  }, [short, loadingMore, loadMore, items.length, retries]);
   const archivedCount = archive.ids.length;
   const { info } = printer;
 
