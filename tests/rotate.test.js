@@ -84,6 +84,20 @@ test("rotatePdf turns a page whose only marks are annotations", async () => {
   assert.ok(xobjects?.keys().length, "the page is redrawn turned");
 });
 
+test("rotatePdf keeps only the crop box, the part a viewer shows", async () => {
+  const src = await PDFDocument.create();
+  const page = src.addPage([700, 900]);
+  page.setCropBox(50, 30, 595, 842);
+  page.drawRectangle({ x: 60, y: 40, width: 40, height: 40 });
+  const out = await PDFDocument.load(await rotatePdf(await src.save(), { 1: 90 }));
+  const turned = out.getPage(0);
+  assert.deepEqual([turned.getWidth(), turned.getHeight()], [595, 842]);
+  const xobjects = turned.node.lookup(PDFName.of("Resources"), PDFDict).lookup(PDFName.of("XObject"), PDFDict);
+  const [drawn] = xobjects.entries().map(([, ref]) => out.context.lookup(ref));
+  const bbox = drawn.dict.lookup(PDFName.of("BBox")).asArray().map((n) => n.asNumber());
+  assert.deepEqual(bbox, [50, 30, 645, 872]);
+});
+
 test("withDensity carries an image's resolution into a canvas copy", () => {
   // What a canvas writes: a 1×1 PNG with no pHYs, and a JPEG whose JFIF names no unit.
   const chunk = (type, data) => {

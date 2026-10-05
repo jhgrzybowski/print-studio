@@ -221,38 +221,48 @@ export function useHistory(enabled) {
 /* ---------- Preferences (free-form JSON on the server) ---------- */
 export function usePreferences(enabled) {
   const [prefs, setPrefs] = useState(null);
-  const synced = useRef(false);
   const [queue] = useState(() => prefsQueue((doc) => api.savePreferences(doc).then((r) => r.preferences), setPrefs));
+  // One read of the server's preferences, shared by the first load and any save made before it lands.
+  const reading = useRef(null);
+  const synced = useRef(false);
+  const sync = useCallback(() => {
+    if (!reading.current) {
+      const read = api.preferences().then(
+        (r) => {
+          if (reading.current !== read) return; // Signed out (or in again) since.
+          queue.reset(r.preferences || {});
+          synced.current = true;
+          setPrefs(queue.current());
+        },
+        (e) => {
+          if (reading.current === read) reading.current = null;
+          throw e;
+        },
+      );
+      reading.current = read;
+    }
+    return reading.current;
+  }, [queue]);
 
   useEffect(() => {
     queue.reset({});
+    reading.current = null;
     synced.current = false;
     if (!enabled) {
       setPrefs(null);
       return;
     }
-    api
-      .preferences()
-      .then((r) => {
-        queue.reset(r.preferences || {});
-        synced.current = true;
-        setPrefs(queue.current());
-      })
-      .catch(() => setPrefs({}));
-  }, [enabled, queue]);
+    sync().catch(() => setPrefs({}));
+  }, [enabled, queue, sync]);
 
   const save = useCallback(
     async (patch) => {
       // PUT replaces the whole object, so never save over preferences we failed to read.
-      if (!synced.current) {
-        const r = await api.preferences();
-        // Another save may have read them first and already be under way.
-        if (!synced.current) queue.reset(r.preferences || {});
-        synced.current = true;
-      }
+      // (A read that a sign-out overtook settles without syncing, so wait for the current one.)
+      while (!synced.current) await sync();
       return queue.save(patch);
     },
-    [queue],
+    [queue, sync],
   );
   const update = save;
 

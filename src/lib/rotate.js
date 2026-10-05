@@ -47,10 +47,12 @@ export async function rotatePdf(bytes, rotations) {
     if (!page.node.Contents() && !page.node.Annots()?.size()) continue;
     // What the viewer shows: the page's own /Rotate is part of it.
     const own = turn(page.getRotation().angle);
-    const { width: w, height: h } = page.getSize();
+    // Only the crop box is visible (bleed and imposition marks lie outside it), so that is the page.
+    const crop = page.getCropBox();
+    const { width: w, height: h } = crop;
     const [W, H] = own === 90 || own === 270 ? [h, w] : [w, h];
     bakeAnnotations(pdf, page, lib);
-    const embedded = await pdf.embedPage(page);
+    const embedded = await pdf.embedPage(page, { left: crop.x, bottom: crop.y, right: crop.x + w, top: crop.y + h });
     const p = placement(w, h, W, H, own + deg);
     const fresh = pdf.insertPage(index, [W, H]);
     fresh.drawPage(embedded, { x: p.x, y: p.y, xScale: p.scale, yScale: p.scale, rotate: degrees(p.ccw) });
@@ -121,6 +123,7 @@ function bakeAnnotations(pdf, page, lib) {
 /** Turn an image clockwise inside its own frame, keeping its type. */
 export async function rotateImage(file, deg) {
   const d = turn(deg);
+  const source = new Uint8Array(await file.arrayBuffer());
   const bitmap = await createImageBitmap(file);
   const W = bitmap.width;
   const H = bitmap.height;
@@ -128,7 +131,8 @@ export async function rotateImage(file, deg) {
   const s = quarter ? Math.min(W / H, H / W) : 1;
   const canvas = new OffscreenCanvas(W, H);
   const ctx = canvas.getContext("2d");
-  const type = file.type === "image/png" ? "image/png" : "image/jpeg";
+  // The browser's MIME type can be empty or odd; the bytes say what the file is.
+  const type = isPng(source) ? "image/png" : "image/jpeg";
   // JPEG has no transparency; the margins a quarter turn opens must be paper white.
   if (type === "image/jpeg") {
     ctx.fillStyle = "#fff";
@@ -141,7 +145,7 @@ export async function rotateImage(file, deg) {
   bitmap.close();
   const blob = await canvas.convertToBlob({ type, quality: 0.95 });
   // A canvas writes no resolution, and without one the printer picks its own physical size.
-  const out = withDensity(new Uint8Array(await blob.arrayBuffer()), readDensity(new Uint8Array(await file.arrayBuffer())));
+  const out = withDensity(new Uint8Array(await blob.arrayBuffer()), readDensity(source));
   return new File([out], file.name, { type });
 }
 
