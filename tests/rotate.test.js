@@ -74,6 +74,22 @@ test("rotatePdf keeps filled form fields on turned pages", async () => {
   assert.ok(inner.some((n) => n.startsWith("/Annot")), `annotation painted, got ${inner}`);
 });
 
+test("rotatePdf draws fields saved without an appearance before turning them", async () => {
+  const src = await PDFDocument.create();
+  const page = src.addPage([595, 842]);
+  page.drawText("Body", { x: 50, y: 780 });
+  const field = src.getForm().createTextField("bare");
+  field.setText("Filled");
+  field.addToPage(page, { x: 50, y: 700, width: 300, height: 30 });
+  // Strip the drawing, as a /NeedAppearances form saves it: only the value is left.
+  for (const w of field.acroField.getWidgets()) w.dict.delete(PDFName.of("AP"));
+  const bytes = await src.save({ updateFieldAppearances: false });
+  const out = await PDFDocument.load(await rotatePdf(bytes, { 1: 90 }));
+  const xobjects = (dict) => dict.lookup(PDFName.of("Resources"), PDFDict)?.lookup(PDFName.of("XObject"), PDFDict);
+  const [drawn] = xobjects(out.getPage(0).node).entries().map(([, ref]) => out.context.lookup(ref));
+  assert.ok(xobjects(drawn.dict).keys().map(String).some((n) => n.startsWith("/Annot")));
+});
+
 test("rotatePdf turns a page whose only marks are annotations", async () => {
   const src = await PDFDocument.create();
   const page = src.addPage([595, 842]);

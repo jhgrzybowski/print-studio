@@ -38,6 +38,13 @@ export async function rotatePdf(bytes, rotations) {
   const { PDFDocument, degrees } = lib;
   const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
   const count = pdf.getPageCount();
+  // Fields saved with /NeedAppearances have no drawing of their value, only the value; a viewer
+  // draws it at display time. Draw them now, so baking (below) has something to keep.
+  try {
+    pdf.getForm().updateFieldAppearances();
+  } catch {
+    // An unusual form is left as it is; its other pages still turn.
+  }
   for (const [key, value] of Object.entries(rotations)) {
     const index = Number(key) - 1;
     const deg = turn(value);

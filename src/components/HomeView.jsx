@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { motion } from "motion/react";
 import { Archive, ChevronRight, FolderOpen, Plus, RotateCw } from "lucide-react";
 import { Mark } from "./glyphs.jsx";
@@ -47,6 +47,17 @@ export function HomeView({ narrow, lead, printer, onPrinter, history, archive, c
 
   const recent = useMemo(() => history.items.filter((i) => !archive.hidden.has(i.id)).slice(0, RECENT), [history.items, archive.hidden]);
   const loading = history.status === "loading" || history.status === "idle" || !archive.loaded;
+  // When the newest prints are all archived, older ones fill the list. On a phone the sidebar that
+  // would page them in isn't mounted, so home asks for them itself.
+  const { items, total, loadMore, loadingMore } = history;
+  const short = !loading && recent.length < RECENT && items.length < total;
+  const asked = useRef(-1);
+  useEffect(() => {
+    // One request per list length, so a failing page isn't asked for in a loop.
+    if (!short || loadingMore || asked.current === items.length) return;
+    asked.current = items.length;
+    loadMore().catch(() => {});
+  }, [short, loadingMore, loadMore, items.length]);
   const archivedCount = archive.ids.length;
   const { info } = printer;
 
