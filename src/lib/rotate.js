@@ -179,9 +179,42 @@ export function readDensity(b) {
   }
   if (isJpeg(b)) {
     const j = jfif(b);
-    if (j < 0 || !b[j + 11]) return null;
-    const per = b[j + 11] === 2 ? 2.54 : 1;
-    return { x: u16(b, j + 12) * per, y: u16(b, j + 14) * per };
+    if (j >= 0 && b[j + 11]) {
+      const per = b[j + 11] === 2 ? 2.54 : 1;
+      return { x: u16(b, j + 12) * per, y: u16(b, j + 14) * per };
+    }
+    // Cameras and scanners often name it only in EXIF.
+    return exifDensity(b);
+  }
+  return null;
+}
+
+// XResolution, YResolution and ResolutionUnit from a JPEG's EXIF IFD0, as pixels per inch.
+function exifDensity(b) {
+  for (let i = 2; i + 4 <= b.length && b[i] === 0xff; i += 2 + u16(b, i + 2)) {
+    if (b[i + 1] === 0xda) break;
+    if (b[i + 1] !== 0xe1 || ascii(b, i + 4, 6) !== "Exif\0\0") continue;
+    const t = i + 10;
+    const le = ascii(b, t, 2) === "II";
+    const r16 = (o) => (le ? b[t + o] | (b[t + o + 1] << 8) : u16(b, t + o));
+    const r32 = (o) => (le ? (b[t + o] | (b[t + o + 1] << 8) | (b[t + o + 2] << 16) | (b[t + o + 3] << 24)) >>> 0 : u32(b, t + o));
+    const ifd = r32(4);
+    const end = i + 2 + u16(b, i + 2);
+    if (t + ifd + 2 > end) return null;
+    const tags = {};
+    for (let n = 0, count = r16(ifd); n < count; n++) {
+      const e = ifd + 2 + n * 12;
+      if (t + e + 12 > end) break;
+      const tag = r16(e);
+      if (tag === 0x011a || tag === 0x011b) {
+        const at = r32(e + 8);
+        if (t + at + 8 <= end && r32(at + 4)) tags[tag] = r32(at) / r32(at + 4);
+      } else if (tag === 0x0128) tags[tag] = r16(e + 8);
+    }
+    const unit = tags[0x0128] ?? 2;
+    if (!tags[0x011a] || !tags[0x011b] || (unit !== 2 && unit !== 3)) return null;
+    const per = unit === 3 ? 2.54 : 1;
+    return { x: tags[0x011a] * per, y: tags[0x011b] * per };
   }
   return null;
 }

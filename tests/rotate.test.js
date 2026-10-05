@@ -144,6 +144,32 @@ test("withDensity carries an image's resolution into a canvas copy", () => {
   near(readDensity(withDensity(png300, { x: 150, y: 72 })), 150, 72);
   assert.equal(withDensity(png300, { x: 150, y: 72 }).length, png300.length);
   near(readDensity(withDensity(jpeg, { x: 200, y: 200 })), 200, 200);
+  // A JPEG that names its resolution only in EXIF (big-endian TIFF, 300/1 per inch).
+  const tiff = Buffer.alloc(8 + 2 + 3 * 12 + 4 + 16);
+  tiff.write("MM", 0);
+  tiff.writeUInt16BE(42, 2);
+  tiff.writeUInt32BE(8, 4);
+  tiff.writeUInt16BE(3, 8);
+  const entry = (n, tag, type, value) => {
+    const o = 10 + n * 12;
+    tiff.writeUInt16BE(tag, o);
+    tiff.writeUInt16BE(type, o + 2);
+    tiff.writeUInt32BE(1, o + 4);
+    if (type === 3) tiff.writeUInt16BE(value, o + 8);
+    else tiff.writeUInt32BE(value, o + 8);
+  };
+  entry(0, 0x011a, 5, 50);
+  entry(1, 0x011b, 5, 58);
+  entry(2, 0x0128, 3, 2);
+  tiff.writeUInt32BE(300, 50);
+  tiff.writeUInt32BE(1, 54);
+  tiff.writeUInt32BE(300, 58);
+  tiff.writeUInt32BE(1, 62);
+  const app1 = Buffer.concat([Buffer.from("Exif\0\0", "binary"), tiff]);
+  const len = Buffer.alloc(2);
+  len.writeUInt16BE(app1.length + 2);
+  const exifJpeg = new Uint8Array(Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe1]), len, app1, Buffer.from([0xff, 0xda])]));
+  near(readDensity(exifJpeg), 300, 300);
   assert.equal(withDensity(jpeg, null), jpeg);
 });
 
