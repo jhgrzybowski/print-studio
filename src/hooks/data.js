@@ -268,6 +268,10 @@ export function usePreferences(enabled) {
     return () => {
       live = false;
       clearTimeout(retry);
+      // Signed out or unmounted: saves still waiting their turn must not go out under a later session.
+      queue.reset({});
+      reading.current = null;
+      synced.current = false;
     };
   }, [enabled, queue, sync]);
 
