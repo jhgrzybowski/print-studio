@@ -98,6 +98,15 @@ test("rotatePdf keeps only the crop box, the part a viewer shows", async () => {
   assert.deepEqual(bbox, [50, 30, 645, 872]);
 });
 
+test("rotatePdf keeps a large-format page's UserUnit", async () => {
+  const src = await PDFDocument.create();
+  const page = src.addPage([600, 400]);
+  page.node.set(PDFName.of("UserUnit"), src.context.obj(4));
+  page.drawRectangle({ x: 10, y: 10, width: 40, height: 40 });
+  const out = await PDFDocument.load(await rotatePdf(await src.save(), { 1: 90 }));
+  assert.equal(out.getPage(0).node.lookup(PDFName.of("UserUnit")).asNumber(), 4);
+});
+
 test("withDensity carries an image's resolution into a canvas copy", () => {
   // What a canvas writes: a 1×1 PNG with no pHYs, and a JPEG whose JFIF names no unit.
   const chunk = (type, data) => {

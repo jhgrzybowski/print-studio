@@ -111,7 +111,7 @@ function HistorySkeleton() {
   );
 }
 
-function HistoryList({ history, hidden, selectedId, onSelect, onReprint, onArchive, query }) {
+function HistoryList({ history, hidden, ready, selectedId, onSelect, onReprint, onArchive, query }) {
   const { items: all, status, total, loadMore, loadingMore, jobs } = history;
   const [since] = useState(() => Date.now());
   // A callback ref: the sentinel unmounts during search and comes back as a new node.
@@ -143,7 +143,7 @@ function HistoryList({ history, hidden, selectedId, onSelect, onReprint, onArchi
     return () => io.disconnect();
   }, [sentinel, loadMore, all.length]);
 
-  if (status === "loading" || status === "idle") return <HistorySkeleton />;
+  if (status === "loading" || status === "idle" || !ready) return <HistorySkeleton />;
   if (status === "error" && !all.length) return <p className="hlist__empty">{t("History is offline. Retrying.")}</p>;
   // Archived rows may fill the first page; keep loading until something is left to show.
   const sentinelNode = more && (
@@ -300,7 +300,7 @@ export const Sidebar = forwardRef(function Sidebar(
       </label>
 
       <div className="sidebar__scroll">
-        <HistoryList history={history} hidden={archive.hidden} selectedId={selectedId} onSelect={onSelectHistory} onReprint={onReprint} onArchive={onArchive} query={query} />
+        <HistoryList history={history} hidden={archive.hidden} ready={archive.loaded} selectedId={selectedId} onSelect={onSelectHistory} onReprint={onReprint} onArchive={onArchive} query={query} />
       </div>
 
       <div className="sidebar__foot">

@@ -341,6 +341,11 @@ function Shell({ session, printer, appearance, setAppearance }) {
 
   const archive = useArchive(prefs);
   const { archive: archiveId, restore: restoreId, remove: removeIds } = archive;
+  // A print deleted for good doesn't stay open, whether it was just deleted or was opened before
+  // preferences arrived. Its place is the archive it was deleted from.
+  useEffect(() => {
+    if (view.kind === "history" && archive.deleted.has(view.id)) setView({ kind: "archive" });
+  }, [view, archive.deleted]);
   const archiveEntry = useCallback(
     async (entry) => {
       try {

@@ -55,6 +55,9 @@ export async function rotatePdf(bytes, rotations) {
     const embedded = await pdf.embedPage(page, { left: crop.x, bottom: crop.y, right: crop.x + w, top: crop.y + h });
     const p = placement(w, h, W, H, own + deg);
     const fresh = pdf.insertPage(index, [W, H]);
+    // Large-format pages scale their units; the new page must measure the same.
+    const unit = page.node.get(lib.PDFName.of("UserUnit"));
+    if (unit) fresh.node.set(lib.PDFName.of("UserUnit"), unit);
     fresh.drawPage(embedded, { x: p.x, y: p.y, xScale: p.scale, yScale: p.scale, rotate: degrees(p.ccw) });
     pdf.removePage(index + 1);
   }

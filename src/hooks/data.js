@@ -225,6 +225,8 @@ export function usePreferences(enabled) {
   // One read of the server's preferences, shared by the first load and any save made before it lands.
   const reading = useRef(null);
   const synced = useRef(false);
+  // Until the server's copy is read, archived and deleted prints can't be told apart from the rest.
+  const [ready, setReady] = useState(false);
   const sync = useCallback(() => {
     if (!reading.current) {
       const read = api.preferences().then(
@@ -232,6 +234,7 @@ export function usePreferences(enabled) {
           if (reading.current !== read) return; // Signed out (or in again) since.
           queue.reset(r.preferences || {});
           synced.current = true;
+          setReady(true);
           setPrefs(queue.current());
         },
         (e) => {
@@ -248,11 +251,24 @@ export function usePreferences(enabled) {
     queue.reset({});
     reading.current = null;
     synced.current = false;
+    setReady(false);
     if (!enabled) {
       setPrefs(null);
       return;
     }
-    sync().catch(() => setPrefs({}));
+    let live = true;
+    let retry;
+    const load = () =>
+      sync().catch(() => {
+        if (!live) return;
+        setPrefs((p) => p || {});
+        retry = setTimeout(load, 5000);
+      });
+    load();
+    return () => {
+      live = false;
+      clearTimeout(retry);
+    };
   }, [enabled, queue, sync]);
 
   const save = useCallback(
@@ -266,7 +282,7 @@ export function usePreferences(enabled) {
   );
   const update = save;
 
-  return { prefs, save, update, loaded: prefs !== null };
+  return { prefs, save, update, loaded: prefs !== null, synced: ready };
 }
 
 const NONE = [];
@@ -280,6 +296,7 @@ export function useArchive(prefs) {
   const ids = prefs.prefs?.archived_history || NONE;
   const deleted = prefs.prefs?.deleted_history || NONE;
   const archived = useMemo(() => new Set(ids), [ids]);
+  const gone = useMemo(() => new Set(deleted), [deleted]);
   const hidden = useMemo(() => new Set([...ids, ...deleted]), [ids, deleted]);
   const { update } = prefs;
   const archive = useCallback((id) => update((p) => ({ archived_history: [id, ...without(p.archived_history, [id])] })), [update]);
@@ -292,7 +309,8 @@ export function useArchive(prefs) {
       })),
     [update],
   );
-  return { ids, archived, hidden, archive, restore, remove, loaded: prefs.loaded };
+  // `loaded` waits for the server's copy: until then any history row might be one the person hid.
+  return { ids, archived, deleted: gone, hidden, archive, restore, remove, loaded: prefs.synced };
 }
 
 /* ---------- Debounced value ---------- */
