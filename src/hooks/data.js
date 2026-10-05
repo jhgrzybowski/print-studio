@@ -222,6 +222,7 @@ export function usePreferences(enabled) {
   const [prefs, setPrefs] = useState(null);
   const latest = useRef({});
   const synced = useRef(false);
+  const queue = useRef(Promise.resolve());
 
   useEffect(() => {
     if (!enabled) {
@@ -252,17 +253,23 @@ export function usePreferences(enabled) {
     const next = { ...before, ...(typeof patch === "function" ? patch(before) : patch) };
     latest.current = next;
     setPrefs(next);
-    try {
-      const r = await api.savePreferences(next);
-      latest.current = r.preferences || next;
-    } catch (e) {
-      // Put back what the server still has, unless a later change has already moved on.
-      if (latest.current === next) latest.current = before;
-      throw e;
-    } finally {
-      setPrefs(latest.current);
-    }
-    return latest.current;
+    // Each PUT replaces the whole object, so they go out one at a time, in order.
+    const run = queue.current.then(async () => {
+      try {
+        const r = await api.savePreferences(next);
+        // A newer change is already queued behind this one; don't step back over it.
+        if (latest.current === next) latest.current = r.preferences || next;
+      } catch (e) {
+        // Put back what the server still has, unless a later change has already moved on.
+        if (latest.current === next) latest.current = before;
+        throw e;
+      } finally {
+        setPrefs(latest.current);
+      }
+      return latest.current;
+    });
+    queue.current = run.catch(() => {});
+    return run;
   }, []);
   const update = save;
 
