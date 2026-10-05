@@ -39,11 +39,24 @@ export async function rotatePdf(bytes, rotations) {
   const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
   const count = pdf.getPageCount();
   // Fields saved with /NeedAppearances have no drawing of their value, only the value; a viewer
-  // draws it at display time. Draw them now, so baking (below) has something to keep.
+  // draws it at display time. Draw them now, so baking (below) has something to keep. One field at
+  // a time: Helvetica can't draw every value (Polish letters, say), and those fields are carried
+  // over as live widgets instead.
+  let fields = [];
   try {
-    pdf.getForm().updateFieldAppearances();
+    fields = pdf.getForm().getFields();
   } catch {
     // An unusual form is left as it is; its other pages still turn.
+  }
+  let font;
+  for (const field of fields) {
+    try {
+      if (!field.needsAppearancesUpdate()) continue;
+      font ??= await pdf.embedFont(lib.StandardFonts.Helvetica);
+      field.defaultUpdateAppearances(font);
+    } catch {
+      // Left without a drawing; see `carry` below.
+    }
   }
   for (const [key, value] of Object.entries(rotations)) {
     const index = Number(key) - 1;
@@ -58,17 +71,55 @@ export async function rotatePdf(bytes, rotations) {
     const crop = page.getCropBox();
     const { width: w, height: h } = crop;
     const [W, H] = own === 90 || own === 270 ? [h, w] : [w, h];
-    bakeAnnotations(pdf, page, lib);
+    const live = bakeAnnotations(pdf, page, lib);
     const embedded = await pdf.embedPage(page, { left: crop.x, bottom: crop.y, right: crop.x + w, top: crop.y + h });
     const p = placement(w, h, W, H, own + deg);
     const fresh = pdf.insertPage(index, [W, H]);
     // Large-format pages scale their units; the new page must measure the same.
     const unit = page.node.get(lib.PDFName.of("UserUnit"));
     if (unit) fresh.node.set(lib.PDFName.of("UserUnit"), unit);
+    // Blend modes and soft masks are composited in the page's transparency group.
+    const group = page.node.get(lib.PDFName.of("Group"));
+    if (group) fresh.node.set(lib.PDFName.of("Group"), group);
     fresh.drawPage(embedded, { x: p.x, y: p.y, xScale: p.scale, yScale: p.scale, rotate: degrees(p.ccw) });
+    carry(pdf, live, fresh, crop, p, own + deg, lib);
     pdf.removePage(index + 1);
   }
-  return pdf.save();
+  // Appearances were drawn above where they could be; redrawing at save would throw on the rest.
+  return pdf.save({ updateFieldAppearances: false });
+}
+
+/**
+ * Move printable annotations that have no drawing to bake onto the turned page, placed where the
+ * turned page puts them and turned with it, for the viewer or printer to draw from their values.
+ */
+function carry(pdf, refs, fresh, crop, p, clockwise, lib) {
+  const { PDFName, PDFDict, PDFArray, PDFNumber } = lib;
+  if (!refs.length) return;
+  const r = (p.ccw * Math.PI) / 180;
+  const at = (u, v) => {
+    const [x, y] = [(u - crop.x) * p.scale, (v - crop.y) * p.scale];
+    return [p.x + x * Math.cos(r) - y * Math.sin(r), p.y + x * Math.sin(r) + y * Math.cos(r)];
+  };
+  for (const ref of refs) {
+    const annot = pdf.context.lookup(ref, PDFDict);
+    const rect = annot.lookupMaybe(PDFName.of("Rect"), PDFArray)?.asArray().map((n) => pdf.context.lookup(n, PDFNumber).asNumber());
+    if (!rect) continue;
+    const pts = [at(rect[0], rect[1]), at(rect[2], rect[1]), at(rect[0], rect[3]), at(rect[2], rect[3])];
+    const xs = pts.map((q) => q[0]);
+    const ys = pts.map((q) => q[1]);
+    annot.set(PDFName.of("Rect"), pdf.context.obj([Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]));
+    annot.set(PDFName.of("P"), fresh.ref);
+    // /MK /R turns a widget's drawing counterclockwise; the page turned clockwise.
+    if (annot.get(PDFName.of("Subtype"))?.toString() === "/Widget") {
+      const mk = annot.lookupMaybe(PDFName.of("MK"), PDFDict) || pdf.context.obj({});
+      const was = mk.lookupMaybe(PDFName.of("R"), PDFNumber)?.asNumber() ?? 0;
+      mk.set(PDFName.of("R"), PDFNumber.of((((was - clockwise) % 360) + 360) % 360));
+      annot.set(PDFName.of("MK"), mk);
+    }
+    fresh.node.addAnnot(ref);
+  }
+  pdf.catalog.getOrCreateAcroForm().dict.set(PDFName.of("NeedAppearances"), lib.PDFBool.True);
 }
 
 const PRINT = 4;
@@ -82,21 +133,26 @@ const HIDDEN = 2;
 function bakeAnnotations(pdf, page, lib) {
   const { PDFName, PDFDict, PDFArray, PDFNumber, PDFRef, pushGraphicsState, popGraphicsState, concatTransformationMatrix, drawObject } = lib;
   const annots = page.node.Annots();
-  if (!annots || !annots.size()) return;
+  const live = [];
+  if (!annots || !annots.size()) return live;
   const numbers = (arr) => (arr instanceof PDFArray ? arr.asArray().map((n) => pdf.context.lookup(n, PDFNumber).asNumber()) : null);
   const ops = [];
   for (let i = 0; i < annots.size(); i++) {
     const annot = annots.lookup(i, PDFDict);
-    const flags = annot.lookup(PDFName.of("F"), PDFNumber)?.asNumber() ?? 0;
+    const flags = annot.lookupMaybe(PDFName.of("F"), PDFNumber)?.asNumber() ?? 0;
     if (!(flags & PRINT) || flags & HIDDEN) continue;
-    const ap = annot.lookup(PDFName.of("AP"), PDFDict);
+    const ap = annot.lookupMaybe(PDFName.of("AP"), PDFDict);
     let ref = ap?.get(PDFName.of("N"));
     // A field with states (a checkbox, a radio button) shows the one named by /AS.
     if (ref && pdf.context.lookup(ref) instanceof PDFDict) {
       const state = annot.lookup(PDFName.of("AS"));
       ref = state ? pdf.context.lookup(ref, PDFDict).get(state) : undefined;
     }
-    if (!ref) continue;
+    if (!ref) {
+      const own = annots.get(i);
+      if (own instanceof PDFRef) live.push(own);
+      continue;
+    }
     if (!(ref instanceof PDFRef)) ref = pdf.context.register(ref);
     const form = pdf.context.lookup(ref);
     const bbox = numbers(form?.dict?.lookup(PDFName.of("BBox")));
@@ -119,7 +175,7 @@ function bakeAnnotations(pdf, page, lib) {
     const name = page.node.newXObject("Annot", ref);
     ops.push(pushGraphicsState(), concatTransformationMatrix(sx, 0, 0, sy, rx0 - sx * bx0, ry0 - sy * by0), drawObject(name), popGraphicsState());
   }
-  if (!ops.length) return;
+  if (!ops.length) return live;
   // Close whatever state the page's own content leaves open before painting over it.
   page.node.normalize();
   const context = pdf.context;
@@ -128,6 +184,7 @@ function bakeAnnotations(pdf, page, lib) {
     context.register(context.contentStream([popGraphicsState()])),
   );
   page.pushOperators(...ops);
+  return live;
 }
 
 /** Turn an image clockwise inside its own frame, keeping its type. */

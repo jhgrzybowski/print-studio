@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { PDFDict, PDFDocument, PDFName, degrees } from "pdf-lib";
+import { PDFDict, PDFDocument, PDFHexString, PDFName, degrees } from "pdf-lib";
 import { deflateSync } from "node:zlib";
 import { hasRotation, placement, readDensity, rotatePdf, turn, withDensity } from "../src/lib/rotate.js";
 import { cleanRange } from "../src/lib/pages.js";
@@ -88,6 +88,36 @@ test("rotatePdf draws fields saved without an appearance before turning them", a
   const xobjects = (dict) => dict.lookup(PDFName.of("Resources"), PDFDict)?.lookup(PDFName.of("XObject"), PDFDict);
   const [drawn] = xobjects(out.getPage(0).node).entries().map(([, ref]) => out.context.lookup(ref));
   assert.ok(xobjects(drawn.dict).keys().map(String).some((n) => n.startsWith("/Annot")));
+});
+
+test("rotatePdf carries over a field Helvetica can't draw, with its value", async () => {
+  const src = await PDFDocument.create();
+  const page = src.addPage([595, 842]);
+  page.drawText("Body", { x: 50, y: 780 });
+  const field = src.getForm().createTextField("pl");
+  field.addToPage(page, { x: 50, y: 700, width: 300, height: 30 });
+  field.acroField.setValue(PDFHexString.fromText("Zażółć gęślą jaźń"));
+  for (const w of field.acroField.getWidgets()) w.dict.delete(PDFName.of("AP"));
+  const { x, y, width, height } = field.acroField.getWidgets()[0].getRectangle();
+  const out = await PDFDocument.load(await rotatePdf(await src.save({ updateFieldAppearances: false }), { 1: 180 }));
+  const annots = out.getPage(0).node.Annots();
+  assert.equal(annots?.size(), 1, "the widget is on the turned page");
+  const widget = annots.lookup(0, PDFDict);
+  const rect = widget.lookup(PDFName.of("Rect")).asArray().map((n) => n.asNumber());
+  // Turned half way round about the page's centre.
+  const expected = [595 - x - width, 842 - y - height, 595 - x, 842 - y];
+  assert.ok(rect.every((v, i) => Math.abs(v - expected[i]) < 0.01), `${rect} ≈ ${expected}`);
+  assert.equal(widget.lookup(PDFName.of("MK"), PDFDict).lookup(PDFName.of("R")).asNumber(), 180);
+  assert.equal(out.getForm().getTextField("pl").getText(), "Zażółć gęślą jaźń");
+});
+
+test("rotatePdf keeps the page's transparency group", async () => {
+  const src = await PDFDocument.create();
+  const page = src.addPage([595, 842]);
+  page.drawRectangle({ x: 10, y: 10, width: 40, height: 40 });
+  page.node.set(PDFName.of("Group"), src.context.obj({ Type: "Group", S: "Transparency", CS: "DeviceRGB" }));
+  const out = await PDFDocument.load(await rotatePdf(await src.save(), { 1: 90 }));
+  assert.equal(out.getPage(0).node.lookup(PDFName.of("Group"), PDFDict).lookup(PDFName.of("S")).toString(), "/Transparency");
 });
 
 test("rotatePdf turns a page whose only marks are annotations", async () => {
