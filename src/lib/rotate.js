@@ -44,7 +44,7 @@ export async function rotatePdf(bytes, rotations) {
     if (!deg || index < 0 || index >= count) continue;
     const page = pdf.getPage(index);
     // A page with nothing on it looks the same at any angle.
-    if (!page.node.Contents()) continue;
+    if (!page.node.Contents() && !page.node.Annots()?.size()) continue;
     // What the viewer shows: the page's own /Rotate is part of it.
     const own = turn(page.getRotation().angle);
     const { width: w, height: h } = page.getSize();

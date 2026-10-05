@@ -11,7 +11,7 @@ import { t } from "../i18n/index.js";
 const ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const NO_TURNS = {};
 
-function PageImage({ fileId, page, className, style }) {
+function PageImage({ fileId, page, className, spin, ar }) {
   const src = api.previewPageUrl(fileId, page);
   // State is tied to the URL it describes, so a new page starts as loading without a reset effect.
   const [result, setResult] = useState({ src: null, state: "loading" });
@@ -24,19 +24,25 @@ function PageImage({ fileId, page, className, style }) {
       ) : (
         <img
           className={`${className} ${state === "ready" ? "is-ready" : ""}`}
-          style={style}
+          style={spin ? { rotate: `${spin}deg`, scale: fitScale(spin, result.src === src ? result.ar : ar) } : undefined}
           src={src}
           alt={t("Page {n}", { n: page })}
           loading="lazy"
           decoding="async"
           draggable={false}
-          onLoad={() => setResult({ src, state: "ready" })}
+          onLoad={(e) => setResult({ src, state: "ready", ar: aspect(e.currentTarget) })}
           onError={() => setResult({ src, state: "error" })}
         />
       )}
     </>
   );
 }
+
+const aspect = (img) => (img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : undefined);
+
+// A quarter turn shrinks the page by its own proportions, as rotate.js does for the printed file;
+// the paper's proportions stand in until the page image has loaded.
+const fitScale = (spin, ar) => (quarter(spin) && ar ? Math.min(ar, 1 / ar) : 1);
 
 // Decoded page images by URL. The sheet swaps to a page only once it is ready to paint, so paging
 // never passes through an empty sheet.
@@ -46,7 +52,7 @@ function preload(src) {
   if (!p) {
     const img = new Image();
     img.src = src;
-    p = img.decode();
+    p = img.decode().then(() => aspect(img));
     p.catch(() => decoded.delete(src));
     decoded.set(src, p);
     if (decoded.size > 120) decoded.delete(decoded.keys().next().value);
@@ -84,7 +90,7 @@ function SheetPage({ fileId, page, spins, ar, className }) {
   useEffect(() => {
     let live = true;
     preload(api.previewPageUrl(fileId, page)).then(
-      () => live && setShown({ page, state: "ready" }),
+      (pageAr) => live && setShown({ page, state: "ready", ar: pageAr }),
       () => live && setShown({ page, state: "error" }),
     );
     return () => {
@@ -105,7 +111,7 @@ function SheetPage({ fileId, page, spins, ar, className }) {
     <motion.div
       className="sheet__content"
       initial={false}
-      animate={{ rotate: spin, scale: quarter(spin) ? Math.min(ar, 1 / ar) : 1 }}
+      animate={{ rotate: spin, scale: fitScale(spin, shown.ar || ar) }}
       transition={jump ? { duration: 0 } : { type: "spring", bounce: 0.12, duration: 0.42 }}
     >
       {shown.state === "error" ? (
@@ -207,7 +213,8 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
                     fileId={fileId}
                     page={p.page}
                     className={`thumb__img ${mono ? "is-mono" : ""}`}
-                    style={spins[p.page] ? { rotate: `${spins[p.page]}deg`, scale: quarter(spins[p.page]) ? Math.min(ar, 1 / ar) : 1 } : undefined}
+                    spin={spins[p.page]}
+                    ar={ar}
                   />
                 </button>
                 {readOnly ? (

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, setUnauthorizedHandler } from "../api/client.js";
 import { interpretStatus } from "../lib/printer.js";
 import { supportedChoices } from "../lib/settings.js";
+import { prefsQueue } from "../lib/prefsQueue.js";
 import { ACTIVE_STATUSES } from "../lib/format.js";
 import { t, useLocale } from "../i18n/index.js";
 
@@ -220,57 +221,39 @@ export function useHistory(enabled) {
 /* ---------- Preferences (free-form JSON on the server) ---------- */
 export function usePreferences(enabled) {
   const [prefs, setPrefs] = useState(null);
-  const latest = useRef({});
   const synced = useRef(false);
-  const queue = useRef(Promise.resolve());
+  const [queue] = useState(() => prefsQueue((doc) => api.savePreferences(doc).then((r) => r.preferences), setPrefs));
 
   useEffect(() => {
+    queue.reset({});
+    synced.current = false;
     if (!enabled) {
       setPrefs(null);
-      latest.current = {};
-      synced.current = false;
       return;
     }
     api
       .preferences()
       .then((r) => {
-        latest.current = r.preferences || {};
+        queue.reset(r.preferences || {});
         synced.current = true;
-        setPrefs(latest.current);
+        setPrefs(queue.current());
       })
       .catch(() => setPrefs({}));
-  }, [enabled]);
+  }, [enabled, queue]);
 
-  // A patch may be a function of the newest preferences, so quick changes in a row don't undo each other.
-  const save = useCallback(async (patch) => {
-    // PUT replaces the whole object, so never save over preferences we failed to read.
-    if (!synced.current) {
-      const r = await api.preferences();
-      latest.current = { ...(r.preferences || {}), ...latest.current };
-      synced.current = true;
-    }
-    const before = latest.current;
-    const next = { ...before, ...(typeof patch === "function" ? patch(before) : patch) };
-    latest.current = next;
-    setPrefs(next);
-    // Each PUT replaces the whole object, so they go out one at a time, in order.
-    const run = queue.current.then(async () => {
-      try {
-        const r = await api.savePreferences(next);
-        // A newer change is already queued behind this one; don't step back over it.
-        if (latest.current === next) latest.current = r.preferences || next;
-      } catch (e) {
-        // Put back what the server still has, unless a later change has already moved on.
-        if (latest.current === next) latest.current = before;
-        throw e;
-      } finally {
-        setPrefs(latest.current);
+  const save = useCallback(
+    async (patch) => {
+      // PUT replaces the whole object, so never save over preferences we failed to read.
+      if (!synced.current) {
+        const r = await api.preferences();
+        // Another save may have read them first and already be under way.
+        if (!synced.current) queue.reset(r.preferences || {});
+        synced.current = true;
       }
-      return latest.current;
-    });
-    queue.current = run.catch(() => {});
-    return run;
-  }, []);
+      return queue.save(patch);
+    },
+    [queue],
+  );
   const update = save;
 
   return { prefs, save, update, loaded: prefs !== null };

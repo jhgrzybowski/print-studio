@@ -74,6 +74,16 @@ test("rotatePdf keeps filled form fields on turned pages", async () => {
   assert.ok(inner.some((n) => n.startsWith("/Annot")), `annotation painted, got ${inner}`);
 });
 
+test("rotatePdf turns a page whose only marks are annotations", async () => {
+  const src = await PDFDocument.create();
+  const page = src.addPage([595, 842]);
+  src.getForm().createTextField("only").addToPage(page, { x: 50, y: 700, width: 300, height: 30 });
+  assert.equal(page.node.Contents(), undefined);
+  const out = await PDFDocument.load(await rotatePdf(await src.save(), { 1: 180 }));
+  const xobjects = out.getPage(0).node.lookup(PDFName.of("Resources"), PDFDict)?.lookup(PDFName.of("XObject"), PDFDict);
+  assert.ok(xobjects?.keys().length, "the page is redrawn turned");
+});
+
 test("withDensity carries an image's resolution into a canvas copy", () => {
   // What a canvas writes: a 1×1 PNG with no pHYs, and a JPEG whose JFIF names no unit.
   const chunk = (type, data) => {
