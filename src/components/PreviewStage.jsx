@@ -4,6 +4,7 @@ import { Check, ChevronLeft, ChevronRight, Minus, Plus, RotateCw, Scan } from "l
 import { api } from "../api/client.js";
 import { formatRange, selectedPages } from "../lib/pages.js";
 import { paperMM } from "../lib/format.js";
+import { frameOnPaper } from "../lib/rotate.js";
 import { FileGlyph } from "./FileGlyph.jsx";
 import { IconKey, Tip, ease } from "./controls.jsx";
 import { t } from "../i18n/index.js";
@@ -83,9 +84,11 @@ function useSpins(turns, count) {
 
 /**
  * The page on the sheet. It keeps showing the last page until the next one has decoded, then
- * swaps in the same frame. A quarter turn shrinks the page to fit, as it will print.
+ * swaps in the same frame. A turn happens inside the page's own frame, which is then placed on
+ * the paper (frameOnPaper), as rotate.js turns the file before the printer places it. A quarter turn shrinks the
+ * page to fit its frame, as it will print.
  */
-function SheetPage({ fileId, page, spins, ar, className }) {
+function SheetPage({ fileId, page, spins, ar, fit, className }) {
   const [shown, setShown] = useState({ page: null, state: "loading" });
   useEffect(() => {
     let live = true;
@@ -107,19 +110,27 @@ function SheetPage({ fileId, page, spins, ar, className }) {
 
   if (shown.page == null) return <span className="skel skel--fill" aria-hidden />;
   const spin = spins[shown.page] || 0;
-  return (
-    <motion.div
-      className="sheet__content"
-      initial={false}
-      animate={{ rotate: spin, scale: fitScale(spin, shown.ar || ar) }}
-      transition={jump ? { duration: 0 } : { type: "spring", bounce: 0.12, duration: 0.42 }}
-    >
-      {shown.state === "error" ? (
+  if (shown.state === "error") {
+    return (
+      <div className="sheet__content">
         <span className="page-missing">{t("Page {n} didn't load", { n: shown.page })}</span>
-      ) : (
-        <img className={`${className} is-ready`} src={api.previewPageUrl(fileId, shown.page)} alt={t("Page {n}", { n: shown.page })} draggable={false} />
-      )}
-    </motion.div>
+      </div>
+    );
+  }
+  const box = frameOnPaper(shown.ar, ar, fit);
+  return (
+    <div className="sheet__content">
+      <div className="sheet__frame" style={{ left: `${box.left}%`, top: `${box.top}%`, width: `${box.width}%`, height: `${box.height}%` }}>
+        <motion.div
+          className="sheet__turn"
+          initial={false}
+          animate={{ rotate: spin, scale: fitScale(spin, shown.ar || ar) }}
+          transition={jump ? { duration: 0 } : { type: "spring", bounce: 0.12, duration: 0.42 }}
+        >
+          <img className={`${className} is-ready`} src={api.previewPageUrl(fileId, shown.page)} alt={t("Page {n}", { n: shown.page })} draggable={false} />
+        </motion.div>
+      </div>
+    </div>
   );
 }
 
@@ -265,6 +276,7 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
                   page={current}
                   spins={spins}
                   ar={ar}
+                  fit={!!settings.fit_to_page}
                   className={`sheet__img ${mono ? "is-mono" : ""} ${settings.fit_to_page ? "is-fit" : ""}`}
                 />
               ) : (

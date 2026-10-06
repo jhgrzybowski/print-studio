@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { PDFDict, PDFDocument, PDFHexString, PDFName, degrees } from "pdf-lib";
 import { deflateSync } from "node:zlib";
-import { hasRotation, placement, readDensity, rotatePdf, turn, withDensity } from "../src/lib/rotate.js";
+import { frameOnPaper, hasRotation, placement, readDensity, rotatePdf, turn, withDensity } from "../src/lib/rotate.js";
 import { cleanRange } from "../src/lib/pages.js";
 
 test("turn normalises angles to clockwise quarter turns", () => {
@@ -201,6 +201,23 @@ test("withDensity carries an image's resolution into a canvas copy", () => {
   const exifJpeg = new Uint8Array(Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe1]), len, app1, Buffer.from([0xff, 0xda])]));
   near(readDensity(exifJpeg), 300, 300);
   assert.equal(withDensity(jpeg, null), jpeg);
+});
+
+test("frameOnPaper fits a page inside the paper, or covers it from the top", () => {
+  const a4 = 210 / 297;
+  // A square photo on portrait A4: fitted, it spans the width, centred; unscaled, it spans the
+  // height and spills over both sides.
+  const fitted = frameOnPaper(1, a4, true);
+  assert.equal(fitted.width, 100);
+  assert.ok(Math.abs(fitted.height - a4 * 100) < 1e-9 && Math.abs(fitted.top - (100 - a4 * 100) / 2) < 1e-9);
+  const covered = frameOnPaper(1, a4, false);
+  assert.equal(covered.height, 100);
+  assert.equal(covered.top, 0);
+  assert.ok(Math.abs(covered.width - 100 / a4) < 1e-9 && covered.left < 0);
+  // A tall page on landscape paper, unscaled: spans the width, top aligned, cut at the bottom.
+  const tall = frameOnPaper(0.5, 2, false);
+  assert.deepEqual([tall.left, tall.top, tall.width, tall.height], [0, 0, 100, 400]);
+  assert.deepEqual(frameOnPaper(undefined, a4, true), { left: 0, top: 0, width: 100, height: 100 });
 });
 
 test("cleanRange keeps what a range needs and turns phone dashes into hyphens", () => {

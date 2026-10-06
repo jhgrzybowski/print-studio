@@ -435,6 +435,14 @@
   inset: 0;
   transition: opacity var(--t-mid) ease;
 }
+/* The page's own frame on the paper (see frameBox), and the turn inside it. */
+.sheet__frame {
+  position: absolute;
+}
+.sheet__turn {
+  position: absolute;
+  inset: 0;
+}
 .sheet__img {
   position: absolute;
   inset: 0;

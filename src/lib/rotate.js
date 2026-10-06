@@ -32,6 +32,18 @@ export function placement(w, h, W, H, deg) {
   return { x: at[0], y: at[1], scale: s, ccw: -d };
 }
 
+/**
+ * Where a page's own frame sits on the paper, in percent of the sheet: fitted inside it (`fit`),
+ * or covering it from the top, as the printer places a page it doesn't scale. `page` and `paper`
+ * are width / height.
+ */
+export function frameOnPaper(page, paper, fit) {
+  if (!page || !paper) return { left: 0, top: 0, width: 100, height: 100 };
+  const wider = page > paper;
+  const [width, height] = wider === fit ? [100, (paper / page) * 100] : [(page / paper) * 100, 100];
+  return { left: (100 - width) / 2, top: fit ? (100 - height) / 2 : 0, width, height };
+}
+
 /** Turn pages of a PDF in place. `rotations` maps 1-based page numbers to clockwise degrees. */
 export async function rotatePdf(bytes, rotations) {
   const lib = await import("pdf-lib");
