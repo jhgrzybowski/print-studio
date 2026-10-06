@@ -98,6 +98,10 @@ export async function rotatePdf(bytes, rotations) {
     const embedded = await pdf.embedPage(page, { left: crop.x, bottom: crop.y, right: crop.x + w, top: crop.y + h });
     const p = placement(w, h, W, H, own + deg);
     const fresh = pdf.insertPage(index, [W, H]);
+    // A /Rotate or crop box set on the page tree would reach the new page too; the turn and the crop
+    // are already in what it draws.
+    fresh.setRotation(degrees(0));
+    fresh.setCropBox(0, 0, W, H);
     // Large-format pages scale their units; the new page must measure the same.
     const unit = page.node.get(lib.PDFName.of("UserUnit"));
     if (unit) fresh.node.set(lib.PDFName.of("UserUnit"), unit);

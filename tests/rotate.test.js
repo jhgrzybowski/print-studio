@@ -256,3 +256,16 @@ test("a NoRotate annotation is turned back about its shown top-left corner", () 
   assert.deepEqual(apply(uprightMatrix(180, rect), [100, 220]), [160, 200]);
   assert.deepEqual(apply(uprightMatrix(270, rect), [100, 220]), [160, 220]);
 });
+
+test("rotatePdf doesn't let an inherited /Rotate turn the new page again", async () => {
+  const src = await PDFDocument.create();
+  src.addPage([200, 300]).drawRectangle({ x: 10, y: 10, width: 40, height: 40 });
+  src.catalog.Pages().set(PDFName.of("Rotate"), src.context.obj(90));
+  const before = await PDFDocument.load(await src.save());
+  assert.equal(before.getPage(0).getRotation().angle, 90);
+  const out = await PDFDocument.load(await rotatePdf(await src.save(), { 1: 90 }));
+  const turned = out.getPage(0);
+  assert.equal(turned.getRotation().angle, 0);
+  // The page keeps the landscape frame it was shown in; the turn is drawn inside it.
+  assert.deepEqual([turned.getWidth(), turned.getHeight()], [300, 200]);
+});
