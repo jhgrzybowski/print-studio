@@ -142,6 +142,9 @@ test("rotatePdf keeps only the crop box, the part a viewer shows", async () => {
   const [drawn] = xobjects.entries().map(([, ref]) => out.context.lookup(ref));
   const bbox = drawn.dict.lookup(PDFName.of("BBox")).asArray().map((n) => n.asNumber());
   assert.deepEqual(bbox, [50, 30, 645, 872]);
+  // The form moves the crop box's corner to its origin, where placement() expects it.
+  const matrix = drawn.dict.lookup(PDFName.of("Matrix")).asArray().map((n) => n.asNumber());
+  assert.deepEqual(matrix, [1, 0, 0, 1, -50, -30]);
 });
 
 test("rotatePdf keeps a large-format page's UserUnit", async () => {
