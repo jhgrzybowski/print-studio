@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { PDFDict, PDFDocument, PDFHexString, PDFName, degrees } from "pdf-lib";
 import { deflateSync } from "node:zlib";
-import { frameOnPaper, hasRotation, placement, readDensity, rotatePdf, turn, withDensity, withFlip } from "../src/lib/rotate.js";
+import { frameOnPaper, hasRotation, placement, readDensity, rotatePdf, turn, uprightMatrix, withDensity, withFlip } from "../src/lib/rotate.js";
 import { cleanRange } from "../src/lib/pages.js";
 
 test("turn normalises angles to clockwise quarter turns", () => {
@@ -242,4 +242,17 @@ test("a protected PDF is refused rather than turned blind", async () => {
   src.context.trailerInfo.Encrypt = src.context.register(src.context.obj({ Filter: "Standard", V: 1, R: 2 }));
   const bytes = await src.save();
   await assert.rejects(rotatePdf(bytes, { 1: 90 }), (e) => e.code === "encrypted");
+});
+
+test("a NoRotate annotation is turned back about its shown top-left corner", () => {
+  const apply = ([a, b, c, d, e, f], [x, y]) => [a * x + c * y + e, b * x + d * y + f];
+  const rect = [100, 200, 160, 220]; // 60 wide, 20 tall
+  assert.deepEqual(uprightMatrix(0, rect), [1, 0, 0, 1, 0, 0]);
+  // Shown a quarter turn clockwise, the rect's lower-left corner is its top left on screen.
+  const m = uprightMatrix(90, rect);
+  assert.deepEqual(apply(m, [100, 220]), [100, 200]);
+  // Its own right-hand edge runs up the page, which reads left to right once the page is turned.
+  assert.deepEqual(apply(m, [160, 220]), [100, 260]);
+  assert.deepEqual(apply(uprightMatrix(180, rect), [100, 220]), [160, 200]);
+  assert.deepEqual(apply(uprightMatrix(270, rect), [100, 220]), [160, 220]);
 });

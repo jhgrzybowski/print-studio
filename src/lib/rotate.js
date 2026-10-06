@@ -94,7 +94,7 @@ export async function rotatePdf(bytes, rotations) {
     const crop = page.getCropBox();
     const { width: w, height: h } = crop;
     const [W, H] = own === 90 || own === 270 ? [h, w] : [w, h];
-    const live = bakeAnnotations(pdf, page, lib);
+    const live = bakeAnnotations(pdf, page, own, lib);
     const embedded = await pdf.embedPage(page, { left: crop.x, bottom: crop.y, right: crop.x + w, top: crop.y + h });
     const p = placement(w, h, W, H, own + deg);
     const fresh = pdf.insertPage(index, [W, H]);
@@ -147,13 +147,26 @@ function carry(pdf, refs, fresh, crop, p, clockwise, lib) {
 
 const PRINT = 4;
 const HIDDEN = 2;
+const NO_ROTATE = 16;
+
+/**
+ * For an annotation drawn in [x0, y0, x1, y1] on a page shown turned `own` degrees clockwise: the
+ * matrix that turns it back the same amount about the corner shown as its top left, so it reads
+ * upright with that corner in place, as a viewer shows a NoRotate annotation (PDF 32000, 12.5.3).
+ */
+export function uprightMatrix(own, [x0, y0, x1, y1]) {
+  const r = (turn(own) * Math.PI) / 180;
+  const [cos, sin] = [Math.round(Math.cos(r)), Math.round(Math.sin(r))];
+  const [px, py] = { 0: [x0, y1], 90: [x0, y0], 180: [x1, y0], 270: [x1, y1] }[turn(own)];
+  return [cos, sin, sin ? -sin : 0, cos, px - (cos * x0 - sin * y1), py - (sin * x0 + cos * y1)];
+}
 
 /**
  * Filled form fields, stamps and comments sit beside a page's content, and an embedded copy of
  * the page keeps only the content. Paint every printable annotation's appearance into the content
  * first, placed the way a viewer places it (PDF 32000, 12.5.5), so the turned print still has it.
  */
-function bakeAnnotations(pdf, page, lib) {
+function bakeAnnotations(pdf, page, own, lib) {
   const { PDFName, PDFDict, PDFArray, PDFNumber, PDFRef, pushGraphicsState, popGraphicsState, concatTransformationMatrix, drawObject } = lib;
   const annots = page.node.Annots();
   const live = [];
@@ -196,7 +209,11 @@ function bakeAnnotations(pdf, page, lib) {
     const sx = (rx1 - rx0) / (bx1 - bx0);
     const sy = (ry1 - ry0) / (by1 - by0);
     const name = page.node.newXObject("Annot", ref);
-    ops.push(pushGraphicsState(), concatTransformationMatrix(sx, 0, 0, sy, rx0 - sx * bx0, ry0 - sy * by0), drawObject(name), popGraphicsState());
+    ops.push(pushGraphicsState());
+    // A NoRotate annotation stays upright on a page with its own /Rotate, pinned by the corner
+    // that shows as its top left. Baked into the content, it has to be turned back by hand.
+    if (flags & NO_ROTATE && own) ops.push(concatTransformationMatrix(...uprightMatrix(own, [rx0, ry0, rx1, ry1])));
+    ops.push(concatTransformationMatrix(sx, 0, 0, sy, rx0 - sx * bx0, ry0 - sy * by0), drawObject(name), popGraphicsState());
   }
   if (!ops.length) return live;
   // Close whatever state the page's own content leaves open before painting over it.
