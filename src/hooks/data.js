@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, setUnauthorizedHandler } from "../api/client.js";
 import { interpretStatus } from "../lib/printer.js";
 import { supportedChoices } from "../lib/settings.js";
+import { prefsQueue } from "../lib/prefsQueue.js";
 import { ACTIVE_STATUSES } from "../lib/format.js";
 import { t, useLocale } from "../i18n/index.js";
 
@@ -220,43 +221,107 @@ export function useHistory(enabled) {
 /* ---------- Preferences (free-form JSON on the server) ---------- */
 export function usePreferences(enabled) {
   const [prefs, setPrefs] = useState(null);
-  const latest = useRef({});
+  const [queue] = useState(() => prefsQueue((doc) => api.savePreferences(doc).then((r) => r.preferences), setPrefs));
+  // One read of the server's preferences, shared by the first load and any save made before it lands.
+  const reading = useRef(null);
   const synced = useRef(false);
+  // Bumped on every sign-in and sign-out, so a save started under one session never runs in another.
+  const session = useRef(0);
+  // Until the server's copy is read, archived and deleted prints can't be told apart from the rest.
+  const [ready, setReady] = useState(false);
+  const sync = useCallback(() => {
+    if (!reading.current) {
+      const read = api.preferences().then(
+        (r) => {
+          if (reading.current !== read) return; // Signed out (or in again) since.
+          queue.reset(r.preferences || {});
+          synced.current = true;
+          setReady(true);
+          setPrefs(queue.current());
+        },
+        (e) => {
+          if (reading.current === read) reading.current = null;
+          throw e;
+        },
+      );
+      reading.current = read;
+    }
+    return reading.current;
+  }, [queue]);
 
   useEffect(() => {
+    queue.reset({});
+    reading.current = null;
+    synced.current = false;
+    session.current += 1;
+    setReady(false);
     if (!enabled) {
       setPrefs(null);
-      latest.current = {};
-      synced.current = false;
       return;
     }
-    api
-      .preferences()
-      .then((r) => {
-        latest.current = r.preferences || {};
-        synced.current = true;
-        setPrefs(latest.current);
-      })
-      .catch(() => setPrefs({}));
-  }, [enabled]);
+    let live = true;
+    let retry;
+    const load = () =>
+      sync().catch(() => {
+        if (!live) return;
+        setPrefs((p) => p || {});
+        retry = setTimeout(load, 5000);
+      });
+    load();
+    return () => {
+      live = false;
+      clearTimeout(retry);
+      // Signed out or unmounted: saves still waiting their turn must not go out under a later session.
+      queue.reset({});
+      reading.current = null;
+      synced.current = false;
+      session.current += 1;
+    };
+  }, [enabled, queue, sync]);
 
-  const save = useCallback(async (patch) => {
-    // PUT replaces the whole object, so never save over preferences we failed to read.
-    if (!synced.current) {
-      const r = await api.preferences();
-      latest.current = { ...(r.preferences || {}), ...latest.current };
-      synced.current = true;
-    }
-    const next = { ...latest.current, ...patch };
-    latest.current = next;
-    setPrefs(next);
-    const r = await api.savePreferences(next);
-    latest.current = r.preferences || next;
-    setPrefs(latest.current);
-    return latest.current;
-  }, []);
+  const save = useCallback(
+    async (patch) => {
+      // PUT replaces the whole object, so never save over preferences we failed to read.
+      const mine = session.current;
+      while (!synced.current) {
+        await sync();
+        if (session.current !== mine) throw new Error(t("Signed out before the change was saved."));
+      }
+      return queue.save(patch);
+    },
+    [queue, sync],
+  );
+  const update = save;
 
-  return { prefs, save, loaded: prefs !== null };
+  return { prefs, save, update, loaded: prefs !== null, synced: ready };
+}
+
+const NONE = [];
+const without = (list, ids) => (list || NONE).filter((id) => !ids.includes(id));
+
+/**
+ * Archived and deleted prints, kept with the account's preferences. The server keeps every
+ * history record, so deleting hides a print for good rather than erasing it there.
+ */
+export function useArchive(prefs) {
+  const ids = prefs.prefs?.archived_history || NONE;
+  const deleted = prefs.prefs?.deleted_history || NONE;
+  const archived = useMemo(() => new Set(ids), [ids]);
+  const gone = useMemo(() => new Set(deleted), [deleted]);
+  const hidden = useMemo(() => new Set([...ids, ...deleted]), [ids, deleted]);
+  const { update } = prefs;
+  const archive = useCallback((id) => update((p) => ({ archived_history: [id, ...without(p.archived_history, [id])] })), [update]);
+  const restore = useCallback((id) => update((p) => ({ archived_history: without(p.archived_history, [id]) })), [update]);
+  const remove = useCallback(
+    (list) =>
+      update((p) => ({
+        archived_history: without(p.archived_history, list),
+        deleted_history: [...new Set([...(p.deleted_history || NONE), ...list])],
+      })),
+    [update],
+  );
+  // `loaded` waits for the server's copy: until then any history row might be one the person hid.
+  return { ids, archived, deleted: gone, hidden, archive, restore, remove, loaded: prefs.synced };
 }
 
 /* ---------- Debounced value ---------- */

@@ -1,0 +1,294 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { PDFDict, PDFDocument, PDFHexString, PDFName, degrees } from "pdf-lib";
+import { deflateSync } from "node:zlib";
+import { frameOnPaper, hasRotation, placement, readDensity, rotatePdf, turn, uprightMatrix, withDensity, withFlip } from "../src/lib/rotate.js";
+import { cleanRange } from "../src/lib/pages.js";
+
+test("turn normalises angles to clockwise quarter turns", () => {
+  assert.equal(turn(0), 0);
+  assert.equal(turn(450), 90);
+  assert.equal(turn(-90), 270);
+  assert.equal(turn(360), 0);
+  assert.equal(hasRotation({ 1: 0, 2: 360 }), false);
+  assert.equal(hasRotation({ 3: 180 }), true);
+});
+
+// Corners of a w×h box turned by `ccw` degrees about (x, y) and scaled.
+function bounds(w, h, p) {
+  const r = (p.ccw * Math.PI) / 180;
+  const pts = [
+    [0, 0],
+    [w, 0],
+    [0, h],
+    [w, h],
+  ].map(([u, v]) => [p.x + p.scale * (u * Math.cos(r) - v * Math.sin(r)), p.y + p.scale * (u * Math.sin(r) + v * Math.cos(r))]);
+  const xs = pts.map((q) => q[0]);
+  const ys = pts.map((q) => q[1]);
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+}
+
+test("placement centres the turned page inside the same frame", () => {
+  const [W, H] = [595, 842];
+  for (const deg of [0, 90, 180, 270]) {
+    const p = placement(W, H, W, H, deg);
+    const [x0, y0, x1, y1] = bounds(W, H, p);
+    assert.ok(x0 >= -0.01 && y0 >= -0.01 && x1 <= W + 0.01 && y1 <= H + 0.01, `fits at ${deg}°`);
+    assert.ok(Math.abs((x0 + x1) / 2 - W / 2) < 0.01 && Math.abs((y0 + y1) / 2 - H / 2) < 0.01, `centred at ${deg}°`);
+    // A quarter turn fills the width; a half turn fills the page.
+    if (deg % 180) assert.ok(Math.abs(x1 - x0 - W) < 0.01);
+    else assert.ok(Math.abs(x1 - x0 - W) < 0.01 && Math.abs(y1 - y0 - H) < 0.01);
+  }
+});
+
+test("rotatePdf keeps every page's size and leaves unturned pages alone", async () => {
+  const src = await PDFDocument.create();
+  const mark = (page) => page.drawRectangle({ x: 20, y: page.getHeight() - 60, width: 40, height: 40 });
+  mark(src.addPage([595, 842]));
+  mark(src.addPage([842, 595]));
+  const own = src.addPage([595, 842]);
+  own.setRotation(degrees(90));
+  mark(own);
+  src.addPage([595, 842]);
+  const out = await PDFDocument.load(await rotatePdf(await src.save(), { 1: 90, 3: 180, 4: 90 }));
+  assert.equal(out.getPageCount(), 4);
+  const sizes = out.getPages().map((p) => [p.getSize().width, p.getSize().height, p.getRotation().angle]);
+  assert.deepEqual(sizes[0], [595, 842, 0]);
+  assert.deepEqual(sizes[1], [842, 595, 0]);
+  // A page with its own /Rotate becomes the frame the viewer showed, with the turn baked in.
+  assert.deepEqual(sizes[2], [842, 595, 0]);
+});
+
+test("rotatePdf keeps filled form fields on turned pages", async () => {
+  const src = await PDFDocument.create();
+  const page = src.addPage([595, 842]);
+  page.drawText("Body", { x: 50, y: 780 });
+  const field = src.getForm().createTextField("name");
+  field.setText("Filled");
+  field.addToPage(page, { x: 50, y: 700, width: 300, height: 30 });
+  const out = await PDFDocument.load(await rotatePdf(await src.save(), { 1: 90 }));
+  // The turned page is one drawing of the old page; that drawing must paint the field's appearance.
+  const xobjects = (dict) => dict.lookup(PDFName.of("Resources"), PDFDict)?.lookup(PDFName.of("XObject"), PDFDict);
+  const [drawn] = xobjects(out.getPage(0).node).entries().map(([, ref]) => out.context.lookup(ref));
+  const inner = xobjects(drawn.dict).keys().map(String);
+  assert.ok(inner.some((n) => n.startsWith("/Annot")), `annotation painted, got ${inner}`);
+});
+
+test("rotatePdf draws fields saved without an appearance before turning them", async () => {
+  const src = await PDFDocument.create();
+  const page = src.addPage([595, 842]);
+  page.drawText("Body", { x: 50, y: 780 });
+  const field = src.getForm().createTextField("bare");
+  field.setText("Filled");
+  field.addToPage(page, { x: 50, y: 700, width: 300, height: 30 });
+  // Strip the drawing, as a /NeedAppearances form saves it: only the value is left.
+  for (const w of field.acroField.getWidgets()) w.dict.delete(PDFName.of("AP"));
+  const bytes = await src.save({ updateFieldAppearances: false });
+  const out = await PDFDocument.load(await rotatePdf(bytes, { 1: 90 }));
+  const xobjects = (dict) => dict.lookup(PDFName.of("Resources"), PDFDict)?.lookup(PDFName.of("XObject"), PDFDict);
+  const [drawn] = xobjects(out.getPage(0).node).entries().map(([, ref]) => out.context.lookup(ref));
+  assert.ok(xobjects(drawn.dict).keys().map(String).some((n) => n.startsWith("/Annot")));
+});
+
+test("rotatePdf carries over a field Helvetica can't draw, with its value", async () => {
+  const src = await PDFDocument.create();
+  const page = src.addPage([595, 842]);
+  page.drawText("Body", { x: 50, y: 780 });
+  const field = src.getForm().createTextField("pl");
+  field.addToPage(page, { x: 50, y: 700, width: 300, height: 30 });
+  field.acroField.setValue(PDFHexString.fromText("Zażółć gęślą jaźń"));
+  for (const w of field.acroField.getWidgets()) w.dict.delete(PDFName.of("AP"));
+  const { x, y, width, height } = field.acroField.getWidgets()[0].getRectangle();
+  const out = await PDFDocument.load(await rotatePdf(await src.save({ updateFieldAppearances: false }), { 1: 180 }));
+  const annots = out.getPage(0).node.Annots();
+  assert.equal(annots?.size(), 1, "the widget is on the turned page");
+  const widget = annots.lookup(0, PDFDict);
+  const rect = widget.lookup(PDFName.of("Rect")).asArray().map((n) => n.asNumber());
+  // Turned half way round about the page's centre.
+  const expected = [595 - x - width, 842 - y - height, 595 - x, 842 - y];
+  assert.ok(rect.every((v, i) => Math.abs(v - expected[i]) < 0.01), `${rect} ≈ ${expected}`);
+  assert.equal(widget.lookup(PDFName.of("MK"), PDFDict).lookup(PDFName.of("R")).asNumber(), 180);
+  assert.equal(out.getForm().getTextField("pl").getText(), "Zażółć gęślą jaźń");
+});
+
+test("rotatePdf keeps the page's transparency group", async () => {
+  const src = await PDFDocument.create();
+  const page = src.addPage([595, 842]);
+  page.drawRectangle({ x: 10, y: 10, width: 40, height: 40 });
+  page.node.set(PDFName.of("Group"), src.context.obj({ Type: "Group", S: "Transparency", CS: "DeviceRGB" }));
+  const out = await PDFDocument.load(await rotatePdf(await src.save(), { 1: 90 }));
+  assert.equal(out.getPage(0).node.lookup(PDFName.of("Group"), PDFDict).lookup(PDFName.of("S")).toString(), "/Transparency");
+});
+
+test("rotatePdf turns a page whose only marks are annotations", async () => {
+  const src = await PDFDocument.create();
+  const page = src.addPage([595, 842]);
+  src.getForm().createTextField("only").addToPage(page, { x: 50, y: 700, width: 300, height: 30 });
+  assert.equal(page.node.Contents(), undefined);
+  const out = await PDFDocument.load(await rotatePdf(await src.save(), { 1: 180 }));
+  const xobjects = out.getPage(0).node.lookup(PDFName.of("Resources"), PDFDict)?.lookup(PDFName.of("XObject"), PDFDict);
+  assert.ok(xobjects?.keys().length, "the page is redrawn turned");
+});
+
+test("rotatePdf keeps only the crop box, the part a viewer shows", async () => {
+  const src = await PDFDocument.create();
+  const page = src.addPage([700, 900]);
+  page.setCropBox(50, 30, 595, 842);
+  page.drawRectangle({ x: 60, y: 40, width: 40, height: 40 });
+  const out = await PDFDocument.load(await rotatePdf(await src.save(), { 1: 90 }));
+  const turned = out.getPage(0);
+  assert.deepEqual([turned.getWidth(), turned.getHeight()], [595, 842]);
+  const xobjects = turned.node.lookup(PDFName.of("Resources"), PDFDict).lookup(PDFName.of("XObject"), PDFDict);
+  const [drawn] = xobjects.entries().map(([, ref]) => out.context.lookup(ref));
+  const bbox = drawn.dict.lookup(PDFName.of("BBox")).asArray().map((n) => n.asNumber());
+  assert.deepEqual(bbox, [50, 30, 645, 872]);
+  // The form moves the crop box's corner to its origin, where placement() expects it.
+  const matrix = drawn.dict.lookup(PDFName.of("Matrix")).asArray().map((n) => n.asNumber());
+  assert.deepEqual(matrix, [1, 0, 0, 1, -50, -30]);
+});
+
+test("rotatePdf keeps a large-format page's UserUnit", async () => {
+  const src = await PDFDocument.create();
+  const page = src.addPage([600, 400]);
+  page.node.set(PDFName.of("UserUnit"), src.context.obj(4));
+  page.drawRectangle({ x: 10, y: 10, width: 40, height: 40 });
+  const out = await PDFDocument.load(await rotatePdf(await src.save(), { 1: 90 }));
+  assert.equal(out.getPage(0).node.lookup(PDFName.of("UserUnit")).asNumber(), 4);
+});
+
+test("withDensity carries an image's resolution into a canvas copy", () => {
+  // What a canvas writes: a 1×1 PNG with no pHYs, and a JPEG whose JFIF names no unit.
+  const chunk = (type, data) => {
+    const len = Buffer.alloc(4);
+    len.writeUInt32BE(data.length);
+    return Buffer.concat([len, Buffer.from(type), data, Buffer.alloc(4)]);
+  };
+  const ihdr = Buffer.from([0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0, 0, 0]);
+  const png = new Uint8Array(
+    Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(Buffer.from([0, 0]))), chunk("IEND", Buffer.alloc(0))]),
+  );
+  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 16, 0x4a, 0x46, 0x49, 0x46, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0xff, 0xda]);
+  assert.equal(readDensity(png), null);
+  assert.equal(readDensity(jpeg), null);
+  const near = (d, x, y) => assert.ok(Math.abs(d.x - x) < 0.1 && Math.abs(d.y - y) < 0.1, JSON.stringify(d));
+  const png300 = withDensity(png, { x: 300, y: 300 });
+  near(readDensity(png300), 300, 300);
+  // Writing again replaces the chunk rather than adding a second one.
+  near(readDensity(withDensity(png300, { x: 150, y: 72 })), 150, 72);
+  assert.equal(withDensity(png300, { x: 150, y: 72 }).length, png300.length);
+  near(readDensity(withDensity(jpeg, { x: 200, y: 200 })), 200, 200);
+  // A JPEG that names its resolution only in EXIF (big-endian TIFF, 300/1 per inch).
+  const tiff = Buffer.alloc(8 + 2 + 3 * 12 + 4 + 16);
+  tiff.write("MM", 0);
+  tiff.writeUInt16BE(42, 2);
+  tiff.writeUInt32BE(8, 4);
+  tiff.writeUInt16BE(3, 8);
+  const entry = (n, tag, type, value) => {
+    const o = 10 + n * 12;
+    tiff.writeUInt16BE(tag, o);
+    tiff.writeUInt16BE(type, o + 2);
+    tiff.writeUInt32BE(1, o + 4);
+    if (type === 3) tiff.writeUInt16BE(value, o + 8);
+    else tiff.writeUInt32BE(value, o + 8);
+  };
+  entry(0, 0x011a, 5, 50);
+  entry(1, 0x011b, 5, 58);
+  entry(2, 0x0128, 3, 2);
+  tiff.writeUInt32BE(300, 50);
+  tiff.writeUInt32BE(1, 54);
+  tiff.writeUInt32BE(300, 58);
+  tiff.writeUInt32BE(1, 62);
+  const app1 = Buffer.concat([Buffer.from("Exif\0\0", "binary"), tiff]);
+  const len = Buffer.alloc(2);
+  len.writeUInt16BE(app1.length + 2);
+  const exifJpeg = new Uint8Array(Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe1]), len, app1, Buffer.from([0xff, 0xda])]));
+  near(readDensity(exifJpeg), 300, 300);
+  assert.equal(withDensity(jpeg, null), jpeg);
+});
+
+test("frameOnPaper fits a page inside the paper, or covers it from the top", () => {
+  const a4 = 210 / 297;
+  // A square photo on portrait A4: fitted, it spans the width, centred; unscaled, it spans the
+  // height and spills over both sides.
+  const fitted = frameOnPaper(1, a4, true);
+  assert.equal(fitted.width, 100);
+  assert.ok(Math.abs(fitted.height - a4 * 100) < 1e-9 && Math.abs(fitted.top - (100 - a4 * 100) / 2) < 1e-9);
+  const covered = frameOnPaper(1, a4, false);
+  assert.equal(covered.height, 100);
+  assert.equal(covered.top, 0);
+  assert.ok(Math.abs(covered.width - 100 / a4) < 1e-9 && covered.left < 0);
+  // A tall page on landscape paper, unscaled: spans the width, top aligned, cut at the bottom.
+  const tall = frameOnPaper(0.5, 2, false);
+  assert.deepEqual([tall.left, tall.top, tall.width, tall.height], [0, 0, 100, 400]);
+  assert.deepEqual(frameOnPaper(undefined, a4, true), { left: 0, top: 0, width: 100, height: 100 });
+});
+
+test("cleanRange keeps what a range needs and turns phone dashes into hyphens", () => {
+  assert.equal(cleanRange("1–3, 5"), "1-3, 5");
+  assert.equal(cleanRange("2—4;7"), "2-4,7");
+  assert.equal(cleanRange("1a-2"), "1-2");
+});
+
+test("an upside-down flip adds a half turn to every page and leaves manual turns alone", () => {
+  const manual = { 2: 90 };
+  assert.deepEqual(withFlip(manual, true, 3), { 1: 180, 2: 270, 3: 180 });
+  assert.equal(withFlip(manual, false, 3), manual);
+  assert.deepEqual(manual, { 2: 90 });
+});
+
+test("a protected PDF is refused rather than turned blind", async () => {
+  const src = await PDFDocument.create();
+  src.addPage([200, 300]);
+  src.context.trailerInfo.Encrypt = src.context.register(src.context.obj({ Filter: "Standard", V: 1, R: 2 }));
+  const bytes = await src.save();
+  await assert.rejects(rotatePdf(bytes, { 1: 90 }), (e) => e.code === "encrypted");
+});
+
+test("a NoRotate annotation is turned back about its shown top-left corner", () => {
+  const apply = ([a, b, c, d, e, f], [x, y]) => [a * x + c * y + e, b * x + d * y + f];
+  const rect = [100, 200, 160, 220]; // 60 wide, 20 tall
+  assert.deepEqual(uprightMatrix(0, rect), [1, 0, 0, 1, 0, 0]);
+  // Shown a quarter turn clockwise, the rect's lower-left corner is its top left on screen.
+  const m = uprightMatrix(90, rect);
+  assert.deepEqual(apply(m, [100, 220]), [100, 200]);
+  // Its own right-hand edge runs up the page, which reads left to right once the page is turned.
+  assert.deepEqual(apply(m, [160, 220]), [100, 260]);
+  assert.deepEqual(apply(uprightMatrix(180, rect), [100, 220]), [160, 200]);
+  assert.deepEqual(apply(uprightMatrix(270, rect), [100, 220]), [160, 220]);
+});
+
+test("rotatePdf doesn't let an inherited /Rotate turn the new page again", async () => {
+  const src = await PDFDocument.create();
+  src.addPage([200, 300]).drawRectangle({ x: 10, y: 10, width: 40, height: 40 });
+  src.catalog.Pages().set(PDFName.of("Rotate"), src.context.obj(90));
+  const before = await PDFDocument.load(await src.save());
+  assert.equal(before.getPage(0).getRotation().angle, 90);
+  const out = await PDFDocument.load(await rotatePdf(await src.save(), { 1: 90 }));
+  const turned = out.getPage(0);
+  assert.equal(turned.getRotation().angle, 0);
+  // The page keeps the landscape frame it was shown in; the turn is drawn inside it.
+  assert.deepEqual([turned.getWidth(), turned.getHeight()], [300, 200]);
+});
+
+test("rotatePdf carries a NoRotate field with only the turn asked for", async () => {
+  const src = await PDFDocument.create();
+  const page = src.addPage([595, 842]);
+  page.setRotation(degrees(90));
+  page.drawText("Body", { x: 50, y: 780 });
+  const field = src.getForm().createTextField("pl");
+  field.addToPage(page, { x: 50, y: 700, width: 300, height: 30 });
+  field.acroField.setValue(PDFHexString.fromText("Zażółć"));
+  for (const w of field.acroField.getWidgets()) {
+    w.dict.delete(PDFName.of("AP"));
+    w.dict.set(PDFName.of("F"), src.context.obj(4 | 16));
+    w.dict.delete(PDFName.of("MK"));
+  }
+  const { width, height } = field.acroField.getWidgets()[0].getRectangle();
+  const out = await PDFDocument.load(await rotatePdf(await src.save({ updateFieldAppearances: false }), { 1: 90 }));
+  const widget = out.getPage(0).node.Annots().lookup(0, PDFDict);
+  // Shown upright before, so a quarter turn clockwise is all it gets.
+  assert.equal(widget.lookup(PDFName.of("MK"), PDFDict).lookup(PDFName.of("R")).asNumber(), 270);
+  const [x0, y0, x1, y1] = widget.lookup(PDFName.of("Rect")).asArray().map((n) => n.asNumber());
+  const scale = Math.min(842 / 595, 595 / 842);
+  assert.ok(Math.abs(x1 - x0 - height * scale) < 0.01 && Math.abs(y1 - y0 - width * scale) < 0.01, `${x1 - x0} × ${y1 - y0}`);
+});

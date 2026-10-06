@@ -1,17 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError } from "../api/client.js";
-import { BASE_SETTINGS, fromRequested, reconcile, toPrintOptions } from "../lib/settings.js";
+import { BASE_SETTINGS, fromRequested, meaningfulWarnings, reconcile, toPrintOptions } from "../lib/settings.js";
 import { parseRange } from "../lib/pages.js";
+import { hasRotation, rotateImage, rotatePdf, turn, withFlip } from "../lib/rotate.js";
 import { fileKind, formatBytes } from "../lib/format.js";
 import { useDebounced } from "./data.js";
 import { t, useLocale } from "../i18n/index.js";
 
 const OFFICE_EXT = ["docx", "xlsx", "pptx", "odt", "ods", "odp"];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// Warnings the backend emits for every mapped option; they add noise, not information.
-const NOISE = [/^Mapped \S+ to detected /i, /^Mapped .* through detected PPD/i, /^Ignored fit_to_page/i, /collate/i, /preserve the user-specified page order/i];
-export const meaningfulWarnings = (list = []) => list.filter((w) => !NOISE.some((re) => re.test(w)));
 
 /**
  * The document being composed: upload -> preview -> settings -> validate -> print.
@@ -22,17 +19,33 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
   const [settings, setSettings] = useState(BASE_SETTINGS);
   const [validation, setValidation] = useState({ state: "idle" });
   const [printing, setPrinting] = useState({ state: "idle" });
+  // Clockwise turns by page number, baked into a fresh upload when printing.
+  const [manual, setManual] = useState({});
+  // An upside-down default or history job turns every page half way on top of the manual turns,
+  // so applying a normal default later can take it back off without losing them.
+  const [flip, setFlip] = useState(false);
   const uploadCtl = useRef(null);
+  const turnedCtl = useRef(null);
   const seq = useRef(0);
 
   const hasChoices = Object.keys(choices).length > 0;
+
+  // Leaving (signing out included) calls off whatever is still on its way to the printer.
+  useEffect(
+    () => () => {
+      seq.current++;
+      uploadCtl.current?.abort();
+      turnedCtl.current?.abort();
+    },
+    [],
+  );
 
   // Apply saved defaults whenever nothing is loaded yet.
   useEffect(() => {
     if (!doc && hasChoices) setSettings(reconcile({ ...BASE_SETTINGS, ...(defaults || {}) }, choices));
   }, [defaults, choices, hasChoices, doc]);
 
-  const loadPreview = useCallback(async (file, token, text) => {
+  const loadPreview = useCallback(async (file, token, text, source) => {
     let pages = [];
     if (file.preview_available !== false) {
       try {
@@ -43,17 +56,36 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
       }
     }
     if (token !== seq.current) return;
-    setDoc({ phase: "ready", file, pages, text, name: file.original_filename, kind: fileKind(file.detected_mime, file.original_filename) });
+    setDoc({ phase: "ready", file, pages, text, source, name: file.original_filename, kind: fileKind(file.detected_mime, file.original_filename) });
+    return pages;
   }, []);
+
+  // Upside-down prints used to be a reverse orientation, in saved defaults and in history. A
+  // document whose pages can be turned here gets them all turned half way; one whose pages can't
+  // (an image from history, a PDF without a preview) keeps the reverse orientation, so it still
+  // prints the way it did.
+  const keepUpsideDown = useCallback(
+    (orientation, file, pages, source) => {
+      if (!/^reverse-/.test(orientation || "")) return;
+      const count = file.page_count || pages?.length || 0;
+      const turnable = !!pages?.length && count > 0 && (!!file.pdf_url || (!!source && /^image\/(png|jpeg)$/.test(file.detected_mime)));
+      if (turnable) setFlip(true);
+      else if (!choices.orientation?.length || choices.orientation.includes(orientation)) setSettings((s) => ({ ...s, orientation }));
+    },
+    [choices],
+  );
 
   const attach = useCallback(
     async (f) => {
       if (!f) return;
       uploadCtl.current?.abort();
+      turnedCtl.current?.abort();
       const token = ++seq.current;
       const kind = fileKind(f.type, f.name);
       setPrinting({ state: "idle" });
       setValidation({ state: "idle" });
+      setManual({});
+      setFlip(false);
       setSettings((s) => ({ ...s, pages: "" }));
 
       if (maxBytes && f.size > maxBytes) {
@@ -92,7 +124,8 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
           });
           if (token !== seq.current) return;
           setDoc((d) => ({ ...d, phase: "loading", progress: 1 }));
-          await loadPreview(file, token, text);
+          const pages = await loadPreview(file, token, text, f);
+          if (token === seq.current) keepUpsideDown(defaults?.orientation, file, pages, f);
           return;
         } catch (e) {
           if (token !== seq.current || e.name === "AbortError") return;
@@ -107,21 +140,25 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
         }
       }
     },
-    [loadPreview, maxBytes],
+    [loadPreview, maxBytes, keepUpsideDown, defaults],
   );
 
   /** Load a file that is already on the server (reprint from history). */
   const openExisting = useCallback(
     async (entry) => {
       uploadCtl.current?.abort();
+      turnedCtl.current?.abort();
       const token = ++seq.current;
       setPrinting({ state: "idle" });
       setValidation({ state: "idle" });
+      setManual({});
+      setFlip(false);
       setDoc({ phase: "loading", name: entry.original_filename, kind: fileKind(entry.detected_mime, entry.original_filename) });
       setSettings(reconcile({ ...BASE_SETTINGS, ...(defaults || {}), ...fromRequested(entry.requested_options) }, choices));
       try {
         const file = await api.file(entry.file_id);
-        await loadPreview(file, token);
+        const pages = await loadPreview(file, token);
+        if (token === seq.current) keepUpsideDown(entry.requested_options?.orientation || defaults?.orientation, file, pages);
         return true;
       } catch (e) {
         if (token !== seq.current) return false;
@@ -134,15 +171,18 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
         return false;
       }
     },
-    [choices, defaults, loadPreview],
+    [choices, defaults, loadPreview, keepUpsideDown],
   );
 
   const clear = useCallback(() => {
     uploadCtl.current?.abort();
+    turnedCtl.current?.abort();
     seq.current++;
     setDoc(null);
     setPrinting({ state: "idle" });
     setValidation({ state: "idle" });
+    setManual({});
+    setFlip(false);
     setSettings(reconcile({ ...BASE_SETTINGS, ...(defaults || {}) }, choices));
   }, [choices, defaults]);
 
@@ -152,6 +192,24 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
   }, []);
 
   const pageCount = doc?.file?.page_count || doc?.pages?.length || null;
+
+  // PDFs (and Office files, printed as PDF) turn with pdf-lib. Images turn on a canvas, which
+  // needs the original file, so an image reopened from history can't be turned.
+  const canRotate = doc?.phase === "ready" && !!doc.pages?.length && (!!doc.file.pdf_url || (!!doc.source && /^image\/(png|jpeg)$/.test(doc.file.detected_mime)));
+  const rotate = useCallback(
+    (pages, delta) =>
+      setManual((r) => {
+        const next = { ...r };
+        for (const p of pages) next[p] = turn((next[p] || 0) + delta);
+        return next;
+      }),
+    [],
+  );
+  const unrotate = useCallback(() => {
+    setManual({});
+    setFlip(false);
+  }, []);
+  const rotations = useMemo(() => withFlip(manual, flip, pageCount), [manual, flip, pageCount]);
 
   const locale = useLocale();
   const rangeError = useMemo(() => {
@@ -191,16 +249,75 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
   const print = useCallback(async () => {
     if (!payload || printing.state === "sending") return;
     setPrinting({ state: "sending" });
+    // Turning and uploading can take a while; if the document changes meanwhile, this print is off.
+    const token = seq.current;
+    let body = payload;
+    if (canRotate && hasRotation(rotations)) {
+      try {
+        const file = await rotatedFile(doc, rotations);
+        if (token !== seq.current) return;
+        turnedCtl.current?.abort();
+        turnedCtl.current = new AbortController();
+        const turned = await api.upload(file, { signal: turnedCtl.current.signal });
+        if (token !== seq.current) return;
+        body = { ...payload, file_id: turned.file_id };
+      } catch (e) {
+        if (token !== seq.current) return;
+        setPrinting({ state: "error", error: e instanceof ApiError ? printMessage(e) : e?.code === "encrypted" ? t("This PDF is protected, so its pages can't be turned. Print it unturned.") : t("Couldn't turn the pages. Try again, or print them unturned.") });
+        return;
+      }
+    }
     try {
-      const r = await api.print(payload);
+      const r = await api.print(body);
       setPrinting({ state: "sent", result: r, warnings: meaningfulWarnings(r.warnings) });
       onPrinted?.(r);
     } catch (e) {
       setPrinting({ state: "error", error: printMessage(e) });
     }
-  }, [payload, printing.state, onPrinted]);
+  }, [payload, printing.state, onPrinted, canRotate, rotations, doc]);
 
-  return { doc, settings, set, setSettings, attach, openExisting, clear, pageCount, rangeError, validation, printing, setPrinting, print, canPrint: !!payload };
+  /** Put the saved defaults back, keeping the page range and manual turns; only an upside-down default turns the pages. */
+  const applyDefaults = useCallback(() => {
+    setSettings((s) => reconcile({ ...BASE_SETTINGS, ...(defaults || {}), pages: s.pages }, choices));
+    setFlip(false);
+    if (doc?.phase === "ready") keepUpsideDown(defaults?.orientation, doc.file, doc.pages, doc.source);
+  }, [defaults, choices, doc, keepUpsideDown]);
+
+  return {
+    applyDefaults,
+    doc,
+    settings,
+    set,
+    setSettings,
+    attach,
+    openExisting,
+    clear,
+    pageCount,
+    rangeError,
+    validation,
+    printing,
+    setPrinting,
+    print,
+    canPrint: !!payload,
+    rotations: canRotate ? rotations : NO_TURNS,
+    flip: canRotate && flip,
+    canRotate,
+    rotate,
+    unrotate,
+  };
+}
+
+const NO_TURNS = {};
+
+/** The file to print, with the turns baked in. */
+async function rotatedFile(doc, rotations) {
+  if (!doc.file.pdf_url) return rotateImage(doc.source, rotations[1] || 0);
+  const res = await fetch(api.pdfUrl(doc.file.file_id), { credentials: "include" });
+  if (!res.ok) throw new ApiError(res.status, null);
+  const bytes = await rotatePdf(await res.arrayBuffer(), rotations);
+  // An Office file prints as its PDF, and the name says so.
+  const name = /\.pdf$/i.test(doc.name) ? doc.name : `${doc.name.replace(/\.[^.]+$/, "")}.pdf`;
+  return new File([bytes], name, { type: "application/pdf" });
 }
 
 function uploadMessage(e, name) {

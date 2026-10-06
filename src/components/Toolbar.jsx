@@ -1,10 +1,11 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { DropdownMenu, Popover } from "radix-ui";
-import { BookmarkCheck, BookmarkPlus, Check, ChevronDown, Copy, Ellipsis, File, Files, FlipVertical2, Layers, Printer, RotateCcw, Shrink } from "lucide-react";
+import { BookmarkCheck, BookmarkPlus, ChevronDown, Copy, Ellipsis, File, Files, Layers, Printer, RotateCcw, RotateCcwSquare, RotateCwSquare, Shrink, Undo2 } from "lucide-react";
 import { Dot, IconKey, MOD, PrintButton, Segmented, Select, Stepper, Tip } from "./controls.jsx";
 import { asGroups, mediaGroups, optionModel, paperSelectGroups } from "./Options.jsx";
 import { printerDot } from "./PrinterStatus.jsx";
 import { COLOR_LABELS, label as labelOf } from "../lib/format.js";
+import { cleanRange } from "../lib/pages.js";
 import { t, tn } from "../i18n/index.js";
 
 function PagesField({ value, onChange, pageCount, error, disabled }) {
@@ -67,11 +68,14 @@ function PagesField({ value, onChange, pageCount, error, disabled }) {
             id={id}
             className="input pop__input"
             placeholder="1-3, 5"
+            inputMode="text"
+            autoComplete="off"
+            spellCheck={false}
             value={value}
             disabled={mode === "all"}
             aria-invalid={!!error}
             aria-describedby={error ? `${id}-err` : undefined}
-            onChange={(e) => onChange(e.target.value.replace(/[^\d,\-\s]/g, ""))}
+            onChange={(e) => onChange(cleanRange(e.target.value))}
             onKeyDown={(e) => e.key === "Enter" && !error && setOpen(false)}
           />
           {error && (
@@ -85,7 +89,7 @@ function PagesField({ value, onChange, pageCount, error, disabled }) {
   );
 }
 
-function DefaultsMenu({ model, onSaveDefaults, onResetDefaults, defaultsState }) {
+function DefaultsMenu({ rotation, onSaveDefaults, onResetDefaults, defaultsState }) {
   const saved = defaultsState === "saved";
   return (
     <DropdownMenu.Root>
@@ -98,15 +102,23 @@ function DefaultsMenu({ model, onSaveDefaults, onResetDefaults, defaultsState })
       </Tip>
       <DropdownMenu.Portal>
         <DropdownMenu.Content className="menu" side="bottom" align="end" sideOffset={6} collisionPadding={12}>
-          {model.canFlip && (
+          {rotation?.canRotate && (
             <>
-              <DropdownMenu.CheckboxItem className="menu__item menu__item--check" checked={model.flipped} onCheckedChange={model.toggleFlip}>
-                <DropdownMenu.ItemIndicator className="menu__check">
-                  <Check size={14} strokeWidth={1.8} />
-                </DropdownMenu.ItemIndicator>
-                <FlipVertical2 size={16} strokeWidth={1.5} aria-hidden />
-                {t("Print upside down")}
-              </DropdownMenu.CheckboxItem>
+              {/* The menu stays open, so a second press turns the pages again. */}
+              <DropdownMenu.Item className="menu__item" onSelect={(e) => (e.preventDefault(), rotation.rotateAll(90))}>
+                <RotateCwSquare size={16} strokeWidth={1.5} aria-hidden />
+                {t("Rotate all pages right")}
+              </DropdownMenu.Item>
+              <DropdownMenu.Item className="menu__item" onSelect={(e) => (e.preventDefault(), rotation.rotateAll(-90))}>
+                <RotateCcwSquare size={16} strokeWidth={1.5} aria-hidden />
+                {t("Rotate all pages left")}
+              </DropdownMenu.Item>
+              {rotation.turned && (
+                <DropdownMenu.Item className="menu__item" onSelect={rotation.reset}>
+                  <Undo2 size={16} strokeWidth={1.5} aria-hidden />
+                  {t("Undo rotation")}
+                </DropdownMenu.Item>
+              )}
               <DropdownMenu.Separator className="menu__sep" />
             </>
           )}
@@ -125,11 +137,17 @@ function DefaultsMenu({ model, onSaveDefaults, onResetDefaults, defaultsState })
 }
 
 /** The phone bar: menu, the document in hand, and the printer's state. Settings live in the dock below. */
-function PhoneBar({ lead, title, printer, onPrinter }) {
+export function PhoneBar({ lead, printer, onPrinter, onHome }) {
   return (
     <div className="toolbar toolbar--phone">
       {lead}
-      <p className="toolbar__title">{title}</p>
+      {onHome ? (
+        <button type="button" className="toolbar__title toolbar__home" onClick={onHome} aria-label={t("Print Studio home")}>
+          Print Studio
+        </button>
+      ) : (
+        <p className="toolbar__title">Print Studio</p>
+      )}
       <button type="button" className="toolbar__printer" onClick={onPrinter} aria-label={t("Printer: {status}. Open settings", { status: printer.info.label })}>
         <Dot tone={printerDot(printer.info.tone)} pulse={printer.info.tone === "busy"} />
         <span>{printer.info.label}</span>
@@ -139,12 +157,12 @@ function PhoneBar({ lead, title, printer, onPrinter }) {
 }
 
 /** Every print preference on one line above the stage, with Print at the end. */
-export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSaveDefaults, onResetDefaults, defaultsState, lead, narrow, printer, onPrinter }) {
+export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSaveDefaults, onResetDefaults, defaultsState, lead, narrow, printer, onPrinter, onHome, rotation }) {
   const { settings, set, pageCount, rangeError, printing } = flow;
   const m = optionModel(settings, set, choices);
 
   // The document chip on the stage carries the file name, so the bar names the place.
-  if (narrow) return <PhoneBar lead={lead} title="Print Studio" printer={printer} onPrinter={onPrinter} />;
+  if (narrow) return <PhoneBar lead={lead} printer={printer} onPrinter={onPrinter} onHome={onHome} />;
 
   return (
     <div className="toolbar" role="toolbar" aria-label={t("Print settings")}>
@@ -206,7 +224,7 @@ export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSav
       </div>
 
       <div className="toolbar__print">
-        <DefaultsMenu model={m} onSaveDefaults={onSaveDefaults} onResetDefaults={onResetDefaults} defaultsState={defaultsState} />
+        <DefaultsMenu rotation={rotation} onSaveDefaults={onSaveDefaults} onResetDefaults={onResetDefaults} defaultsState={defaultsState} />
         <PrintButton icon={Printer} shortcut={`${MOD}P`} onClick={onPrint} disabled={printDisabled} state={printing.state} />
       </div>
     </div>

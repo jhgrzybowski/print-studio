@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { Check, LogOut, Monitor, Moon, RefreshCw, Sun } from "lucide-react";
 import { api } from "../api/client.js";
 import { PALETTES } from "../hooks/appearance.js";
-import { BASE_SETTINGS, pickDefaults, reconcile } from "../lib/settings.js";
+import { BASE_SETTINGS, defaultsToSave, pickDefaults, reconcile, savedUpsideDown } from "../lib/settings.js";
 import { formatBytes, formatDate } from "../lib/format.js";
 import { Button, IconKey, Row, Segmented, Stepper, Tip, ease } from "./controls.jsx";
 import { OptionRows } from "./Options.jsx";
@@ -29,11 +29,16 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
   const saved = prefs.prefs?.print_defaults;
   const base = useMemo(() => reconcile({ ...BASE_SETTINGS, ...(saved || {}) }, choices), [saved, choices]);
   const [draft, setDraft] = useState(base);
+  // An old upside-down default has no control here; it stays until the orientation is changed or reset.
+  const [upsideDown, setUpsideDown] = useState(savedUpsideDown(saved));
   const [state, setState] = useState("idle");
   const [health, setHealth] = useState(null);
   const localePref = useLocalePref();
 
-  useEffect(() => setDraft(base), [base]);
+  useEffect(() => {
+    setDraft(base);
+    setUpsideDown(savedUpsideDown(saved));
+  }, [base, saved]);
 
   useEffect(() => {
     api
@@ -42,13 +47,16 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
       .catch(() => setHealth({ status: "unreachable" }));
   }, []);
 
-  const dirty = JSON.stringify(pickDefaults(draft)) !== JSON.stringify(pickDefaults(base));
-  const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
+  const dirty = JSON.stringify(pickDefaults(draft)) !== JSON.stringify(pickDefaults(base)) || upsideDown !== savedUpsideDown(saved);
+  const set = (k, v) => {
+    if (k === "orientation") setUpsideDown(false);
+    setDraft((d) => ({ ...d, [k]: v }));
+  };
 
   async function saveDefaults() {
     setState("saving");
     try {
-      await prefs.save({ print_defaults: pickDefaults(draft) });
+      await prefs.save({ print_defaults: defaultsToSave(draft, upsideDown) });
       setState("saved");
       setTimeout(() => setState("idle"), 1600);
     } catch {
@@ -136,7 +144,10 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
             tools={
               <>
                 {state === "error" && <span className="section__note is-error">{t("Not saved")}</span>}
-                <Button variant="quiet" className="btn--sm" onClick={() => setDraft(reconcile(BASE_SETTINGS, choices))}>
+                <Button variant="quiet" className="btn--sm" onClick={() => {
+                    setDraft(reconcile(BASE_SETTINGS, choices));
+                    setUpsideDown(false);
+                  }}>
                   {t("Reset")}
                 </Button>
                 <Button

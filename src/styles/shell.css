@@ -53,6 +53,43 @@
   letter-spacing: -0.015em;
   white-space: nowrap;
 }
+/* The wordmark leads home. */
+.wordmark-link {
+  min-width: 0;
+  margin-left: -6px;
+  padding: 5px 8px 5px 6px;
+  border-radius: var(--r-sm);
+  transition:
+    background-color var(--t-fast) ease,
+    transform var(--t-press) var(--ease);
+}
+@media (hover: hover) {
+  .wordmark-link:hover {
+    background: var(--hover);
+  }
+}
+.wordmark-link:active {
+  transform: scale(0.97);
+}
+.archive-key {
+  position: relative;
+}
+.archive-key__count {
+  position: absolute;
+  top: 2px;
+  right: 1px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 15px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
 .splash .wordmark__name {
   font-size: 22px;
 }
@@ -205,11 +242,17 @@
   transform: scale(0.98);
 }
 .hrow.is-selected .hrow__main {
-  background: var(--raise);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 0 0 1px var(--line);
+  background: linear-gradient(var(--accent-wash), var(--accent-wash)), var(--raise);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 0 0 1px color-mix(in oklab, var(--accent) 34%, transparent);
 }
 [data-theme="light"] .hrow.is-selected .hrow__main {
-  box-shadow: 0 0 0 1px var(--line), 0 1px 2px rgb(20 24 30 / 0.08);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 30%, transparent), 0 1px 2px rgb(20 24 30 / 0.08);
+}
+.hrow.is-selected .hrow__name {
+  color: var(--accent);
+}
+.hrow.is-selected .hthumb {
+  box-shadow: 0 0 0 1.5px var(--accent);
 }
 .hrow__text {
   display: grid;
@@ -246,37 +289,49 @@
 .hrow__mark.tone-error {
   color: var(--error);
 }
-.hrow__again {
+.hrow__actions {
   position: absolute;
   top: 50%;
   right: 8px;
+  display: flex;
+  gap: 4px;
   translate: 0 -50%;
   opacity: 0;
+  transition: opacity var(--t-fast) ease;
+}
+.hrow__actions .ikey {
   background: var(--field);
   box-shadow: var(--field-shadow);
-  transition:
-    opacity var(--t-fast) ease,
-    transform var(--t-press) var(--ease);
 }
-.hrow:focus-within .hrow__again {
+.hrow:focus-within .hrow__actions {
   opacity: 1;
 }
+/* The name fades out under the actions instead of running beneath them. */
+.hrow:focus-within:has(.hrow__actions) .hrow__text {
+  mask-image: linear-gradient(90deg, #000 calc(100% - 70px), transparent calc(100% - 34px));
+}
 @media (hover: hover) {
-  .hrow:hover .hrow__again {
+  .hrow:hover .hrow__actions {
     opacity: 1;
   }
+  .hrow:hover:has(.hrow__actions) .hrow__text {
+    mask-image: linear-gradient(90deg, #000 calc(100% - 70px), transparent calc(100% - 34px));
+  }
 }
-.hrow:focus-within .hrow__status {
+.hrow:focus-within:has(.hrow__actions) .hrow__status {
   opacity: 0;
 }
 @media (hover: hover) {
-  .hrow:hover .hrow__status {
+  .hrow:hover:has(.hrow__actions) .hrow__status {
     opacity: 0;
   }
 }
 @media (hover: none) {
-  .hrow__again {
+  .hrow__actions {
     display: none;
+  }
+  .hrow .hrow__text {
+    mask-image: none !important;
   }
   .hrow .hrow__status {
     opacity: 1;

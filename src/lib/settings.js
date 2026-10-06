@@ -36,6 +36,8 @@ export function supportedChoices(options) {
 /** Clamp a settings object to what the printer supports. */
 export function reconcile(settings, choices) {
   const out = { ...BASE_SETTINGS, ...settings };
+  // Upside down is a turn of the pages now, not an orientation.
+  if (/^reverse-/.test(out.orientation || "")) out.orientation = out.orientation.slice(8);
   for (const key of ["paper_size", "orientation", "color_mode", "duplex", "quality", "media_type"]) {
     const list = choices[key];
     if (list && list.length && !list.includes(out[key])) {
@@ -68,8 +70,25 @@ export function fromRequested(requested = {}) {
   return s;
 }
 
+/** Whether saved defaults ask for upside-down prints (the old reverse orientations). */
+export const savedUpsideDown = (saved) => /^reverse-/.test(saved?.orientation || "");
+
+/**
+ * Defaults to save, keeping the upside-down marker the settings screen can't show: it stays
+ * while the orientation is the one it was saved with, and goes once that is changed.
+ */
+export function defaultsToSave(settings, upsideDown) {
+  const out = pickDefaults(settings);
+  if (upsideDown && out.orientation && !/^reverse-/.test(out.orientation)) out.orientation = `reverse-${out.orientation}`;
+  return out;
+}
+
 export function pickDefaults(settings) {
   const out = {};
   for (const k of DEFAULT_KEYS) out[k] = settings[k];
   return out;
 }
+
+// Warnings the backend emits for every mapped option; they add noise, not information.
+const NOISE = [/^Mapped .+ (?:to|through) detected /i, /^Ignored fit_to_page/i, /collate/i, /preserve the user-specified page order/i];
+export const meaningfulWarnings = (list = []) => list.filter((w) => !NOISE.some((re) => re.test(w)));

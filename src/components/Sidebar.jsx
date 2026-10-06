@@ -1,7 +1,7 @@
 import { forwardRef, memo, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { DropdownMenu } from "radix-ui";
-import { Ban, Check, CircleAlert, LogOut, Monitor, Moon, PanelLeftClose, Plus, RotateCw, Search, Settings, Sun, X } from "lucide-react";
+import { Archive, Ban, Check, CircleAlert, LogOut, Monitor, Moon, PanelLeftClose, Plus, RotateCw, Search, Settings, Sun, X } from "lucide-react";
 import { api } from "../api/client.js";
 import { Mark } from "./glyphs.jsx";
 import { FileGlyph } from "./FileGlyph.jsx";
@@ -30,7 +30,7 @@ export function Avatar({ user, size = "md" }) {
   );
 }
 
-function Thumb({ item }) {
+export function Thumb({ item }) {
   const [failed, setFailed] = useState(false);
   const kind = fileKind(item.detected_mime, item.original_filename);
   const landscape = /landscape/.test(item.requested_options?.orientation || "");
@@ -58,7 +58,7 @@ function StatusMark({ status, active }) {
  * re-render with it. `locale` is a prop so a language switch still reaches the row. Only a print
  * that arrives while the list is open slides in; rows coming back after a search just appear.
  */
-const HistoryRow = memo(function HistoryRow({ item, job, selected, onSelect, onReprint, fresh, searching }) {
+const HistoryRow = memo(function HistoryRow({ item, job, selected, onSelect, onReprint, onArchive, fresh, searching }) {
   const active = ACTIVE_STATUSES.has(item.status);
   // Live CUPS state can run ahead of the stored status while a job is moving.
   const status = active && job?.state ? job.state : item.status;
@@ -88,7 +88,12 @@ const HistoryRow = memo(function HistoryRow({ item, job, selected, onSelect, onR
           <StatusMark status={status} active={active} />
         </span>
       </button>
-      {!active && item.file_id && <IconKey label={t("Print again")} icon={RotateCw} size="sm" className="hrow__again" onClick={() => onReprint(item)} tipSide="right" />}
+      {!active && (
+        <span className="hrow__actions">
+          <IconKey label={t("Move to archive")} icon={Archive} size="sm" onClick={() => onArchive(item)} tipSide="bottom" />
+          {item.file_id && <IconKey label={t("Print again")} icon={RotateCw} size="sm" onClick={() => onReprint(item)} tipSide="right" />}
+        </span>
+      )}
     </motion.li>
   );
 });
@@ -106,16 +111,18 @@ function HistorySkeleton() {
   );
 }
 
-function HistoryList({ history, selectedId, onSelect, onReprint, query }) {
-  const { items, status, total, loadMore, loadingMore, jobs } = history;
+function HistoryList({ history, hidden, ready, selectedId, onSelect, onReprint, onArchive, query }) {
+  const { items: all, status, total, loadMore, loadingMore, jobs } = history;
   const [since] = useState(() => Date.now());
   // A callback ref: the sentinel unmounts during search and comes back as a new node.
   const [sentinel, setSentinel] = useState(null);
 
+  const items = useMemo(() => all.filter((i) => !hidden.has(i.id)), [all, hidden]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return q ? items.filter((i) => i.original_filename.toLowerCase().includes(q)) : items;
   }, [items, query]);
+  const more = all.length < total && !query;
 
   const locale = useLocale();
   const groups = useMemo(() => {
@@ -134,11 +141,19 @@ function HistoryList({ history, selectedId, onSelect, onReprint, query }) {
     const io = new IntersectionObserver((e) => e[0].isIntersecting && loadMore(), { rootMargin: "120px" });
     io.observe(sentinel);
     return () => io.disconnect();
-  }, [sentinel, loadMore, items.length]);
+  }, [sentinel, loadMore, all.length]);
 
-  if (status === "loading" || status === "idle") return <HistorySkeleton />;
-  if (status === "error" && !items.length) return <p className="hlist__empty">{t("History is offline. Retrying.")}</p>;
-  if (!items.length) return <p className="hlist__empty">{t("Your prints will appear here.")}</p>;
+  if (status === "loading" || status === "idle" || !ready) return <HistorySkeleton />;
+  if (status === "error" && !all.length) return <p className="hlist__empty">{t("History is offline. Retrying.")}</p>;
+  // Archived rows may fill the first page; keep loading until something is left to show.
+  const sentinelNode = more && (
+    <div ref={setSentinel} className="hlist__more">
+      {loadingMore || !items.length ? <HistorySkeleton /> : null}
+    </div>
+  );
+  if (!items.length && more) return sentinelNode;
+  if (!all.length) return <p className="hlist__empty">{t("Your prints will appear here.")}</p>;
+  if (!items.length) return <p className="hlist__empty">{t("Everything is in the archive.")}</p>;
   if (!filtered.length) return <p className="hlist__empty">{t("No match for “{query}”", { query })}</p>;
 
   return (
@@ -156,6 +171,7 @@ function HistoryList({ history, selectedId, onSelect, onReprint, query }) {
                   selected={it.id === selectedId}
                   onSelect={onSelect}
                   onReprint={onReprint}
+                  onArchive={onArchive}
                   fresh={Date.parse(it.created_at) > since}
                   searching={!!query}
                   locale={locale}
@@ -165,11 +181,7 @@ function HistoryList({ history, selectedId, onSelect, onReprint, query }) {
           </ul>
         </section>
       ))}
-      {items.length < total && !query && (
-        <div ref={setSentinel} className="hlist__more">
-          {loadingMore ? <HistorySkeleton /> : null}
-        </div>
-      )}
+      {sentinelNode}
     </nav>
   );
 }
@@ -230,17 +242,32 @@ function ProfileMenu({ user, appearance, setAppearance, onSettings, onLogout, se
 }
 
 export const Sidebar = forwardRef(function Sidebar(
-  { user, printer, history, view, onNew, onSelectHistory, onReprint, onSettings, onLogout, appearance, setAppearance, onClose, drawer },
+  { user, printer, history, archive, view, onHome, onNew, onSelectHistory, onReprint, onArchive, onOpenArchive, onSettings, onLogout, appearance, setAppearance, onClose, drawer },
   searchRef,
 ) {
   const [query, setQuery] = useState("");
   const selectedId = view.kind === "history" ? view.id : null;
+  const archivedCount = archive.ids.length;
 
   return (
     <aside className="sidebar" aria-label={t("Sidebar")}>
       <div className="sidebar__top">
-        <Wordmark />
+        <button type="button" className={`wordmark-link ${view.kind === "home" ? "is-on" : ""}`} onClick={onHome} aria-label={t("Print Studio home")}>
+          <Wordmark />
+        </button>
         <div className="sidebar__tools">
+          <Tip label={archivedCount ? t("Archive ({n})", { n: archivedCount }) : t("Archive")}>
+            <button
+              type="button"
+              className={`ikey ikey--plain ikey--md archive-key ${view.kind === "archive" ? "is-on" : ""}`}
+              aria-label={archivedCount ? t("Archive ({n})", { n: archivedCount }) : t("Archive")}
+              aria-current={view.kind === "archive" ? "page" : undefined}
+              onClick={onOpenArchive}
+            >
+              <Archive size={18} strokeWidth={1.5} aria-hidden />
+              {archivedCount > 0 && <span className="archive-key__count">{archivedCount > 99 ? "99+" : archivedCount}</span>}
+            </button>
+          </Tip>
           <Tip label={t("New print")}>
             <button type="button" className="newprint metal" aria-label={t("New print")} onClick={onNew}>
               <Plus size={16} strokeWidth={1.8} aria-hidden />
@@ -273,7 +300,7 @@ export const Sidebar = forwardRef(function Sidebar(
       </label>
 
       <div className="sidebar__scroll">
-        <HistoryList history={history} selectedId={selectedId} onSelect={onSelectHistory} onReprint={onReprint} query={query} />
+        <HistoryList history={history} hidden={archive.hidden} ready={archive.loaded} selectedId={selectedId} onSelect={onSelectHistory} onReprint={onReprint} onArchive={onArchive} query={query} />
       </div>
 
       <div className="sidebar__foot">

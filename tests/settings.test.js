@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BASE_SETTINGS, supportedChoices, reconcile, toPrintOptions, fromRequested, pickDefaults } from "../src/lib/settings.js";
+import { BASE_SETTINGS, supportedChoices, reconcile, toPrintOptions, fromRequested, pickDefaults, meaningfulWarnings, defaultsToSave, savedUpsideDown } from "../src/lib/settings.js";
 
 // Shape of GET /options from local_printer_api.
 const OPTIONS = {
@@ -49,9 +49,30 @@ test("toPrintOptions sends only supported options", () => {
   assert.equal("fit_to_page" in toPrintOptions(BASE_SETTINGS, c), false);
 });
 
+test("meaningfulWarnings drops the per-option mapping notes", () => {
+  const notes = [
+    "Mapped fit_to_page through detected fit-to-page option",
+    "Mapped color mode through detected PPD ColorModel option",
+    "Mapped quality to detected cupsPrintQuality=Normal",
+  ];
+  assert.deepEqual(meaningfulWarnings([...notes, "Paper tray is empty"]), ["Paper tray is empty"]);
+  assert.deepEqual(meaningfulWarnings(undefined), []);
+});
+
 test("fromRequested and pickDefaults keep known keys only", () => {
   assert.deepEqual(fromRequested({ copies: 3, pages: null, printer: "x" }), { copies: 3 });
   const d = pickDefaults({ ...BASE_SETTINGS, pages: "1" });
   assert.equal("pages" in d, false);
   assert.equal(d.copies, 1);
+});
+
+test("saving defaults keeps an upside-down default only while asked to", () => {
+  assert.equal(savedUpsideDown({ orientation: "reverse-portrait" }), true);
+  assert.equal(savedUpsideDown({ orientation: "portrait" }), false);
+  assert.equal(savedUpsideDown(null), false);
+  const s = { ...BASE_SETTINGS, orientation: "landscape", copies: 3 };
+  assert.equal(defaultsToSave(s, true).orientation, "reverse-landscape");
+  assert.equal(defaultsToSave(s, true).copies, 3);
+  assert.equal(defaultsToSave(s, false).orientation, "landscape");
+  assert.equal(defaultsToSave({ ...s, orientation: "reverse-portrait" }, true).orientation, "reverse-portrait");
 });

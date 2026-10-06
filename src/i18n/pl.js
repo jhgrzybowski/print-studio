@@ -165,9 +165,19 @@ export default {
   Landscape: "Pozioma",
   "Portrait, flipped": "Pionowa, odwrócona",
   "Landscape, flipped": "Pozioma, odwrócona",
-  "Upside down": "Obrót o 180°",
-  "Rotate the output 180°": "Obraca wydruk o 180°",
-  "Print upside down": "Obróć o 180°",
+
+  // Rotation, worded like "Obróć w lewo / w prawo" in Windows' photo and PDF viewers.
+  "Rotate all pages": "Obróć wszystkie strony",
+  "Turned pages shrink to fit the paper": "Obrócona strona jest zmniejszana do rozmiaru papieru",
+  "Rotate left": "Obróć w lewo",
+  "Rotate right": "Obróć w prawo",
+  "Rotate all pages right": "Obróć wszystkie strony w prawo",
+  "Rotate all pages left": "Obróć wszystkie strony w lewo",
+  "Undo rotation": "Cofnij obrót",
+  "Rotate page": "Obróć stronę",
+  "Rotate this page": "Obróć tę stronę",
+  "Couldn't turn the pages. Try again, or print them unturned.": "Nie udało się obrócić stron. Spróbuj ponownie lub wydrukuj je bez obrotu.",
+  "This PDF is protected, so its pages can't be turned. Print it unturned.": "Ten PDF jest zabezpieczony, więc nie można obrócić jego stron. Wydrukuj go bez obrotu.",
 
   // Quality
   Quality: "Jakość wydruku",
@@ -344,4 +354,54 @@ export default {
   "{username} · since {date}": "{username} · od {date}",
   "Sign out": "Wyloguj się",
   "Printer: {status}. Open settings": "Drukarka: {status}. Otwórz ustawienia",
+
+  // Home. The verb for adding a file matches "Upuść, aby dodać".
+  "Print Studio home": "Print Studio – ekran główny",
+  "Drop a file, check every page, and get it right on the first print.":
+    "Przeciągnij plik, sprawdź każdą stronę i wydrukuj dobrze za pierwszym razem.",
+  "Drop a file here": "Upuść plik tutaj",
+  "PDFs, photos, text and Office documents. Every page shows in the preview before anything reaches the printer.":
+    "Pliki PDF, zdjęcia, tekst i dokumenty Office. Każdą stronę zobaczysz w podglądzie, zanim cokolwiek trafi do drukarki.",
+  "Tap to choose a file": "Stuknij, aby wybrać plik",
+  "Drag it in, or click to browse": "Przeciągnij plik tutaj lub kliknij, aby go wybrać",
+  "Continue with {name}": "Wróć do pliku {name}",
+  "Supported files": "Obsługiwane pliki",
+  "up to {size}": "do {size}",
+  "Recent prints": "Ostatnie wydruki",
+  "Open a print to see its pages and settings, or send it again just as it was.":
+    "Otwórz wydruk, aby zobaczyć jego strony i ustawienia, lub wyślij go ponownie bez zmian.",
+  "Nothing printed yet. Your prints will show up here.": "Nic jeszcze nie wydrukowano. Tutaj pojawią się Twoje wydruki.",
+
+  // Archive. The noun is "Archiwum"; the action reads "Przenieś do archiwum",
+  // so the two get separate keys. "Usuń na stałe" is the wording Windows and
+  // Gmail use for deletion that skips the bin.
+  Archive: "Archiwum",
+  "Archive ({n})": "Archiwum ({n})",
+  "Move to archive": "Przenieś do archiwum",
+  "Moved to the archive": "Przeniesiono do archiwum",
+  "Couldn't archive: {error}": "Nie udało się przenieść do archiwum: {error}",
+  "In the archive": "W archiwum",
+  "Everything is in the archive.": "Wszystko jest w archiwum.",
+  "Restore to history": "Przywróć do historii",
+  "Back in your history": "Przywrócono do historii",
+  "Couldn't restore: {error}": "Nie udało się przywrócić: {error}",
+  Delete: "Usuń",
+  "Delete all": "Usuń wszystko",
+  "Delete permanently": "Usuń na stałe",
+  "Delete for good?": "Usunąć na stałe?",
+  "Delete {n} for good": "Usuń na stałe ({n})",
+  "Deleted {n} print": plural("Usunięto {n} wydruk", "Usunięto {n} wydruki", "Usunięto {n} wydruków"),
+  "Couldn't delete: {error}": "Nie udało się usunąć: {error}",
+  "Signed out before the change was saved.": "Wylogowano, zanim zmiana została zapisana.",
+  "Nothing archived": "Archiwum jest puste",
+  "Prints you archive leave the history list and wait here. Restore them any time, or delete them for good.":
+    "Zarchiwizowane wydruki znikają z listy historii i czekają tutaj. Możesz je w każdej chwili przywrócić albo usunąć na stałe.",
+  "{n} print, kept out of your history. Open one to see it, or restore it to the list.": plural(
+    "{n} wydruk poza historią. Otwórz go, aby go obejrzeć, lub przywróć na listę.",
+    "{n} wydruki poza historią. Otwórz dowolny, aby go obejrzeć, lub przywróć na listę.",
+    "{n} wydruków poza historią. Otwórz dowolny, aby go obejrzeć, lub przywróć na listę.",
+  ),
+  "Print #{id}": "Wydruk nr {id}",
+  "No longer on the print server": "Nie ma go już na serwerze wydruku",
+  "Couldn't load this print": "Nie udało się wczytać tego wydruku",
 };

@@ -134,7 +134,7 @@ export const api = {
 
   // History & preferences
   history: (limit = 50, offset = 0) => request("GET", "/history", { query: { limit, offset } }),
-  historyEntry: (id) => request("GET", `/history/${id}`),
+  historyEntry: (id, opts) => request("GET", `/history/${id}`, opts),
   preferences: () => request("GET", "/me/preferences"),
   savePreferences: (prefs) => request("PUT", "/me/preferences", { body: prefs }),
 };
