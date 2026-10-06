@@ -29,6 +29,15 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
 
   const hasChoices = Object.keys(choices).length > 0;
 
+  // Leaving (signing out included) calls off whatever is still on its way to the printer.
+  useEffect(
+    () => () => {
+      seq.current++;
+      uploadCtl.current?.abort();
+    },
+    [],
+  );
+
   // Apply saved defaults whenever nothing is loaded yet.
   useEffect(() => {
     if (!doc && hasChoices) setSettings(reconcile({ ...BASE_SETTINGS, ...(defaults || {}) }, choices));
@@ -240,7 +249,9 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     let body = payload;
     if (canRotate && hasRotation(rotations)) {
       try {
-        const turned = await api.upload(await rotatedFile(doc, rotations));
+        const file = await rotatedFile(doc, rotations);
+        if (token !== seq.current) return;
+        const turned = await api.upload(file);
         if (token !== seq.current) return;
         body = { ...payload, file_id: turned.file_id };
       } catch (e) {
