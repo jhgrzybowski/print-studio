@@ -79,6 +79,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     async (f) => {
       if (!f) return;
       uploadCtl.current?.abort();
+      turnedCtl.current?.abort();
       const token = ++seq.current;
       const kind = fileKind(f.type, f.name);
       setPrinting({ state: "idle" });
@@ -146,6 +147,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
   const openExisting = useCallback(
     async (entry) => {
       uploadCtl.current?.abort();
+      turnedCtl.current?.abort();
       const token = ++seq.current;
       setPrinting({ state: "idle" });
       setValidation({ state: "idle" });
@@ -174,6 +176,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
 
   const clear = useCallback(() => {
     uploadCtl.current?.abort();
+    turnedCtl.current?.abort();
     seq.current++;
     setDoc(null);
     setPrinting({ state: "idle" });
@@ -253,6 +256,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
       try {
         const file = await rotatedFile(doc, rotations);
         if (token !== seq.current) return;
+        turnedCtl.current?.abort();
         turnedCtl.current = new AbortController();
         const turned = await api.upload(file, { signal: turnedCtl.current.signal });
         if (token !== seq.current) return;
