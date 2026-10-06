@@ -120,8 +120,10 @@
   border-radius: 8px;
   transition: background-color var(--t-fast) ease;
 }
-.jobchip__main:hover {
-  background: var(--hover);
+@media (hover: hover) {
+  .jobchip__main:hover {
+    background: var(--hover);
+  }
 }
 .jobchip__main {
   height: auto;
@@ -197,16 +199,17 @@
 .track.is-running::after {
   content: "";
   position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent) 0 0 / 40% 100% no-repeat;
+  inset: 0 auto 0 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.55), transparent);
   animation: glint 1.4s linear infinite;
 }
 @keyframes glint {
   from {
-    background-position: -60% 0;
+    transform: translateX(-90%);
   }
   to {
-    background-position: 160% 0;
+    transform: translateX(240%);
   }
 }
 
@@ -347,8 +350,10 @@
   color: var(--text-3);
   font-size: var(--fs-12);
 }
-.thumb__toggle:hover {
-  color: var(--text);
+@media (hover: hover) {
+  .thumb__toggle:hover {
+    color: var(--text);
+  }
 }
 .thumb__num {
   justify-self: center;
@@ -540,9 +545,11 @@
   font-size: var(--fs-13);
   font-weight: 500;
 }
-.zoom__val:hover {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) {
+  .zoom__val:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 
 .verdict {
@@ -627,13 +634,21 @@
     box-shadow var(--t-mid) ease,
     color var(--t-fast) ease;
 }
-.blank__sheet:hover:not(:disabled),
 .blank.is-dragging .blank__sheet {
   background: color-mix(in srgb, var(--paper) 10%, transparent);
   box-shadow:
     inset 0 0 0 1px var(--accent),
     0 30px 60px -30px rgb(0 0 0 / 0.6);
   color: var(--text);
+}
+@media (hover: hover) {
+  .blank__sheet:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--paper) 10%, transparent);
+    box-shadow:
+      inset 0 0 0 1px var(--accent),
+      0 30px 60px -30px rgb(0 0 0 / 0.6);
+    color: var(--text);
+  }
 }
 .blank__sheet:active:not(:disabled) {
   scale: 0.98;
@@ -688,9 +703,13 @@
 [data-theme="light"] .blank__sheet {
   background: rgb(255 255 255 / 0.5);
 }
-[data-theme="light"] .blank__sheet:hover:not(:disabled),
 [data-theme="light"] .blank.is-dragging .blank__sheet {
   background: rgb(255 255 255 / 0.8);
+}
+@media (hover: hover) {
+  [data-theme="light"] .blank__sheet:hover:not(:disabled) {
+    background: rgb(255 255 255 / 0.8);
+  }
 }
 
 /* ---------- History detail ---------- */
@@ -1006,6 +1025,8 @@
   gap: 12px;
   flex: none;
   padding: 0 12px 6px 20px;
+  /* The header drags the sheet too, so the browser must not claim the gesture as a scroll. */
+  touch-action: none;
 }
 .sheet-panel__title {
   margin: 0;

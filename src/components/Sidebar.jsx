@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useMemo, useState } from "react";
+import { forwardRef, memo, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { DropdownMenu } from "radix-ui";
 import { Ban, Check, CircleAlert, LogOut, Monitor, Moon, PanelLeftClose, Plus, RotateCw, Search, Settings, Sun, X } from "lucide-react";
@@ -53,7 +53,12 @@ function StatusMark({ status, active }) {
   return null;
 }
 
-function HistoryRow({ item, job, selected, onSelect, onReprint }) {
+/**
+ * Memoised: polling and upload progress re-render the app often, and a long history should not
+ * re-render with it. `locale` is a prop so a language switch still reaches the row. Only a print
+ * that arrives while the list is open slides in; rows coming back after a search just appear.
+ */
+const HistoryRow = memo(function HistoryRow({ item, job, selected, onSelect, onReprint, fresh, searching }) {
   const active = ACTIVE_STATUSES.has(item.status);
   // Live CUPS state can run ahead of the stored status while a job is moving.
   const status = active && job?.state ? job.state : item.status;
@@ -64,9 +69,9 @@ function HistoryRow({ item, job, selected, onSelect, onReprint }) {
   const meta = [pages, o.paper_size && paperName(o.paper_size), formatTime(item.created_at)].filter(Boolean).join(" · ");
   return (
     <motion.li
-      layout="position"
+      layout={searching ? false : "position"}
       className={`hrow ${selected ? "is-selected" : ""} ${active ? "is-active" : ""}`}
-      initial={{ opacity: 0, y: -6 }}
+      initial={fresh ? { opacity: 0, y: -6 } : false}
       animate={{ opacity: 1, y: 0 }}
       transition={tween}
     >
@@ -86,7 +91,7 @@ function HistoryRow({ item, job, selected, onSelect, onReprint }) {
       {!active && item.file_id && <IconKey label={t("Print again")} icon={RotateCw} size="sm" className="hrow__again" onClick={() => onReprint(item)} tipSide="right" />}
     </motion.li>
   );
-}
+});
 
 function HistorySkeleton() {
   return (
@@ -103,6 +108,7 @@ function HistorySkeleton() {
 
 function HistoryList({ history, selectedId, onSelect, onReprint, query }) {
   const { items, status, total, loadMore, loadingMore, jobs } = history;
+  const [since] = useState(() => Date.now());
   // A callback ref: the sentinel unmounts during search and comes back as a new node.
   const [sentinel, setSentinel] = useState(null);
 
@@ -143,7 +149,17 @@ function HistoryList({ history, selectedId, onSelect, onReprint, query }) {
           <ul>
             <AnimatePresence initial={false}>
               {g.items.map((it) => (
-                <HistoryRow key={it.id} item={it} job={jobs[it.cups_job_id]} selected={it.id === selectedId} onSelect={onSelect} onReprint={onReprint} />
+                <HistoryRow
+                  key={it.id}
+                  item={it}
+                  job={jobs[it.cups_job_id]}
+                  selected={it.id === selectedId}
+                  onSelect={onSelect}
+                  onReprint={onReprint}
+                  fresh={Date.parse(it.created_at) > since}
+                  searching={!!query}
+                  locale={locale}
+                />
               ))}
             </AnimatePresence>
           </ul>

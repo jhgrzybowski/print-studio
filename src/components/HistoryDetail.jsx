@@ -5,7 +5,7 @@ import { CircleAlert, Ellipsis, Eraser, ExternalLink, RotateCw } from "lucide-re
 import { api } from "../api/client.js";
 import { PreviewStage } from "./PreviewStage.jsx";
 import { jobTone } from "./Dock.jsx";
-import { Button, Dot, PrintButton, Tip } from "./controls.jsx";
+import { Button, Dot, PrintButton, Tip, ease } from "./controls.jsx";
 import { FileGlyph } from "./FileGlyph.jsx";
 import { BASE_SETTINGS, fromRequested } from "../lib/settings.js";
 import {
@@ -148,7 +148,7 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
   const forgettable = terminal && entry.cups_job_id;
 
   return (
-    <motion.div className="page page--detail" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+    <motion.div className="page page--detail" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.14, ease }}>
       <div className="bar">
         {lead}
         <span className={`bar__glyph kind-${kind}`}>

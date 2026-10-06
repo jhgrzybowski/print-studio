@@ -64,9 +64,11 @@
   height: 30px;
   border-radius: 8px;
 }
-.ikey:hover:not(:disabled) {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) {
+  .ikey:hover:not(:disabled) {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 .ikey:active:not(:disabled) {
   transform: scale(0.94);
@@ -83,8 +85,10 @@
 .ikey.is-on svg {
   color: var(--accent);
 }
-.ikey--danger:hover:not(:disabled) {
-  color: var(--error);
+@media (hover: hover) {
+  .ikey--danger:hover:not(:disabled) {
+    color: var(--error);
+  }
 }
 .ikey--accent:not(:disabled) {
   color: var(--accent);
@@ -115,8 +119,10 @@
   background: var(--field);
   box-shadow: var(--field-shadow);
 }
-.btn--raised:hover:not(:disabled) {
-  background: var(--field-hover);
+@media (hover: hover) {
+  .btn--raised:hover:not(:disabled) {
+    background: var(--field-hover);
+  }
 }
 .btn:disabled {
   opacity: 0.45;
@@ -124,9 +130,11 @@
 .btn--quiet {
   color: var(--text-2);
 }
-.btn--quiet:hover:not(:disabled) {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) {
+  .btn--quiet:hover:not(:disabled) {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 .btn--quiet:active:not(:disabled) {
   background: var(--press);
@@ -134,8 +142,10 @@
 .btn--danger {
   color: var(--error);
 }
-.btn--danger:hover:not(:disabled) {
-  color: var(--error);
+@media (hover: hover) {
+  .btn--danger:hover:not(:disabled) {
+    color: var(--error);
+  }
 }
 .btn--metal {
   font-weight: 600;
@@ -178,8 +188,10 @@
     background var(--t-fast) ease,
     transform var(--t-press) var(--ease);
 }
-.field:hover:not(:disabled) {
-  background: var(--field-hover);
+@media (hover: hover) {
+  .field:hover:not(:disabled) {
+    background: var(--field-hover);
+  }
 }
 .field:active:not(:disabled) {
   transform: scale(0.97);
@@ -272,8 +284,10 @@
   width: 34px;
   padding: 0;
 }
-.seg__opt:hover:not(:disabled):not(.is-active) {
-  color: var(--text);
+@media (hover: hover) {
+  .seg__opt:hover:not(:disabled):not(.is-active) {
+    color: var(--text);
+  }
 }
 .seg__opt:active:not(:disabled) {
   transform: scale(0.95);
@@ -327,9 +341,11 @@
     background var(--t-fast) ease,
     transform var(--t-press) var(--ease);
 }
-.stepper__key:hover:not(:disabled) {
-  background: var(--hover);
-  color: var(--text);
+@media (hover: hover) {
+  .stepper__key:hover:not(:disabled) {
+    background: var(--hover);
+    color: var(--text);
+  }
 }
 .stepper__key:active:not(:disabled) {
   transform: scale(0.95);
@@ -690,22 +706,24 @@
     --mx 260ms var(--ease),
     --my 260ms var(--ease);
 }
-/* A slow sheen drifting across the metal. */
+/* A slow sheen drifting across the metal: two tiles slide one tile per loop on the compositor,
+   so the slab never repaints. */
 .print::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: 0 auto 0 0;
   z-index: -1;
-  background: linear-gradient(112deg, transparent 30%, rgb(255 255 255 / 0.7) 45%, transparent 52%, transparent 70%, rgb(255 255 255 / 0.35) 78%, transparent 84%) 0 0 / 260% 100%;
-  animation: flow 7s linear infinite;
+  width: 520%;
+  background: linear-gradient(112deg, transparent 30%, rgb(255 255 255 / 0.7) 45%, transparent 52%, transparent 70%, rgb(255 255 255 / 0.35) 78%, transparent 84%) 0 0 / 50% 100%;
+  animation: flow 4.4s linear infinite;
   pointer-events: none;
 }
 @keyframes flow {
   from {
-    background-position: 130% 0;
+    transform: translateX(-50%);
   }
   to {
-    background-position: -130% 0;
+    transform: translateX(0);
   }
 }
 .print:active:not(:disabled) {
