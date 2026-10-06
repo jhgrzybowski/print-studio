@@ -391,6 +391,7 @@ export default {
   "Delete {n} for good": "Usuń na stałe ({n})",
   "Deleted {n} print": plural("Usunięto {n} wydruk", "Usunięto {n} wydruki", "Usunięto {n} wydruków"),
   "Couldn't delete: {error}": "Nie udało się usunąć: {error}",
+  "Signed out before the change was saved.": "Wylogowano, zanim zmiana została zapisana.",
   "Nothing archived": "Archiwum jest puste",
   "Prints you archive leave the history list and wait here. Restore them any time, or delete them for good.":
     "Zarchiwizowane wydruki znikają z listy historii i czekają tutaj. Możesz je w każdej chwili przywrócić albo usunąć na stałe.",

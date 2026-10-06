@@ -225,6 +225,8 @@ export function usePreferences(enabled) {
   // One read of the server's preferences, shared by the first load and any save made before it lands.
   const reading = useRef(null);
   const synced = useRef(false);
+  // Bumped on every sign-in and sign-out, so a save started under one session never runs in another.
+  const session = useRef(0);
   // Until the server's copy is read, archived and deleted prints can't be told apart from the rest.
   const [ready, setReady] = useState(false);
   const sync = useCallback(() => {
@@ -251,6 +253,7 @@ export function usePreferences(enabled) {
     queue.reset({});
     reading.current = null;
     synced.current = false;
+    session.current += 1;
     setReady(false);
     if (!enabled) {
       setPrefs(null);
@@ -272,14 +275,18 @@ export function usePreferences(enabled) {
       queue.reset({});
       reading.current = null;
       synced.current = false;
+      session.current += 1;
     };
   }, [enabled, queue, sync]);
 
   const save = useCallback(
     async (patch) => {
       // PUT replaces the whole object, so never save over preferences we failed to read.
-      // (A read that a sign-out overtook settles without syncing, so wait for the current one.)
-      while (!synced.current) await sync();
+      const mine = session.current;
+      while (!synced.current) {
+        await sync();
+        if (session.current !== mine) throw new Error(t("Signed out before the change was saved."));
+      }
       return queue.save(patch);
     },
     [queue, sync],
