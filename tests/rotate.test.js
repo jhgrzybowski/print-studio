@@ -232,3 +232,11 @@ test("an upside-down flip adds a half turn to every page and leaves manual turns
   assert.equal(withFlip(manual, false, 3), manual);
   assert.deepEqual(manual, { 2: 90 });
 });
+
+test("a protected PDF is refused rather than turned blind", async () => {
+  const src = await PDFDocument.create();
+  src.addPage([200, 300]);
+  src.context.trailerInfo.Encrypt = src.context.register(src.context.obj({ Filter: "Standard", V: 1, R: 2 }));
+  const bytes = await src.save();
+  await assert.rejects(rotatePdf(bytes, { 1: 90 }), (e) => e.code === "encrypted");
+});

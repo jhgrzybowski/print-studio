@@ -259,7 +259,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
         body = { ...payload, file_id: turned.file_id };
       } catch (e) {
         if (token !== seq.current) return;
-        setPrinting({ state: "error", error: e instanceof ApiError ? printMessage(e) : t("Couldn't turn the pages. Try again, or print them unturned.") });
+        setPrinting({ state: "error", error: e instanceof ApiError ? printMessage(e) : e?.code === "encrypted" ? t("This PDF is protected, so its pages can't be turned. Print it unturned.") : t("Couldn't turn the pages. Try again, or print them unturned.") });
         return;
       }
     }

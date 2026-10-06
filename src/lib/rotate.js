@@ -56,7 +56,10 @@ export function frameOnPaper(page, paper, fit) {
 export async function rotatePdf(bytes, rotations) {
   const lib = await import("pdf-lib");
   const { PDFDocument, degrees } = lib;
+  // pdf-lib can't decrypt, and writing an encrypted file's pages out as they are can leave them
+  // blank, so a protected PDF isn't turned at all.
   const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true });
+  if (pdf.isEncrypted) throw Object.assign(new Error("This PDF is protected, so its pages can't be turned."), { code: "encrypted" });
   const count = pdf.getPageCount();
   // Fields saved with /NeedAppearances have no drawing of their value, only the value; a viewer
   // draws it at display time. Draw them now, so baking (below) has something to keep. One field at

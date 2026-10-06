@@ -177,6 +177,7 @@ export default {
   "Rotate page": "Obróć stronę",
   "Rotate this page": "Obróć tę stronę",
   "Couldn't turn the pages. Try again, or print them unturned.": "Nie udało się obrócić stron. Spróbuj ponownie lub wydrukuj je bez obrotu.",
+  "This PDF is protected, so its pages can't be turned. Print it unturned.": "Ten PDF jest zabezpieczony, więc nie można obrócić jego stron. Wydrukuj go bez obrotu.",
 
   // Quality
   Quality: "Jakość wydruku",
