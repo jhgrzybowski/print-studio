@@ -142,7 +142,7 @@ export function HomeView({ narrow, lead, printer, onPrinter, history, archive, c
                   ))}
                 </ul>
               ) : (
-                <p className="choice__empty">{t("Nothing printed yet. Your prints will show up here.")}</p>
+                <p className="choice__empty">{history.status === "error" ? t("History is offline. Retrying.") : t("Nothing printed yet. Your prints will show up here.")}</p>
               )}
               {archivedCount > 0 && (
                 <button type="button" className="choice__link" onClick={onOpenArchive}>
