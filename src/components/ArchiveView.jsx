@@ -14,18 +14,41 @@ import { t, tn } from "../i18n/index.js";
  */
 function useEntries(ids, items) {
   const [fetched, setFetched] = useState({});
+  const [round, setRound] = useState(0);
   const asked = useRef(new Set());
+  const ctl = useRef(null);
+  // Leaving (signing out included) calls off what is still loading, so a late 401 can't sign out
+  // whoever signs in next.
+  useEffect(() => {
+    ctl.current = new AbortController();
+    const asking = asked.current;
+    return () => {
+      ctl.current.abort();
+      asking.clear();
+    };
+  }, []);
   useEffect(() => {
     const known = new Set(items.map((i) => i.id));
     for (const id of ids) {
       if (known.has(id) || asked.current.has(id)) continue;
       asked.current.add(id);
       api
-        .historyEntry(id)
+        .historyEntry(id, { signal: ctl.current.signal })
         .then((e) => setFetched((f) => ({ ...f, [id]: e })))
-        .catch((e) => setFetched((f) => ({ ...f, [id]: { id, missing: e.status === 404, failed: e.status !== 404 } })));
+        .catch((e) => {
+          if (e.name === "AbortError") return;
+          // Only a 404 is final; anything else is asked again shortly.
+          if (e.status !== 404) asked.current.delete(id);
+          setFetched((f) => ({ ...f, [id]: { id, missing: e.status === 404, failed: e.status !== 404 } }));
+        });
     }
-  }, [ids, items]);
+  }, [ids, items, round]);
+  const failing = ids.some((id) => fetched[id]?.failed);
+  useEffect(() => {
+    if (!failing) return;
+    const timer = setTimeout(() => setRound((r) => r + 1), 5000);
+    return () => clearTimeout(timer);
+  }, [failing, round]);
   return ids.map((id) => items.find((i) => i.id === id) || fetched[id] || { id, pending: true });
 }
 
