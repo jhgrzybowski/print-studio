@@ -9,6 +9,14 @@ export const turn = (deg) => (((Math.round(deg / 90) * 90) % 360) + 360) % 360;
 
 export const hasRotation = (rotations) => Object.values(rotations || {}).some((d) => turn(d) !== 0);
 
+/** The page turns with every page given an extra half turn, as an upside-down default asks for. */
+export function withFlip(rotations, flip, count) {
+  if (!flip || !count) return rotations;
+  const out = { ...rotations };
+  for (let p = 1; p <= count; p++) out[p] = turn((out[p] || 0) + 180);
+  return out;
+}
+
 /**
  * Where a w×h box, turned clockwise by `deg` about its origin and scaled to fit a W×H page,
  * must be placed so it ends up centred. PDF coordinates: y up, positive angles counterclockwise.

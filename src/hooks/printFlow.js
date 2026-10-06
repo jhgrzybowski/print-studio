@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError } from "../api/client.js";
 import { BASE_SETTINGS, fromRequested, meaningfulWarnings, reconcile, toPrintOptions } from "../lib/settings.js";
 import { parseRange } from "../lib/pages.js";
-import { hasRotation, rotateImage, rotatePdf, turn } from "../lib/rotate.js";
+import { hasRotation, rotateImage, rotatePdf, turn, withFlip } from "../lib/rotate.js";
 import { fileKind, formatBytes } from "../lib/format.js";
 import { useDebounced } from "./data.js";
 import { t, useLocale } from "../i18n/index.js";
@@ -20,7 +20,10 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
   const [validation, setValidation] = useState({ state: "idle" });
   const [printing, setPrinting] = useState({ state: "idle" });
   // Clockwise turns by page number, baked into a fresh upload when printing.
-  const [rotations, setRotations] = useState({});
+  const [manual, setManual] = useState({});
+  // An upside-down default or history job turns every page half way on top of the manual turns,
+  // so applying a normal default later can take it back off without losing them.
+  const [flip, setFlip] = useState(false);
   const uploadCtl = useRef(null);
   const seq = useRef(0);
 
@@ -55,7 +58,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
       if (!/^reverse-/.test(orientation || "")) return;
       const count = file.page_count || pages?.length || 0;
       const turnable = !!pages?.length && count > 0 && (!!file.pdf_url || (!!source && /^image\/(png|jpeg)$/.test(file.detected_mime)));
-      if (turnable) setRotations(Object.fromEntries(Array.from({ length: count }, (_, i) => [i + 1, 180])));
+      if (turnable) setFlip(true);
       else if (!choices.orientation?.length || choices.orientation.includes(orientation)) setSettings((s) => ({ ...s, orientation }));
     },
     [choices],
@@ -69,7 +72,8 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
       const kind = fileKind(f.type, f.name);
       setPrinting({ state: "idle" });
       setValidation({ state: "idle" });
-      setRotations({});
+      setManual({});
+      setFlip(false);
       setSettings((s) => ({ ...s, pages: "" }));
 
       if (maxBytes && f.size > maxBytes) {
@@ -134,7 +138,8 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
       const token = ++seq.current;
       setPrinting({ state: "idle" });
       setValidation({ state: "idle" });
-      setRotations({});
+      setManual({});
+      setFlip(false);
       setDoc({ phase: "loading", name: entry.original_filename, kind: fileKind(entry.detected_mime, entry.original_filename) });
       setSettings(reconcile({ ...BASE_SETTINGS, ...(defaults || {}), ...fromRequested(entry.requested_options) }, choices));
       try {
@@ -162,7 +167,8 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     setDoc(null);
     setPrinting({ state: "idle" });
     setValidation({ state: "idle" });
-    setRotations({});
+    setManual({});
+    setFlip(false);
     setSettings(reconcile({ ...BASE_SETTINGS, ...(defaults || {}) }, choices));
   }, [choices, defaults]);
 
@@ -178,14 +184,18 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
   const canRotate = doc?.phase === "ready" && !!doc.pages?.length && (!!doc.file.pdf_url || (!!doc.source && /^image\/(png|jpeg)$/.test(doc.file.detected_mime)));
   const rotate = useCallback(
     (pages, delta) =>
-      setRotations((r) => {
+      setManual((r) => {
         const next = { ...r };
         for (const p of pages) next[p] = turn((next[p] || 0) + delta);
         return next;
       }),
     [],
   );
-  const unrotate = useCallback(() => setRotations({}), []);
+  const unrotate = useCallback(() => {
+    setManual({});
+    setFlip(false);
+  }, []);
+  const rotations = useMemo(() => withFlip(manual, flip, pageCount), [manual, flip, pageCount]);
 
   const locale = useLocale();
   const rangeError = useMemo(() => {
@@ -248,9 +258,10 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     }
   }, [payload, printing.state, onPrinted, canRotate, rotations, doc]);
 
-  /** Put the saved defaults back, keeping the page range; an upside-down default turns the pages. */
+  /** Put the saved defaults back, keeping the page range and manual turns; only an upside-down default turns the pages. */
   const applyDefaults = useCallback(() => {
     setSettings((s) => reconcile({ ...BASE_SETTINGS, ...(defaults || {}), pages: s.pages }, choices));
+    setFlip(false);
     if (doc?.phase === "ready") keepUpsideDown(defaults?.orientation, doc.file, doc.pages, doc.source);
   }, [defaults, choices, doc, keepUpsideDown]);
 

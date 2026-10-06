@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { PDFDict, PDFDocument, PDFHexString, PDFName, degrees } from "pdf-lib";
 import { deflateSync } from "node:zlib";
-import { frameOnPaper, hasRotation, placement, readDensity, rotatePdf, turn, withDensity } from "../src/lib/rotate.js";
+import { frameOnPaper, hasRotation, placement, readDensity, rotatePdf, turn, withDensity, withFlip } from "../src/lib/rotate.js";
 import { cleanRange } from "../src/lib/pages.js";
 
 test("turn normalises angles to clockwise quarter turns", () => {
@@ -224,4 +224,11 @@ test("cleanRange keeps what a range needs and turns phone dashes into hyphens", 
   assert.equal(cleanRange("1–3, 5"), "1-3, 5");
   assert.equal(cleanRange("2—4;7"), "2-4,7");
   assert.equal(cleanRange("1a-2"), "1-2");
+});
+
+test("an upside-down flip adds a half turn to every page and leaves manual turns alone", () => {
+  const manual = { 2: 90 };
+  assert.deepEqual(withFlip(manual, true, 3), { 1: 180, 2: 270, 3: 180 });
+  assert.equal(withFlip(manual, false, 3), manual);
+  assert.deepEqual(manual, { 2: 90 });
 });
