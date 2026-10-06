@@ -248,7 +248,14 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     }
   }, [payload, printing.state, onPrinted, canRotate, rotations, doc]);
 
+  /** Put the saved defaults back, keeping the page range; an upside-down default turns the pages. */
+  const applyDefaults = useCallback(() => {
+    setSettings((s) => reconcile({ ...BASE_SETTINGS, ...(defaults || {}), pages: s.pages }, choices));
+    if (doc?.phase === "ready") keepUpsideDown(defaults?.orientation, doc.file, doc.pages, doc.source);
+  }, [defaults, choices, doc, keepUpsideDown]);
+
   return {
+    applyDefaults,
     doc,
     settings,
     set,

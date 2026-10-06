@@ -6,7 +6,7 @@ import { api } from "./api/client.js";
 import { useAppearance } from "./hooks/appearance.js";
 import { useArchive, useHistory, useMedia, usePreferences, usePrinter, usePrinterOptions, useSession } from "./hooks/data.js";
 import { usePrintFlow } from "./hooks/printFlow.js";
-import { BASE_SETTINGS, pickDefaults, reconcile } from "./lib/settings.js";
+import { pickDefaults } from "./lib/settings.js";
 import { formatTime } from "./lib/format.js";
 import { hasRotation } from "./lib/rotate.js";
 import { t, tn, useLocale } from "./i18n/index.js";
@@ -293,7 +293,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
   }
 
   function resetToDefaults() {
-    flow.setSettings((s) => reconcile({ ...BASE_SETTINGS, ...(defaults || {}), pages: s.pages }, choices));
+    flow.applyDefaults();
   }
 
   async function cancelTracked(entry) {

@@ -189,7 +189,6 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
     if (e.target.closest("input, textarea, [role=radiogroup], [role=menu], [role=listbox]")) return;
     if (e.key === "ArrowRight" || e.key === "PageDown") (e.preventDefault(), go(1));
     if (e.key === "ArrowLeft" || e.key === "PageUp") (e.preventDefault(), go(-1));
-    if (canTurn && (e.key === "r" || e.key === "R") && !e.metaKey && !e.ctrlKey && !e.altKey) (e.preventDefault(), onRotate([current], e.shiftKey ? -90 : 90));
   }
 
   const zi = ZOOMS.indexOf(zoom);
@@ -197,6 +196,23 @@ export function PreviewStage({ doc, settings, pageCount, onPagesChange, readOnly
   const hasPreview = pages.length > 0 && fileId;
   const multi = count > 1 && hasPreview;
   const canTurn = !readOnly && hasPreview && !!onRotate;
+
+  // R turns the current page from anywhere on the page, not only once the stage has focus.
+  const turnRef = useRef(null);
+  turnRef.current = canTurn ? (delta) => onRotate([current], delta) : null;
+  useEffect(() => {
+    function onKey(e) {
+      if (e.defaultPrevented || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key !== "r" && e.key !== "R") return;
+      const el = e.target instanceof Element ? e.target : null;
+      if (el?.closest("input, textarea, select, [contenteditable=''], [contenteditable=true], [role=radiogroup], [role=menu], [role=listbox], [role=dialog]")) return;
+      if (!turnRef.current) return;
+      e.preventDefault();
+      turnRef.current(e.shiftKey ? -90 : 90);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // The neighbours decode ahead, so the next page is ready before it is asked for.
   useEffect(() => {
