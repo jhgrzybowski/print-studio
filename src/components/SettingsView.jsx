@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { Check, LogOut, Monitor, Moon, RefreshCw, Sun } from "lucide-react";
 import { api } from "../api/client.js";
 import { PALETTES } from "../hooks/appearance.js";
-import { BASE_SETTINGS, pickDefaults, reconcile } from "../lib/settings.js";
+import { BASE_SETTINGS, defaultsToSave, pickDefaults, reconcile, savedUpsideDown } from "../lib/settings.js";
 import { formatBytes, formatDate } from "../lib/format.js";
 import { Button, IconKey, Row, Segmented, Stepper, Tip, ease } from "./controls.jsx";
 import { OptionRows } from "./Options.jsx";
@@ -48,7 +48,7 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
   async function saveDefaults() {
     setState("saving");
     try {
-      await prefs.save({ print_defaults: pickDefaults(draft) });
+      await prefs.save({ print_defaults: defaultsToSave(draft, savedUpsideDown(saved) && draft.orientation === base.orientation) });
       setState("saved");
       setTimeout(() => setState("idle"), 1600);
     } catch {

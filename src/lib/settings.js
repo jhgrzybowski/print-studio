@@ -70,6 +70,19 @@ export function fromRequested(requested = {}) {
   return s;
 }
 
+/** Whether saved defaults ask for upside-down prints (the old reverse orientations). */
+export const savedUpsideDown = (saved) => /^reverse-/.test(saved?.orientation || "");
+
+/**
+ * Defaults to save, keeping the upside-down marker the settings screen can't show: it stays
+ * while the orientation is the one it was saved with, and goes once that is changed.
+ */
+export function defaultsToSave(settings, upsideDown) {
+  const out = pickDefaults(settings);
+  if (upsideDown && out.orientation && !/^reverse-/.test(out.orientation)) out.orientation = `reverse-${out.orientation}`;
+  return out;
+}
+
 export function pickDefaults(settings) {
   const out = {};
   for (const k of DEFAULT_KEYS) out[k] = settings[k];

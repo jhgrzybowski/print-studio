@@ -25,6 +25,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
   // so applying a normal default later can take it back off without losing them.
   const [flip, setFlip] = useState(false);
   const uploadCtl = useRef(null);
+  const turnedCtl = useRef(null);
   const seq = useRef(0);
 
   const hasChoices = Object.keys(choices).length > 0;
@@ -34,6 +35,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     () => () => {
       seq.current++;
       uploadCtl.current?.abort();
+      turnedCtl.current?.abort();
     },
     [],
   );
@@ -251,7 +253,8 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
       try {
         const file = await rotatedFile(doc, rotations);
         if (token !== seq.current) return;
-        const turned = await api.upload(file);
+        turnedCtl.current = new AbortController();
+        const turned = await api.upload(file, { signal: turnedCtl.current.signal });
         if (token !== seq.current) return;
         body = { ...payload, file_id: turned.file_id };
       } catch (e) {
@@ -293,6 +296,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     print,
     canPrint: !!payload,
     rotations: canRotate ? rotations : NO_TURNS,
+    flip: canRotate && flip,
     canRotate,
     rotate,
     unrotate,

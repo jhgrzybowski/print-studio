@@ -6,7 +6,7 @@ import { api } from "./api/client.js";
 import { useAppearance } from "./hooks/appearance.js";
 import { useArchive, useHistory, useMedia, usePreferences, usePrinter, usePrinterOptions, useSession } from "./hooks/data.js";
 import { usePrintFlow } from "./hooks/printFlow.js";
-import { pickDefaults } from "./lib/settings.js";
+import { defaultsToSave, savedUpsideDown } from "./lib/settings.js";
 import { formatTime } from "./lib/format.js";
 import { hasRotation } from "./lib/rotate.js";
 import { t, tn, useLocale } from "./i18n/index.js";
@@ -282,7 +282,10 @@ function Shell({ session, printer, appearance, setAppearance }) {
   async function saveDefaults() {
     setDefaultsState("saving");
     try {
-      await prefs.save({ print_defaults: pickDefaults(flow.settings) });
+      // A turnable document shows upside down as a half turn of every page; with nothing loaded,
+      // an upside-down default stays as long as its orientation does.
+      const upsideDown = flow.canRotate ? flow.flip : !flow.doc && savedUpsideDown(defaults) && flow.settings.orientation === defaults.orientation.slice(8);
+      await prefs.save({ print_defaults: defaultsToSave(flow.settings, upsideDown) });
       setDefaultsState("saved");
       flash(t("Saved as your defaults"));
       setTimeout(() => setDefaultsState("idle"), 1800);
