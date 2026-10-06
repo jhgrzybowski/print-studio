@@ -109,7 +109,7 @@ export async function rotatePdf(bytes, rotations) {
     const group = page.node.get(lib.PDFName.of("Group"));
     if (group) fresh.node.set(lib.PDFName.of("Group"), group);
     fresh.drawPage(embedded, { x: p.x, y: p.y, xScale: p.scale, yScale: p.scale, rotate: degrees(p.ccw) });
-    carry(pdf, live, fresh, crop, p, own + deg, lib);
+    carry(pdf, live, fresh, crop, p, own, deg, lib);
     pdf.removePage(index + 1);
   }
   // Appearances were drawn above where they could be; redrawing at save would throw on the rest.
@@ -120,7 +120,7 @@ export async function rotatePdf(bytes, rotations) {
  * Move printable annotations that have no drawing to bake onto the turned page, placed where the
  * turned page puts them and turned with it, for the viewer or printer to draw from their values.
  */
-function carry(pdf, refs, fresh, crop, p, clockwise, lib) {
+function carry(pdf, refs, fresh, crop, p, own, deg, lib) {
   const { PDFName, PDFDict, PDFArray, PDFNumber } = lib;
   if (!refs.length) return;
   const r = (p.ccw * Math.PI) / 180;
@@ -132,16 +132,24 @@ function carry(pdf, refs, fresh, crop, p, clockwise, lib) {
     const annot = pdf.context.lookup(ref, PDFDict);
     const rect = annot.lookupMaybe(PDFName.of("Rect"), PDFArray)?.asArray().map((n) => pdf.context.lookup(n, PDFNumber).asNumber());
     if (!rect) continue;
-    const pts = [at(rect[0], rect[1]), at(rect[2], rect[1]), at(rect[0], rect[3]), at(rect[2], rect[3])];
-    const xs = pts.map((q) => q[0]);
-    const ys = pts.map((q) => q[1]);
+    // A NoRotate widget showed upright on the turned page, so only the turn asked for here applies to it.
+    const upright = (annot.lookupMaybe(PDFName.of("F"), PDFNumber)?.asNumber() ?? 0) & NO_ROTATE && own;
+    const shown = upright ? uprightMatrix(own, rect) : [1, 0, 0, 1, 0, 0];
+    const corners = [
+      [rect[0], rect[1]],
+      [rect[2], rect[1]],
+      [rect[0], rect[3]],
+      [rect[2], rect[3]],
+    ].map(([u, v]) => at(shown[0] * u + shown[2] * v + shown[4], shown[1] * u + shown[3] * v + shown[5]));
+    const xs = corners.map((q) => q[0]);
+    const ys = corners.map((q) => q[1]);
     annot.set(PDFName.of("Rect"), pdf.context.obj([Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]));
     annot.set(PDFName.of("P"), fresh.ref);
     // /MK /R turns a widget's drawing counterclockwise; the page turned clockwise.
     if (annot.get(PDFName.of("Subtype"))?.toString() === "/Widget") {
       const mk = annot.lookupMaybe(PDFName.of("MK"), PDFDict) || pdf.context.obj({});
       const was = mk.lookupMaybe(PDFName.of("R"), PDFNumber)?.asNumber() ?? 0;
-      mk.set(PDFName.of("R"), PDFNumber.of((((was - clockwise) % 360) + 360) % 360));
+      mk.set(PDFName.of("R"), PDFNumber.of((((was - (upright ? deg : own + deg)) % 360) + 360) % 360));
       annot.set(PDFName.of("MK"), mk);
     }
     fresh.node.addAnnot(ref);

@@ -269,3 +269,26 @@ test("rotatePdf doesn't let an inherited /Rotate turn the new page again", async
   // The page keeps the landscape frame it was shown in; the turn is drawn inside it.
   assert.deepEqual([turned.getWidth(), turned.getHeight()], [300, 200]);
 });
+
+test("rotatePdf carries a NoRotate field with only the turn asked for", async () => {
+  const src = await PDFDocument.create();
+  const page = src.addPage([595, 842]);
+  page.setRotation(degrees(90));
+  page.drawText("Body", { x: 50, y: 780 });
+  const field = src.getForm().createTextField("pl");
+  field.addToPage(page, { x: 50, y: 700, width: 300, height: 30 });
+  field.acroField.setValue(PDFHexString.fromText("Zażółć"));
+  for (const w of field.acroField.getWidgets()) {
+    w.dict.delete(PDFName.of("AP"));
+    w.dict.set(PDFName.of("F"), src.context.obj(4 | 16));
+    w.dict.delete(PDFName.of("MK"));
+  }
+  const { width, height } = field.acroField.getWidgets()[0].getRectangle();
+  const out = await PDFDocument.load(await rotatePdf(await src.save({ updateFieldAppearances: false }), { 1: 90 }));
+  const widget = out.getPage(0).node.Annots().lookup(0, PDFDict);
+  // Shown upright before, so a quarter turn clockwise is all it gets.
+  assert.equal(widget.lookup(PDFName.of("MK"), PDFDict).lookup(PDFName.of("R")).asNumber(), 270);
+  const [x0, y0, x1, y1] = widget.lookup(PDFName.of("Rect")).asArray().map((n) => n.asNumber());
+  const scale = Math.min(842 / 595, 595 / 842);
+  assert.ok(Math.abs(x1 - x0 - height * scale) < 0.01 && Math.abs(y1 - y0 - width * scale) < 0.01, `${x1 - x0} × ${y1 - y0}`);
+});
