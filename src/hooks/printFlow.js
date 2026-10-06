@@ -46,6 +46,21 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     return pages;
   }, []);
 
+  // Upside-down prints used to be a reverse orientation, in saved defaults and in history. A
+  // document whose pages can be turned here gets them all turned half way; one whose pages can't
+  // (an image from history, a PDF without a preview) keeps the reverse orientation, so it still
+  // prints the way it did.
+  const keepUpsideDown = useCallback(
+    (orientation, file, pages, source) => {
+      if (!/^reverse-/.test(orientation || "")) return;
+      const count = file.page_count || pages?.length || 0;
+      const turnable = !!pages?.length && count > 0 && (!!file.pdf_url || (!!source && /^image\/(png|jpeg)$/.test(file.detected_mime)));
+      if (turnable) setRotations(Object.fromEntries(Array.from({ length: count }, (_, i) => [i + 1, 180])));
+      else if (!choices.orientation?.length || choices.orientation.includes(orientation)) setSettings((s) => ({ ...s, orientation }));
+    },
+    [choices],
+  );
+
   const attach = useCallback(
     async (f) => {
       if (!f) return;
@@ -93,7 +108,8 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
           });
           if (token !== seq.current) return;
           setDoc((d) => ({ ...d, phase: "loading", progress: 1 }));
-          await loadPreview(file, token, text, f);
+          const pages = await loadPreview(file, token, text, f);
+          if (token === seq.current) keepUpsideDown(defaults?.orientation, file, pages, f);
           return;
         } catch (e) {
           if (token !== seq.current || e.name === "AbortError") return;
@@ -108,7 +124,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
         }
       }
     },
-    [loadPreview, maxBytes],
+    [loadPreview, maxBytes, keepUpsideDown, defaults],
   );
 
   /** Load a file that is already on the server (reprint from history). */
@@ -124,17 +140,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
       try {
         const file = await api.file(entry.file_id);
         const pages = await loadPreview(file, token);
-        // Upside-down prints used to be a reverse orientation; they come back as turned pages. A file
-        // whose pages can't be turned here (an image from history, a PDF without a preview) keeps
-        // the reverse orientation, so it still prints the way it did.
-        const reverse = entry.requested_options?.orientation || "";
-        if (token === seq.current && /^reverse-/.test(reverse)) {
-          if (file.pdf_url && file.page_count && pages?.length) {
-            setRotations(Object.fromEntries(Array.from({ length: file.page_count }, (_, i) => [i + 1, 180])));
-          } else if (!choices.orientation?.length || choices.orientation.includes(reverse)) {
-            setSettings((s) => ({ ...s, orientation: reverse }));
-          }
-        }
+        if (token === seq.current) keepUpsideDown(entry.requested_options?.orientation || defaults?.orientation, file, pages);
         return true;
       } catch (e) {
         if (token !== seq.current) return false;
@@ -147,7 +153,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
         return false;
       }
     },
-    [choices, defaults, loadPreview],
+    [choices, defaults, loadPreview, keepUpsideDown],
   );
 
   const clear = useCallback(() => {
