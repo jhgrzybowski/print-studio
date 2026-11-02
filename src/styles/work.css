@@ -344,6 +344,9 @@
   filter: grayscale(1) contrast(1.04);
 }
 .thumb__toggle {
+  transition:
+    color var(--t-fast) ease,
+    transform var(--t-press) var(--ease);
   display: flex;
   align-items: center;
   gap: 7px;
@@ -362,6 +365,9 @@
   justify-self: center;
   color: var(--text-3);
   font-size: var(--fs-12);
+}
+.thumb__toggle:active {
+  transform: scale(0.95);
 }
 .thumb__toggle .thumb__num {
   color: inherit;
@@ -436,13 +442,10 @@
   transition: opacity var(--t-mid) ease;
 }
 /* Where the printer puts each page (the layout plan's cells), its frame, and the turn inside it. */
+/* Cells move to their new place at once: layout properties would re-lay the sheet every frame,
+   and paging is often done from the keyboard, which never animates. */
 .sheet__cell {
   position: absolute;
-  transition:
-    left var(--t-mid) var(--ease),
-    top var(--t-mid) var(--ease),
-    width var(--t-mid) var(--ease),
-    height var(--t-mid) var(--ease);
 }
 .sheet__cell.is-focused {
   outline: 1.5px solid color-mix(in oklch, var(--accent) 70%, transparent);
@@ -1182,4 +1185,19 @@
 .pages-row .input {
   height: 44px;
   font-size: var(--fs-16);
+}
+
+@media (pointer: coarse) {
+  /* The page tick under each thumbnail is small text; its target spans the thumbnail's width. */
+  .thumb__toggle {
+    position: relative;
+  }
+  .thumb {
+    gap: 10px;
+  }
+  .thumb__toggle::before {
+    content: "";
+    position: absolute;
+    inset: -9px -12px;
+  }
 }

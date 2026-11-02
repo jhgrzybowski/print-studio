@@ -497,4 +497,5 @@ export default {
   "{a} can't be combined with {b}": "{a} – nie można łączyć z: {b}",
   "{n} sheet done": plural("{n} arkusz gotowy", "{n} arkusze gotowe", "{n} arkuszy gotowych"),
   "{n} changed": plural("{n} zmieniona", "{n} zmienione", "{n} zmienionych"),
+  "More print settings": "Więcej ustawień wydruku",
 };

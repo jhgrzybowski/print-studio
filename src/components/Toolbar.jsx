@@ -1,8 +1,8 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { DropdownMenu, Popover } from "radix-ui";
-import { BookmarkCheck, BookmarkPlus, ChevronDown, Copy, Ellipsis, File, Files, Layers, Printer, RotateCcw, RotateCcwSquare, RotateCwSquare, Undo2 } from "lucide-react";
+import { BookmarkCheck, BookmarkPlus, ChevronDown, Copy, Ellipsis, File, Files, Layers, Printer, RotateCcw, RotateCcwSquare, RotateCwSquare, SlidersHorizontal, Undo2 } from "lucide-react";
 import { Dot, IconKey, MOD, PrintButton, Segmented, Select, Stepper, Tip } from "./controls.jsx";
-import { AdvancedRows, asGroups, HandlingRows, LayoutRows, layoutSummary, mediaGroups, optionModel, paperSelectGroups, RowGroup } from "./Options.jsx";
+import { AdvancedRows, asGroups, ExtraRows, HandlingRows, LayoutRows, layoutSummary, mediaGroups, OptionRows, optionModel, paperSelectGroups, RowGroup } from "./Options.jsx";
 import { SheetGridGlyph, TrayGlyph } from "./glyphs.jsx";
 import { changedCount, conflictText } from "../lib/settings.js";
 import { printerDot } from "./PrinterStatus.jsx";
@@ -154,14 +154,14 @@ function DefaultsMenu({ rotation, onSaveDefaults, onResetDefaults, defaultsState
 }
 
 /** A toolbar field that opens a panel of rows: layout, or paper handling and driver options. */
-function PanelField({ label, icon: Icon, value, changed, children, wide }) {
+function PanelField({ label, icon: Icon, value, changed, children, wide, keepValue }) {
   return (
     <Popover.Root>
       <Tip label={label}>
-        <Popover.Trigger className={`field field--compact ${changed ? "is-changed" : ""}`} aria-label={value ? `${label}: ${value}` : label}>
+        <Popover.Trigger className={`field ${keepValue ? "" : "field--compact"} ${changed ? "is-changed" : ""}`} aria-label={value ? `${label}: ${value}` : label}>
           <Icon className="field__lead" size={17} strokeWidth={1.5} aria-hidden />
           {value && <span className="field__val">{value}</span>}
-          {changed > 0 && !value && <span className="field__badge">{changed}</span>}
+          {changed > 0 && (!value || keepValue) && <span className="field__badge">{changed}</span>}
           <ChevronDown className="field__chev" size={14} strokeWidth={1.6} aria-hidden />
         </Popover.Trigger>
       </Tip>
@@ -175,6 +175,34 @@ function PanelField({ label, icon: Icon, value, changed, children, wide }) {
 }
 
 const HANDLING_KEYS = ["borderless", "reverse_order", "advanced"];
+const COMPACT_KEYS = ["media_type", "color_mode", "duplex", "orientation", "quality", "pages_per_sheet", "scaling", ...HANDLING_KEYS];
+
+/**
+ * Whether the full row of settings fits. When it doesn't, the toolbar keeps copies, pages and
+ * paper and folds the rest into one panel, so no setting ends up out of reach to the right.
+ * The full row's width is remembered, so the toolbar opens up again once there is room for it.
+ */
+function useFits(ref) {
+  const [compact, setCompact] = useState(false);
+  const full = useRef(0);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => {
+      if (!compact) {
+        if (el.scrollWidth > el.clientWidth + 1) {
+          full.current = el.scrollWidth;
+          setCompact(true);
+        }
+      } else if (el.clientWidth >= full.current) setCompact(false);
+    };
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref, compact]);
+  return compact;
+}
 
 /** The phone bar: menu, the document in hand, and the printer's state. Settings live in the dock below. */
 export function PhoneBar({ lead, printer, onPrinter, onHome }) {
@@ -200,6 +228,8 @@ export function PhoneBar({ lead, printer, onPrinter, onHome }) {
 export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSaveDefaults, onResetDefaults, defaultsState, lead, narrow, printer, onPrinter, onHome, rotation }) {
   const { settings, set, pageCount, rangeError, printing } = flow;
   const m = optionModel(settings, set, choices);
+  const scrollRef = useRef(null);
+  const compact = useFits(scrollRef);
 
   // The document chip on the stage carries the file name, so the bar names the place.
   if (narrow) return <PhoneBar lead={lead} printer={printer} onPrinter={onPrinter} onHome={onHome} />;
@@ -207,17 +237,9 @@ export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSav
   return (
     <div className="toolbar" role="toolbar" aria-label={t("Print settings")}>
       {lead}
-      <div className="toolbar__scroll">
+      <div className="toolbar__scroll" ref={scrollRef}>
         <div className="toolbar__group">
-          <Stepper
-            label={t("Copies")}
-            decLabel={t("Fewer copies")}
-            incLabel={t("More copies")}
-            icon={Copy}
-            value={settings.copies}
-            onChange={(v) => set("copies", v)}
-            disabled={disabled}
-          />
+          <Stepper label={t("Copies")} decLabel={t("Fewer copies")} incLabel={t("More copies")} icon={Copy} value={settings.copies} onChange={(v) => set("copies", v)} disabled={disabled} />
           <PagesField
             value={settings.pages}
             onChange={(v) => set("pages", v)}
@@ -229,14 +251,7 @@ export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSav
             pageSets={choices.page_set}
           />
           {choices.paper_size?.length > 0 && (
-            <Select
-              label={t("Paper size")}
-              icon={File}
-              value={settings.paper_size}
-              onChange={(v) => set("paper_size", v)}
-              groups={paperSelectGroups(choices.paper_size)}
-              disabled={disabled}
-            />
+            <Select label={t("Paper size")} icon={File} value={settings.paper_size} onChange={(v) => set("paper_size", v)} groups={paperSelectGroups(choices.paper_size)} disabled={disabled} />
           )}
           {choices.media_type?.length > 0 && (
             <Select
@@ -253,38 +268,51 @@ export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSav
 
         <span className="toolbar__sep" role="separator" aria-orientation="vertical" />
 
-        <div className="toolbar__group">
-          {m.color && <Select label={t("Color")} collapse="compact" disabled={disabled} value={m.color.value} onChange={m.color.onChange} groups={asGroups(m.color)} />}
-          {m.duplex && <Select label={t("Sides")} collapse="compact" disabled={disabled} value={m.duplex.value} onChange={m.duplex.onChange} groups={asGroups(m.duplex)} />}
-          {m.orientation && <Select label={t("Orientation")} collapse="compact" disabled={disabled} value={m.orientation.value} onChange={m.orientation.onChange} groups={asGroups(m.orientation)} />}
-          {m.quality && <Select label={t("Quality")} collapse="compact" disabled={disabled} value={m.quality.value} onChange={m.quality.onChange} groups={asGroups(m.quality)} />}
-          {((choices.pages_per_sheet || []).length > 1 || (choices.scaling || []).length > 1) && (
-            <PanelField
-              label={t("Layout and scaling")}
-              icon={SheetGridGlyph}
-              // The field names the layout only once it differs from one page per sheet at its own size.
-              value={Number(settings.pages_per_sheet) > 1 || (settings.scaling && settings.scaling !== "auto") ? layoutSummary(settings) : null}
-              changed={Number(settings.pages_per_sheet) > 1 || (settings.scaling && settings.scaling !== "auto") ? 1 : 0}
-            >
-              <p className="menu__label">{t("group|Layout")}</p>
+        {compact ? (
+          <div className="toolbar__group">
+            <PanelField label={t("More print settings")} icon={SlidersHorizontal} value={t("Settings")} changed={changedCount(settings, COMPACT_KEYS)} wide keepValue>
               <div className="rows">
-                <LayoutRows settings={settings} set={set} choices={choices} disabled={disabled} isPdf={flow.isPdf} idPrefix="tb-lay" />
+                <OptionRows settings={settings} set={set} choices={{ ...choices, paper_size: [] }} disabled={disabled} idPrefix="tb-all" rotation={rotation} />
               </div>
+              <ExtraRows settings={settings} set={set} choices={choices} disabled={disabled} isPdf={flow.isPdf} idPrefix="tb-all" />
             </PanelField>
-          )}
-          {((choices.media_source || []).length > 1 || choices.borderless || choices.reverse_order || choices.collate || (choices.advanced || []).length > 0) && (
-            <PanelField label={t("Paper handling and driver")} icon={TrayGlyph} changed={changedCount(settings, HANDLING_KEYS)} wide>
-              <div className="rows">
-                <HandlingRows settings={settings} set={set} choices={choices} disabled={disabled} />
-              </div>
-              {(choices.advanced || []).length > 0 && (
-                <RowGroup title={t("Printer driver")}>
-                  <AdvancedRows settings={settings} set={set} choices={choices} disabled={disabled} />
-                </RowGroup>
+          </div>
+        ) : (
+          <>
+            <div className="toolbar__group">
+              {m.color && <Select label={t("Color")} collapse="compact" disabled={disabled} value={m.color.value} onChange={m.color.onChange} groups={asGroups(m.color)} />}
+              {m.duplex && <Select label={t("Sides")} collapse="compact" disabled={disabled} value={m.duplex.value} onChange={m.duplex.onChange} groups={asGroups(m.duplex)} />}
+              {m.orientation && <Select label={t("Orientation")} collapse="compact" disabled={disabled} value={m.orientation.value} onChange={m.orientation.onChange} groups={asGroups(m.orientation)} />}
+              {m.quality && <Select label={t("Quality")} collapse="compact" disabled={disabled} value={m.quality.value} onChange={m.quality.onChange} groups={asGroups(m.quality)} />}
+              {((choices.pages_per_sheet || []).length > 1 || (choices.scaling || []).length > 1) && (
+                <PanelField
+                  label={t("Layout and scaling")}
+                  icon={SheetGridGlyph}
+                  // The field names the layout only once it differs from one page per sheet at its own size.
+                  value={Number(settings.pages_per_sheet) > 1 || (settings.scaling && settings.scaling !== "auto") ? layoutSummary(settings) : null}
+                  changed={Number(settings.pages_per_sheet) > 1 || (settings.scaling && settings.scaling !== "auto") ? 1 : 0}
+                >
+                  <p className="menu__label">{t("group|Layout")}</p>
+                  <div className="rows">
+                    <LayoutRows settings={settings} set={set} choices={choices} disabled={disabled} isPdf={flow.isPdf} idPrefix="tb-lay" />
+                  </div>
+                </PanelField>
               )}
-            </PanelField>
-          )}
-        </div>
+              {((choices.media_source || []).length > 1 || choices.borderless || choices.reverse_order || choices.collate || (choices.advanced || []).length > 0) && (
+                <PanelField label={t("Paper handling and driver")} icon={TrayGlyph} changed={changedCount(settings, HANDLING_KEYS)} wide>
+                  <div className="rows">
+                    <HandlingRows settings={settings} set={set} choices={choices} disabled={disabled} />
+                  </div>
+                  {(choices.advanced || []).length > 0 && (
+                    <RowGroup title={t("Printer driver")}>
+                      <AdvancedRows settings={settings} set={set} choices={choices} disabled={disabled} />
+                    </RowGroup>
+                  )}
+                </PanelField>
+              )}
+            </div>
+          </>
+        )}
 
         <span className="toolbar__spacer" />
       </div>
@@ -330,11 +358,7 @@ export function Verdict({ validation, settings, rangeError, printerReady, plan, 
         ? `${tn(n, "{n} page", "{n} pages")}${settings.copies > 1 ? ` × ${settings.copies}` : ""} · ${tn(sheets, "{n} sheet", "{n} sheets")}`
         : t("settings|Ready");
     if (valid && n)
-      opts = [
-        settings.color_mode && labelOf(COLOR_LABELS, settings.color_mode),
-        settings.duplex && (settings.duplex === "none" ? t("One-sided") : t("Two-sided")),
-        plan?.reverse_order && t("last sheet first"),
-      ]
+      opts = [settings.color_mode && labelOf(COLOR_LABELS, settings.color_mode), settings.duplex && (settings.duplex === "none" ? t("One-sided") : t("Two-sided")), plan?.reverse_order && t("last sheet first")]
         .filter(Boolean)
         .join(" · ");
     notes = [

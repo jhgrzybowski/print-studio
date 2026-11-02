@@ -421,7 +421,7 @@
 
 /* ---------- Menus and popovers ---------- */
 .menu {
-  z-index: 50;
+  z-index: 55; /* above the phone sheet (51), below tooltips (60) */
   min-width: 200px;
   max-height: min(420px, var(--radix-select-content-available-height, 420px));
   padding: 5px;
@@ -612,18 +612,38 @@
 .pop--rows .row__label {
   font-size: var(--fs-13);
 }
+/* Choices sit under their label in a panel, full width, so a long set never pushes past it. */
+.pop--rows .row--seg {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px 0 10px;
+}
+.pop--rows .row--seg .row__control {
+  display: grid;
+  max-width: none;
+}
 .pop--rows .seg {
-  width: auto;
+  display: flex;
+  width: 100%;
 }
 .pop--rows .row--seg .seg__opt {
-  min-width: 34px;
+  flex: 1;
+  min-width: 0;
   justify-content: center;
 }
-.pop--rows .row__control {
+/* Driver labels run long on both sides; the label wraps and the value truncates inside the panel. */
+.pop--rows .row__label {
+  flex: 1 1 auto;
   min-width: 0;
 }
+.pop--rows .row__control {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 60%;
+}
 .pop--rows .field {
-  max-width: 200px;
+  max-width: 100%;
 }
 .field.is-changed .field__lead {
   color: var(--accent);
@@ -649,17 +669,39 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 10px 0 4px;
-  color: var(--text-3);
-  font-size: var(--fs-12);
+  padding: 12px 0 4px;
+  color: var(--text-2);
+  font-size: var(--fs-13);
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   text-align: left;
 }
 .rowgroup__head.is-toggle {
   min-height: 40px;
   cursor: pointer;
+  transition:
+    color var(--t-fast) ease,
+    transform var(--t-press) var(--ease);
+}
+.rowgroup__head.is-toggle:active {
+  transform: scale(0.98);
+}
+/* The driver's options arrive just under their heading. */
+.rowgroup__rows {
+  transition:
+    opacity 180ms var(--ease),
+    translate 180ms var(--ease);
+}
+@starting-style {
+  .rowgroup__rows {
+    opacity: 0;
+    translate: 0 -4px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rowgroup__rows {
+    transition: opacity 180ms ease;
+    translate: none;
+  }
 }
 @media (hover: hover) {
   .rowgroup__head.is-toggle:hover {
@@ -668,8 +710,7 @@
 }
 .rowgroup__count {
   color: var(--accent);
-  text-transform: none;
-  letter-spacing: 0;
+  font-size: var(--fs-12);
   font-weight: 550;
 }
 .rowgroup__chev {
@@ -749,6 +790,15 @@
     display: none;
   }
   :lang(pl) .row--seg .seg__text--short {
+    display: inline;
+  }
+}
+/* On the narrowest phones English names don't fit three across either. */
+@media (max-width: 400px) {
+  .row--seg .seg__text--full:has(+ .seg__text--short) {
+    display: none;
+  }
+  .row--seg .seg__text--short {
     display: inline;
   }
 }
@@ -924,5 +974,109 @@
   .print.is-sending .print__fill {
     transform: scaleX(0.6);
     animation: none;
+  }
+}
+
+/* Touch: small keys keep their look but get a full-size hit area, as .btn--sm and .switch do. */
+@media (pointer: coarse) {
+  .ikey--sm,
+  .stepper__key,
+  .seg__opt,
+  .field,
+  .zoom__val {
+    position: relative;
+  }
+  .ikey--sm::before,
+  .zoom__val::before {
+    content: "";
+    position: absolute;
+    inset: -7px -5px;
+  }
+  /* The well grows to a touch height, so keys and the number are full-size targets. */
+  .stepper {
+    height: 40px;
+    padding: 1px;
+  }
+  .stepper__input {
+    height: 38px;
+  }
+  .stepper__key {
+    width: 34px;
+    height: 38px;
+  }
+  .stepper__key::before {
+    content: "";
+    position: absolute;
+    inset: -3px -2px;
+  }
+  .seg__opt::before {
+    content: "";
+    position: absolute;
+    inset: -6px 0;
+  }
+  .field::before {
+    content: "";
+    position: absolute;
+    inset: -3px 0;
+  }
+}
+
+/* The same for driver rows in the phone sheet and in Settings. */
+.rowgroup .row:not(.row--seg) .row__label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.rowgroup .row:not(.row--seg) .row__control {
+  flex: 0 1 auto;
+  max-width: 60%;
+}
+.rowgroup .row:not(.row--seg) .field {
+  max-width: 100%;
+}
+
+/* Touch: 36px keys and links reach a 40px target the same way. */
+@media (pointer: coarse) {
+  .ikey:not(.ikey--sm),
+  .btn:not(.btn--sm),
+  .toolbar__printer,
+  .toolbar__home,
+  .auth__switch,
+  .auth__reveal,
+  .jobchip__main,
+  .printer-line,
+  .newprint {
+    position: relative;
+  }
+  .ikey:not(.ikey--sm)::before,
+  .btn:not(.btn--sm)::before,
+  .toolbar__printer::before,
+  .toolbar__home::before,
+  .auth__switch::before,
+  .auth__reveal::before,
+  .jobchip__main::before,
+  .printer-line::before {
+    content: "";
+    position: absolute;
+    inset: -4px -3px;
+  }
+}
+
+@media (pointer: coarse) {
+  .newprint::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+  }
+}
+
+@media (pointer: coarse) {
+  .seg__opt {
+    min-width: 40px;
+  }
+  .field {
+    min-width: 40px;
+  }
+  .input {
+    min-height: 40px;
   }
 }

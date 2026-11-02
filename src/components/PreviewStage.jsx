@@ -189,7 +189,11 @@ export function PreviewStage({ doc, settings, plan, pageCount, onPagesChange, re
   const [stackRef, animateStack] = useAnimate();
   const area = useSize(areaRef);
 
-  useEffect(() => setAt({ side: 0, page: 1 }), [doc.file?.file_id]);
+  // A new document opens on its first printed sheet, not on a page the job skips.
+  const firstPrinted = plan?.sides?.[0]?.cells?.[0]?.page ?? 1;
+  const opening = useRef(firstPrinted);
+  opening.current = firstPrinted;
+  useEffect(() => setAt({ side: 0, page: opening.current }), [doc.file?.file_id]);
 
   // A successful send lifts the sheet as if the printer took it.
   useEffect(() => {
