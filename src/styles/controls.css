@@ -240,7 +240,7 @@
 .field--pages .field__val {
   flex: 1;
 }
-@media (max-width: 1240px) {
+@media (max-width: 1680px) {
   .field--compact .field__val {
     display: none;
   }
@@ -250,7 +250,7 @@
   }
 }
 /* Polish values run about a third longer ("Jednostronnie", "Standardowa"), so they fold sooner. */
-@media (max-width: 1600px) {
+@media (max-width: 1760px) {
   :lang(pl) .field--compact .field__val {
     display: none;
   }
@@ -363,7 +363,7 @@
   opacity: 0.3;
 }
 .stepper__input {
-  width: 26px;
+  width: calc(var(--digits, 2) * 0.62em + 13px);
   height: 30px;
   padding: 0;
   border: 0;
@@ -371,6 +371,11 @@
   text-align: center;
   font-weight: 600;
   outline: none;
+}
+.stepper__suffix {
+  margin-left: -3px;
+  color: var(--text-3);
+  font-size: var(--fs-12);
 }
 .stepper:focus-within:has(.stepper__input:focus-visible) {
   outline: 2px solid var(--accent);
@@ -587,6 +592,97 @@
 }
 .pop .seg__opt {
   flex: 1;
+}
+/* A panel of setting rows under a toolbar field. */
+.pop--rows {
+  width: min(360px, calc(100vw - 24px));
+  max-height: min(560px, var(--radix-popover-content-available-height, 560px));
+  padding: 6px 14px 10px;
+  gap: 2px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.pop--wide {
+  width: min(400px, calc(100vw - 24px));
+}
+.pop--rows .row {
+  min-height: 46px;
+  padding: 6px 0;
+}
+.pop--rows .row__label {
+  font-size: var(--fs-13);
+}
+.pop--rows .seg {
+  width: auto;
+}
+.pop--rows .row--seg .seg__opt {
+  min-width: 34px;
+  justify-content: center;
+}
+.pop--rows .row__control {
+  min-width: 0;
+}
+.pop--rows .field {
+  max-width: 200px;
+}
+.field.is-changed .field__lead {
+  color: var(--accent);
+}
+.field__badge {
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 11px;
+  font-weight: 650;
+}
+/* Headed groups of rows: layout, paper handling, the driver's options. */
+.rowgroup {
+  margin-top: 10px;
+}
+.rowgroup__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 0 4px;
+  color: var(--text-3);
+  font-size: var(--fs-12);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: left;
+}
+.rowgroup__head.is-toggle {
+  min-height: 40px;
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .rowgroup__head.is-toggle:hover {
+    color: var(--text);
+  }
+}
+.rowgroup__count {
+  color: var(--accent);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 550;
+}
+.rowgroup__chev {
+  margin-left: auto;
+  transition: transform var(--t-mid) var(--ease);
+}
+.rowgroup__head[aria-expanded="true"] .rowgroup__chev {
+  transform: rotate(180deg);
+}
+.rows__tools {
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px 0 2px;
 }
 .pop__error {
   color: var(--error);

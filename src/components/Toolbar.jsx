@@ -1,14 +1,18 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { DropdownMenu, Popover } from "radix-ui";
-import { BookmarkCheck, BookmarkPlus, ChevronDown, Copy, Ellipsis, File, Files, Layers, Printer, RotateCcw, RotateCcwSquare, RotateCwSquare, Shrink, Undo2 } from "lucide-react";
+import { BookmarkCheck, BookmarkPlus, ChevronDown, Copy, Ellipsis, File, Files, Layers, Printer, RotateCcw, RotateCcwSquare, RotateCwSquare, Undo2 } from "lucide-react";
 import { Dot, IconKey, MOD, PrintButton, Segmented, Select, Stepper, Tip } from "./controls.jsx";
-import { asGroups, mediaGroups, optionModel, paperSelectGroups } from "./Options.jsx";
+import { AdvancedRows, asGroups, HandlingRows, LayoutRows, layoutSummary, mediaGroups, optionModel, paperSelectGroups, RowGroup } from "./Options.jsx";
+import { SheetGridGlyph, TrayGlyph } from "./glyphs.jsx";
+import { changedCount, conflictText } from "../lib/settings.js";
 import { printerDot } from "./PrinterStatus.jsx";
 import { COLOR_LABELS, label as labelOf } from "../lib/format.js";
 import { cleanRange } from "../lib/pages.js";
 import { t, tn } from "../i18n/index.js";
 
-function PagesField({ value, onChange, pageCount, error, disabled }) {
+const PAGE_SET = { odd: "Odd pages", even: "Even pages" };
+
+function PagesField({ value, onChange, pageCount, error, disabled, pageSet = "all", onPageSet, pageSets = [] }) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState(value ? "range" : "all");
   const inputRef = useRef(null);
@@ -20,12 +24,13 @@ function PagesField({ value, onChange, pageCount, error, disabled }) {
   }, [value]);
 
   const single = pageCount === 1;
-  const label = value ? value.replace(/,/g, ", ") : pageCount ? t("All {n}", { n: pageCount }) : t("All pages");
+  const range = value ? value.replace(/,/g, ", ") : pageCount ? t("All {n}", { n: pageCount }) : t("All pages");
+  const label = pageSet !== "all" && PAGE_SET[pageSet] ? `${range} · ${t(pageSet === "odd" ? "pages|odd" : "pages|even")}` : range;
 
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Tip label={t("Pages")}>
-        <Popover.Trigger className={`field field--pages ${error ? "is-invalid" : ""}`} aria-label={t("Pages: {value}", { value: label })} disabled={disabled || single}>
+        <Popover.Trigger className={`field field--pages ${error ? "is-invalid" : ""}`} aria-label={t("Pages: {value}", { value: label })} disabled={disabled || (single && pageSet === "all")}>
           <Files className="field__lead" size={17} strokeWidth={1.5} aria-hidden />
           <span className="field__val">{label}</span>
           <ChevronDown className="field__chev" size={14} strokeWidth={1.6} aria-hidden />
@@ -83,6 +88,18 @@ function PagesField({ value, onChange, pageCount, error, disabled }) {
               {error}
             </p>
           )}
+          {pageSets.length > 1 && !single && (
+            <>
+              <p className="menu__label">{t("Print")}</p>
+              <Segmented
+                label={t("Odd or even pages")}
+                layoutKey="toolbar-pageset"
+                value={pageSet}
+                onChange={onPageSet}
+                options={pageSets.map((v) => ({ value: v, label: v === "all" ? t("pages|All") : t(PAGE_SET[v]) }))}
+              />
+            </>
+          )}
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
@@ -136,6 +153,29 @@ function DefaultsMenu({ rotation, onSaveDefaults, onResetDefaults, defaultsState
   );
 }
 
+/** A toolbar field that opens a panel of rows: layout, or paper handling and driver options. */
+function PanelField({ label, icon: Icon, value, changed, children, wide }) {
+  return (
+    <Popover.Root>
+      <Tip label={label}>
+        <Popover.Trigger className={`field field--compact ${changed ? "is-changed" : ""}`} aria-label={value ? `${label}: ${value}` : label}>
+          <Icon className="field__lead" size={17} strokeWidth={1.5} aria-hidden />
+          {value && <span className="field__val">{value}</span>}
+          {changed > 0 && !value && <span className="field__badge">{changed}</span>}
+          <ChevronDown className="field__chev" size={14} strokeWidth={1.6} aria-hidden />
+        </Popover.Trigger>
+      </Tip>
+      <Popover.Portal>
+        <Popover.Content className={`menu pop pop--rows ${wide ? "pop--wide" : ""}`} side="bottom" align="start" sideOffset={6} collisionPadding={12}>
+          {children}
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+const HANDLING_KEYS = ["borderless", "reverse_order", "advanced"];
+
 /** The phone bar: menu, the document in hand, and the printer's state. Settings live in the dock below. */
 export function PhoneBar({ lead, printer, onPrinter, onHome }) {
   return (
@@ -178,7 +218,16 @@ export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSav
             onChange={(v) => set("copies", v)}
             disabled={disabled}
           />
-          <PagesField value={settings.pages} onChange={(v) => set("pages", v)} pageCount={pageCount} error={rangeError} disabled={!flow.doc} />
+          <PagesField
+            value={settings.pages}
+            onChange={(v) => set("pages", v)}
+            pageCount={pageCount}
+            error={rangeError}
+            disabled={!flow.doc}
+            pageSet={settings.page_set}
+            onPageSet={(v) => set("page_set", v)}
+            pageSets={choices.page_set}
+          />
           {choices.paper_size?.length > 0 && (
             <Select
               label={t("Paper size")}
@@ -196,7 +245,7 @@ export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSav
               collapse
               value={settings.media_type}
               onChange={(v) => set("media_type", v)}
-              groups={mediaGroups(choices.media_type)}
+              groups={mediaGroups(choices.media_type, choices.media_type_labels)}
               disabled={disabled}
             />
           )}
@@ -207,16 +256,33 @@ export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSav
         <div className="toolbar__group">
           {m.color && <Select label={t("Color")} collapse="compact" disabled={disabled} value={m.color.value} onChange={m.color.onChange} groups={asGroups(m.color)} />}
           {m.duplex && <Select label={t("Sides")} collapse="compact" disabled={disabled} value={m.duplex.value} onChange={m.duplex.onChange} groups={asGroups(m.duplex)} />}
-          {m.orientation && <Segmented label={t("Orientation")} layoutKey="tb-orient" iconOnly disabled={disabled} {...m.orientation} />}
+          {m.orientation && <Select label={t("Orientation")} collapse="compact" disabled={disabled} value={m.orientation.value} onChange={m.orientation.onChange} groups={asGroups(m.orientation)} />}
           {m.quality && <Select label={t("Quality")} collapse="compact" disabled={disabled} value={m.quality.value} onChange={m.quality.onChange} groups={asGroups(m.quality)} />}
-          {choices.fit_to_page && (
-            <IconKey
-              label={settings.fit_to_page ? t("Fit to page: on") : t("Fit to page: off")}
-              icon={Shrink}
-              pressed={!!settings.fit_to_page}
-              onClick={() => set("fit_to_page", !settings.fit_to_page)}
-              disabled={disabled}
-            />
+          {((choices.pages_per_sheet || []).length > 1 || (choices.scaling || []).length > 1) && (
+            <PanelField
+              label={t("Layout and scaling")}
+              icon={SheetGridGlyph}
+              // The field names the layout only once it differs from one page per sheet at its own size.
+              value={Number(settings.pages_per_sheet) > 1 || (settings.scaling && settings.scaling !== "auto") ? layoutSummary(settings) : null}
+              changed={Number(settings.pages_per_sheet) > 1 || (settings.scaling && settings.scaling !== "auto") ? 1 : 0}
+            >
+              <p className="menu__label">{t("group|Layout")}</p>
+              <div className="rows">
+                <LayoutRows settings={settings} set={set} choices={choices} disabled={disabled} isPdf={flow.isPdf} idPrefix="tb-lay" />
+              </div>
+            </PanelField>
+          )}
+          {((choices.media_source || []).length > 1 || choices.borderless || choices.reverse_order || choices.collate || (choices.advanced || []).length > 0) && (
+            <PanelField label={t("Paper handling and driver")} icon={TrayGlyph} changed={changedCount(settings, HANDLING_KEYS)} wide>
+              <div className="rows">
+                <HandlingRows settings={settings} set={set} choices={choices} disabled={disabled} />
+              </div>
+              {(choices.advanced || []).length > 0 && (
+                <RowGroup title={t("Printer driver")}>
+                  <AdvancedRows settings={settings} set={set} choices={choices} disabled={disabled} />
+                </RowGroup>
+              )}
+            </PanelField>
           )}
         </div>
 
@@ -237,7 +303,7 @@ export function sheetsFor(pages, copies, duplex) {
 }
 
 /** The dry-run result, as a count of sheets with any notes above it. */
-export function Verdict({ validation, settings, rangeError, printerReady }) {
+export function Verdict({ validation, settings, rangeError, printerReady, plan, choices = {} }) {
   if (rangeError) return null;
   const { state, result, warnings = [], error } = validation;
   let tone = "muted";
@@ -248,22 +314,32 @@ export function Verdict({ validation, settings, rangeError, printerReady }) {
     tone = "error";
     title = t("Couldn't check");
     notes = [error];
-  } else if (result) {
-    const n = result.selected_pages?.length || result.page_count || 0;
-    const sheets = sheetsFor(n, settings.copies, settings.duplex);
-    const unsupported = result.unsupported_options || [];
-    tone = !result.valid ? "error" : warnings.length || unsupported.length || !printerReady ? "warn" : "ok";
-    title = !result.valid
-      ? t("Won't print with these settings")
+  } else if (result || plan) {
+    // The plan counts what really prints: odd/even pages, pages per sheet and two-sided pairs.
+    const n = plan ? plan.selected_page_count : result.selected_pages?.length || result.page_count || 0;
+    const sheets = plan ? plan.total_sheets : sheetsFor(n, settings.copies, settings.duplex);
+    const unsupported = result?.unsupported_options || [];
+    const conflicts = result?.conflicts || [];
+    const valid = !result || result.valid;
+    tone = !valid ? "error" : !result ? "muted" : warnings.length || unsupported.length || !printerReady ? "warn" : "ok";
+    title = !valid
+      ? conflicts.length
+        ? t("These settings conflict")
+        : t("Won't print with these settings")
       : n
         ? `${tn(n, "{n} page", "{n} pages")}${settings.copies > 1 ? ` × ${settings.copies}` : ""} · ${tn(sheets, "{n} sheet", "{n} sheets")}`
         : t("settings|Ready");
-    if (result.valid && n)
-      opts = [settings.color_mode && labelOf(COLOR_LABELS, settings.color_mode), settings.duplex && (settings.duplex === "none" ? t("One-sided") : t("Two-sided"))]
+    if (valid && n)
+      opts = [
+        settings.color_mode && labelOf(COLOR_LABELS, settings.color_mode),
+        settings.duplex && (settings.duplex === "none" ? t("One-sided") : t("Two-sided")),
+        plan?.reverse_order && t("last sheet first"),
+      ]
         .filter(Boolean)
         .join(" · ");
     notes = [
-      !printerReady && result.valid && t("Printer isn't ready yet."),
+      !printerReady && valid && result && t("Printer isn't ready yet."),
+      ...conflicts.map((c) => conflictText(c, choices, t)),
       unsupported.length > 0 && t("Not supported: {options}", { options: unsupported.join(", ") }),
       ...warnings,
     ].filter(Boolean);
