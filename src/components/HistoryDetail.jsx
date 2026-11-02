@@ -4,10 +4,12 @@ import { DropdownMenu } from "radix-ui";
 import { Archive, ArchiveRestore, CircleAlert, Ellipsis, Eraser, ExternalLink, RotateCw, Trash2 } from "lucide-react";
 import { api } from "../api/client.js";
 import { PreviewStage } from "./PreviewStage.jsx";
-import { jobTone } from "./Dock.jsx";
+import { jobProgress, jobTone } from "./Dock.jsx";
+import { layoutSummary, SCALING, sourceLabel } from "./Options.jsx";
 import { Button, Dot, PrintButton, Tip, ease } from "./controls.jsx";
 import { FileGlyph } from "./FileGlyph.jsx";
 import { BASE_SETTINGS, fromRequested } from "../lib/settings.js";
+import { planFromOptions } from "../lib/plan.js";
 import {
   ACTIVE_STATUSES,
   COLOR_LABELS,
@@ -27,7 +29,7 @@ import {
 import { meaningfulWarnings } from "../lib/settings.js";
 import { t } from "../i18n/index.js";
 
-export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusLine, lead, archived, onArchive, onRestore, onDelete }) {
+export function HistoryDetail({ id, history, choices, onReprint, onOpenCompose, onStatusLine, lead, archived, onArchive, onRestore, onDelete }) {
   const cached = history.items.find((h) => h.id === id);
   const [entry, setEntry] = useState(cached || null);
   const [file, setFile] = useState({ state: "loading" });
@@ -66,6 +68,11 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
   }, [entry?.file_id]);
 
   const settings = useMemo(() => ({ ...BASE_SETTINGS, ...fromRequested(entry?.requested_options) }), [entry]);
+  // The sheets as this job printed them; text CUPS laid out itself has no plan.
+  const plan = useMemo(
+    () => (file.state === "ready" && file.pages.length ? planFromOptions(entry?.requested_options || {}, choices || {}, file.pages, file.file.page_count || file.pages.length) : null),
+    [file, entry, choices],
+  );
 
   if (error) {
     return (
@@ -92,6 +99,7 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
   const active = ACTIVE_STATUSES.has(entry.status);
   const terminal = TERMINAL_STATUSES.has(entry.status);
   const opts = entry.requested_options || {};
+  const progress = active ? jobProgress(history.jobs?.[entry.cups_job_id], plan?.total_sheets) : null;
   const kind = fileKind(entry.detected_mime, entry.original_filename);
   const warnings = meaningfulWarnings(entry.warnings);
   const stLabel = HISTORY_STATUS[entry.status] ? t(HISTORY_STATUS[entry.status].label) : entry.status;
@@ -133,15 +141,27 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
           ? t("All {n}", { n: entry.page_count })
           : t("pages|All"),
     ],
-    [t("Copies"), opts.copies || 1],
+    opts.page_set && opts.page_set !== "all" && [t("Odd or even pages"), opts.page_set === "odd" ? t("Odd pages") : t("Even pages")],
+    [t("Copies"), `${opts.copies || 1}${opts.copies > 1 && opts.collate === false ? t(", uncollated") : ""}`],
     opts.paper_size && [t("Paper"), `${paperName(opts.paper_size)}${opts.fit_to_page ? t(", fit") : ""}`],
-    opts.orientation && [t("Layout"), label(ORIENTATION_LABELS, opts.orientation)],
+    opts.media_source && [t("Paper source"), sourceLabel(opts.media_source, choices?.media_source_labels)],
+    opts.orientation && [t("Orientation"), label(ORIENTATION_LABELS, opts.orientation)],
+    opts.pages_per_sheet > 1 && [t("Pages per sheet"), layoutSummary({ pages_per_sheet: opts.pages_per_sheet })],
+    (opts.scale_percent != null || (opts.scaling && opts.scaling !== "auto")) && [
+      t("Scaling"),
+      opts.scale_percent != null ? `${opts.scale_percent}%` : t(SCALING[opts.scaling]?.label || opts.scaling),
+    ],
+    opts.borderless && [t("Borderless"), t("Yes")],
+    opts.reverse_order && [t("Reverse order"), t("Yes")],
+    opts.advanced && Object.keys(opts.advanced).length > 0 && [t("Printer driver"), driverSummary(opts.advanced, choices)],
     opts.color_mode && [t("Color"), label(COLOR_LABELS, opts.color_mode)],
     opts.duplex && [t("Sides"), label(DUPLEX_LABELS, opts.duplex)],
     opts.quality && [t("Quality"), label(QUALITY_LABELS, opts.quality)],
     opts.media_type && [t("Media"), mediaLabel(opts.media_type)],
     [t("File"), formatBytes(entry.size_bytes)],
     entry.cups_job_id && [t("Job"), entry.cups_job_id],
+    progress?.text && [t("Progress"), progress.text],
+    progress?.message && [t("Printer says"), progress.message],
   ].filter(Boolean);
 
   const expired = file.state === "expired";
@@ -239,7 +259,7 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
 
       <div className="detail">
         {file.state === "ready" ? (
-          <PreviewStage doc={{ file: file.file, pages: file.pages, kind }} settings={settings} pageCount={file.file.page_count} readOnly onPagesChange={() => {}} />
+          <PreviewStage doc={{ file: file.file, pages: file.pages, kind }} settings={settings} plan={plan} pageCount={file.file.page_count} readOnly onPagesChange={() => {}} />
         ) : file.state === "loading" ? (
           <div className="stage stage--center">
             <span className="skel skel--sheet" />
@@ -278,4 +298,14 @@ export function HistoryDetail({ id, history, onReprint, onOpenCompose, onStatusL
       </div>
     </motion.div>
   );
+}
+
+/** Driver options a job set, as the driver names them. */
+function driverSummary(advanced, choices) {
+  return Object.entries(advanced)
+    .map(([k, v]) => {
+      const d = choices?.driverNames?.[k];
+      return d?.label ? `${d.label}: ${d.values?.[v] || v}` : `${k}: ${v}`;
+    })
+    .join(", ");
 }

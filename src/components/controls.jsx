@@ -173,7 +173,8 @@ export function Segmented({ value, onChange, options, label, disabled, iconOnly,
 
 /* ---------- Stepper ---------- */
 /** decLabel / incLabel name the keys; languages that inflect need them spelled out ("Mniej kopii"). */
-export function Stepper({ value, onChange, min = 1, max = 99, label, decLabel, incLabel, icon: Icon, disabled }) {
+export function Stepper({ value, onChange, min = 1, max = 99, step = 1, suffix, label, decLabel, incLabel, icon: Icon, disabled }) {
+  const digits = String(max).length;
   const [draft, setDraft] = useState(String(value));
   useEffect(() => setDraft(String(value)), [value]);
 
@@ -186,7 +187,7 @@ export function Stepper({ value, onChange, min = 1, max = 99, label, decLabel, i
   const body = (
     <div className={`stepper ${disabled ? "is-disabled" : ""}`} role="group" aria-label={label}>
       {Icon && <Icon className="stepper__lead" size={16} strokeWidth={1.5} aria-hidden />}
-      <button type="button" className="stepper__key" aria-label={decLabel || t("Fewer")} disabled={disabled || value <= min} onClick={() => commit(value - 1)}>
+      <button type="button" className="stepper__key" aria-label={decLabel || t("Fewer")} disabled={disabled || value <= min} onClick={() => commit(value - step)}>
         <Minus size={14} strokeWidth={1.6} aria-hidden />
       </button>
       <input
@@ -195,15 +196,21 @@ export function Stepper({ value, onChange, min = 1, max = 99, label, decLabel, i
         aria-label={label}
         value={draft}
         disabled={disabled}
-        onChange={(e) => setDraft(e.target.value.replace(/\D/g, "").slice(0, 2))}
+        onChange={(e) => setDraft(e.target.value.replace(/\D/g, "").slice(0, digits))}
         onBlur={(e) => commit(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") commit(e.currentTarget.value);
-          if (e.key === "ArrowUp") (e.preventDefault(), commit(value + 1));
-          if (e.key === "ArrowDown") (e.preventDefault(), commit(value - 1));
+          if (e.key === "ArrowUp") (e.preventDefault(), commit(value + step));
+          if (e.key === "ArrowDown") (e.preventDefault(), commit(value - step));
         }}
+        style={{ "--digits": digits }}
       />
-      <button type="button" className="stepper__key" aria-label={incLabel || t("stepper|More")} disabled={disabled || value >= max} onClick={() => commit(value + 1)}>
+      {suffix && (
+        <span className="stepper__suffix" aria-hidden>
+          {suffix}
+        </span>
+      )}
+      <button type="button" className="stepper__key" aria-label={incLabel || t("stepper|More")} disabled={disabled || value >= max} onClick={() => commit(value + step)}>
         <Plus size={14} strokeWidth={1.6} aria-hidden />
       </button>
     </div>

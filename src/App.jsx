@@ -173,14 +173,14 @@ function Shell({ session, printer, appearance, setAppearance }) {
   }, [narrow]);
 
   const onPrinted = useCallback(
-    async (r) => {
+    async (r, info) => {
       if (r.history_id == null) {
         // CUPS took the job but the history write failed; there is nothing to track by.
         flash(t("Sent to the printer as job {id}", { id: r.job_id }));
         history.refresh();
         return;
       }
-      setTracked(r.history_id);
+      setTracked({ id: r.history_id, sheets: info?.sheets ?? null });
       try {
         const entry = await api.historyEntry(r.history_id);
         history.upsert(entry);
@@ -386,7 +386,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
 
   const trackedEntry = useMemo(() => {
     if (!tracked) return null;
-    return history.items.find((h) => h.id === tracked) || { id: tracked, status: "submitted", original_filename: flow.doc?.name };
+    return history.items.find((h) => h.id === tracked.id) || { id: tracked.id, status: "submitted", original_filename: flow.doc?.name };
   }, [tracked, history.items, flow.doc?.name]);
 
   const { canRotate, rotate, rotations, unrotate, pageCount } = flow;
@@ -403,7 +403,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
   const loaded = flow.doc?.phase === "ready";
   const printDisabled = !loaded || !flow.canPrint || !canSend || flow.printing.state === "sending" || (flow.validation.result && !flow.validation.result.valid);
   const line = docLine({ flow, printer, canSend });
-  const verdict = <Verdict validation={flow.validation} settings={flow.settings} rangeError={flow.rangeError} printerReady={canSend} />;
+  const verdict = <Verdict validation={flow.validation} settings={flow.settings} rangeError={flow.rangeError} printerReady={canSend} plan={flow.plan} choices={choices} />;
 
   const drawerKey = narrow ? <IconKey label={t("Open sidebar")} icon={Menu} onClick={() => setDrawer(true)} className="bar__menu" /> : null;
 
@@ -536,6 +536,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
                   <PreviewStage
                     doc={flow.doc}
                     settings={flow.settings}
+                    plan={flow.plan}
                     pageCount={flow.pageCount}
                     onPagesChange={(v) => flow.set("pages", v)}
                     head={docHead}
@@ -554,6 +555,8 @@ function Shell({ session, printer, appearance, setAppearance }) {
                     <JobStrip
                       key={trackedEntry.id}
                       entry={trackedEntry}
+                      job={history.jobs[trackedEntry.cups_job_id]}
+                      sheets={tracked?.sheets}
                       cancelling={cancelling}
                       onCancel={() => cancelTracked(trackedEntry)}
                       onDismiss={() => setTracked(null)}
@@ -584,6 +587,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
             <HistoryDetail
               id={view.id}
               history={history}
+              choices={choices}
               onReprint={reprint}
               onOpenCompose={newPrint}
               onStatusLine={flash}

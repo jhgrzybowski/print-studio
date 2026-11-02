@@ -123,3 +123,47 @@ export function Mark({ size = 26, liquid = true }) {
     </svg>
   );
 }
+
+/** Portrait and landscape sheets on top of each other: the page decides. */
+export const AutoOrientGlyph = glyph("AutoOrientGlyph", () => (
+  <>
+    <rect x="6" y="3.5" width="9" height="13" rx="1.2" />
+    <path d="M18.5 9.5h.3a1.2 1.2 0 0 1 1.2 1.2v8.6a1.2 1.2 0 0 1-1.2 1.2H9.7a1.2 1.2 0 0 1-1.2-1.2v-.3" strokeDasharray="2 2.2" />
+  </>
+));
+
+/** A sheet holding pages: the grid of pages per sheet. */
+export const SheetGridGlyph = glyph("SheetGridGlyph", () => (
+  <>
+    <rect x="4.5" y="3" width="15" height="18" rx="1.5" />
+    <path d="M12 3v18M4.5 12h15" />
+  </>
+));
+
+/** Driver and paper-handling settings. */
+export const TrayGlyph = glyph("TrayGlyph", () => (
+  <>
+    <path d="M7 4h10v8H7z" />
+    <path d="M3.5 12.5h4l1.5 2.5h6l1.5-2.5h4V19a1.5 1.5 0 0 1-1.5 1.5h-14A1.5 1.5 0 0 1 3.5 19z" />
+  </>
+));
+
+/** The order pages fill a sheet, drawn as a path through a 2×2 grid. */
+const CELLS = { lt: [8, 8], rt: [16, 8], lb: [8, 16], rb: [16, 16] };
+export function orderGlyph(layout) {
+  const h = layout.includes("rl") ? ["r", "l"] : ["l", "r"];
+  const v = layout.includes("bt") ? ["b", "t"] : ["t", "b"];
+  const rowsFirst = layout.startsWith("lr") || layout.startsWith("rl");
+  const seq = rowsFirst
+    ? [h[0] + v[0], h[1] + v[0], h[0] + v[1], h[1] + v[1]]
+    : [h[0] + v[0], h[0] + v[1], h[1] + v[0], h[1] + v[1]];
+  const pts = seq.map((k) => CELLS[k]);
+  const [x, y] = pts[0];
+  return glyph(`Order-${layout}`, () => (
+    <>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="1.5" opacity="0.45" />
+      <polyline points={pts.map((p) => p.join(",")).join(" ")} />
+      <circle cx={x} cy={y} r="1.6" fill="currentColor" stroke="none" />
+    </>
+  ));
+}

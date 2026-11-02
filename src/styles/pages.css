@@ -4,8 +4,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 100%;
+  /* Centred while it fits; on a short screen (a phone on its side) it scrolls from the top. */
+  justify-content: safe center;
+  height: 100%;
   padding: 48px 20px 88px;
   overflow-y: auto;
   background:
@@ -756,5 +757,49 @@
   }
   .auth {
     padding-bottom: 32px;
+  }
+}
+
+@media (pointer: coarse) {
+  .home__printer {
+    position: relative;
+  }
+  .home__printer::before {
+    content: "";
+    position: absolute;
+    inset: -5px 0;
+  }
+}
+
+@media (max-height: 520px) {
+  .auth {
+    padding-top: 20px;
+    padding-bottom: 24px;
+  }
+}
+
+@media (pointer: coarse) {
+  .swatches {
+    gap: 12px;
+  }
+  .swatch {
+    position: relative;
+  }
+  .swatch::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+  }
+}
+
+@media (pointer: coarse) {
+  .choice__link {
+    position: relative;
+  }
+  .choice__link::before {
+    content: "";
+    position: absolute;
+    inset: -3px 0;
   }
 }

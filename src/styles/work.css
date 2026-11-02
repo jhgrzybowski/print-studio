@@ -344,6 +344,9 @@
   filter: grayscale(1) contrast(1.04);
 }
 .thumb__toggle {
+  transition:
+    color var(--t-fast) ease,
+    transform var(--t-press) var(--ease);
   display: flex;
   align-items: center;
   gap: 7px;
@@ -362,6 +365,9 @@
   justify-self: center;
   color: var(--text-3);
   font-size: var(--fs-12);
+}
+.thumb__toggle:active {
+  transform: scale(0.95);
 }
 .thumb__toggle .thumb__num {
   color: inherit;
@@ -435,9 +441,46 @@
   inset: 0;
   transition: opacity var(--t-mid) ease;
 }
-/* The page's own frame on the paper (see frameBox), and the turn inside it. */
+/* Where the printer puts each page (the layout plan's cells), its frame, and the turn inside it. */
+/* Cells move to their new place at once: layout properties would re-lay the sheet every frame,
+   and paging is often done from the keyboard, which never animates. */
+.sheet__cell {
+  position: absolute;
+}
+.sheet__cell.is-focused {
+  outline: 1.5px solid color-mix(in oklch, var(--accent) 70%, transparent);
+  outline-offset: 2px;
+  border-radius: 1px;
+}
+/* page_border is drawn by CUPS around each page's cell, so it sits above the page image. */
+.sheet__cell.has-border::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 0.5px oklch(0.2 0 0);
+}
+.sheet__cell.border-single-thick::after {
+  box-shadow: inset 0 0 0 1.5px oklch(0.2 0 0);
+}
+.sheet__cell.border-double::after {
+  box-shadow:
+    inset 0 0 0 0.5px oklch(0.2 0 0),
+    inset 0 0 0 2.5px var(--paper),
+    inset 0 0 0 3px oklch(0.2 0 0);
+}
+.sheet__cell.border-double-thick::after {
+  box-shadow:
+    inset 0 0 0 1.5px oklch(0.2 0 0),
+    inset 0 0 0 3.5px var(--paper),
+    inset 0 0 0 5px oklch(0.2 0 0);
+}
 .sheet__frame {
   position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
 }
 .sheet__turn {
   position: absolute;
@@ -448,14 +491,27 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: top;
+  object-fit: fill;
   opacity: 0;
   transition: opacity 240ms ease;
 }
-.sheet__img.is-fit {
-  object-fit: contain;
-  object-position: center;
+/* The driver's unprintable margins, faint, as a dialog shows them. */
+.sheet__printable {
+  position: absolute;
+  outline: 1px dashed oklch(0.6 0.01 250 / 0.45);
+  pointer-events: none;
+}
+.sheet__face {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: oklch(0.2 0.01 250 / 0.72);
+  color: oklch(0.96 0 0);
+  font-size: var(--fs-12);
+  font-weight: 550;
+  pointer-events: none;
 }
 /* The first page fades in; later pages replace it in place, already decoded. */
 .sheet__img.is-ready {
@@ -1129,4 +1185,19 @@
 .pages-row .input {
   height: 44px;
   font-size: var(--fs-16);
+}
+
+@media (pointer: coarse) {
+  /* The page tick under each thumbnail is small text; its target spans the thumbnail's width. */
+  .thumb__toggle {
+    position: relative;
+  }
+  .thumb {
+    gap: 10px;
+  }
+  .thumb__toggle::before {
+    content: "";
+    position: absolute;
+    inset: -9px -12px;
+  }
 }
