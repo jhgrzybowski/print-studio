@@ -200,3 +200,10 @@ test("driver conflicts are worded with the driver's names", async () => {
   assert.equal(conflictText("StpImageType=Photo cannot be combined with Resolution=300dpi", c, fake), "Image Type: Photograph can't be combined with Resolution: 300dpi");
   assert.equal(conflictText("something else", c, fake), "something else");
 });
+
+test("a reprint keeps the page order a job printed with, not a saved one", () => {
+  const c = supportedChoices(MG5350);
+  const s = reconcile({ pages_per_sheet_layout: "tblr", ...fromRequested({ copies: 1, pages_per_sheet: 4 }) }, c);
+  assert.equal(s.pages_per_sheet_layout, "lrtb");
+  assert.equal(toPrintOptions(s, c).pages_per_sheet_layout, "lrtb");
+});

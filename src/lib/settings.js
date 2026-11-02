@@ -51,6 +51,8 @@ const OMITTED_MEANS = {
   page_set: "all",
   scaling: "auto",
   pages_per_sheet: 1,
+  // CUPS lays pages out left to right, then down, unless told otherwise.
+  pages_per_sheet_layout: "lrtb",
   page_border: "none",
   reverse_order: false,
   borderless: false,
