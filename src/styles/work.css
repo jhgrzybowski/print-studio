@@ -449,20 +449,25 @@
   outline-offset: 2px;
   border-radius: 1px;
 }
-/* page_border is drawn by CUPS around each page's cell. */
-.sheet__cell.has-border {
+/* page_border is drawn by CUPS around each page's cell, so it sits above the page image. */
+.sheet__cell.has-border::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
   box-shadow: inset 0 0 0 0.5px oklch(0.2 0 0);
 }
-.sheet__cell.border-single-thick {
+.sheet__cell.border-single-thick::after {
   box-shadow: inset 0 0 0 1.5px oklch(0.2 0 0);
 }
-.sheet__cell.border-double {
+.sheet__cell.border-double::after {
   box-shadow:
     inset 0 0 0 0.5px oklch(0.2 0 0),
     inset 0 0 0 2.5px var(--paper),
     inset 0 0 0 3px oklch(0.2 0 0);
 }
-.sheet__cell.border-double-thick {
+.sheet__cell.border-double-thick::after {
   box-shadow:
     inset 0 0 0 1.5px oklch(0.2 0 0),
     inset 0 0 0 3.5px var(--paper),
