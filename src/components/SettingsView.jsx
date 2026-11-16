@@ -3,10 +3,10 @@ import { motion } from "motion/react";
 import { Check, LogOut, Monitor, Moon, RefreshCw, Sun } from "lucide-react";
 import { api } from "../api/client.js";
 import { PALETTES } from "../hooks/appearance.js";
-import { BASE_SETTINGS, defaultsToSave, pickDefaults, reconcile, savedUpsideDown } from "../lib/settings.js";
+import { defaultsToSave, reconcile, sameDefaults, savedUpsideDown } from "../lib/settings.js";
 import { formatBytes, formatDate } from "../lib/format.js";
 import { Button, IconKey, Row, Segmented, Stepper, Tip, ease } from "./controls.jsx";
-import { OptionRows } from "./Options.jsx";
+import { ExtraRows, OptionRows } from "./Options.jsx";
 import { PrinterLine } from "./PrinterStatus.jsx";
 import { Avatar } from "./Sidebar.jsx";
 import { setLocalePref, t, tn, useLocalePref } from "../i18n/index.js";
@@ -27,7 +27,7 @@ const EXT_NAMES = { "application/pdf": "PDF", "image/jpeg": "JPEG", "image/png":
 
 export function SettingsView({ user, appearance, setAppearance, choices, prefs, printer, capabilities, onLogout, lead }) {
   const saved = prefs.prefs?.print_defaults;
-  const base = useMemo(() => reconcile({ ...BASE_SETTINGS, ...(saved || {}) }, choices), [saved, choices]);
+  const base = useMemo(() => reconcile({ ...(saved || {}) }, choices), [saved, choices]);
   const [draft, setDraft] = useState(base);
   // An old upside-down default has no control here; it stays until the orientation is changed or reset.
   const [upsideDown, setUpsideDown] = useState(savedUpsideDown(saved));
@@ -47,7 +47,7 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
       .catch(() => setHealth({ status: "unreachable" }));
   }, []);
 
-  const dirty = JSON.stringify(pickDefaults(draft)) !== JSON.stringify(pickDefaults(base)) || upsideDown !== savedUpsideDown(saved);
+  const dirty = !sameDefaults(draft, base) || upsideDown !== savedUpsideDown(saved);
   const set = (k, v) => {
     if (k === "orientation") setUpsideDown(false);
     setDraft((d) => ({ ...d, [k]: v }));
@@ -76,7 +76,9 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
     [t("Accepts"), formats.join(", ")],
     [t("Max upload"), capabilities && formatBytes(capabilities.max_upload_bytes)],
     [t("Office"), capabilities && (capabilities.office?.available ? tn(capabilities.office.max_pages, "Up to {n} page", "Up to {n} pages") : t("Unavailable"))],
-  ];
+    capabilities?.text && [t("Text files"), capabilities.text.rendered_to_pdf ? t("Laid out as PDF, with a preview") : t("Printed as plain text, no preview")],
+    choices.driver && [t("Driver"), choices.driver],
+  ].filter(Boolean);
 
   return (
     <div className="page">
@@ -145,7 +147,7 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
               <>
                 {state === "error" && <span className="section__note is-error">{t("Not saved")}</span>}
                 <Button variant="quiet" className="btn--sm" onClick={() => {
-                    setDraft(reconcile(BASE_SETTINGS, choices));
+                    setDraft(reconcile({}, choices));
                     setUpsideDown(false);
                   }}>
                   {t("Reset")}
@@ -166,6 +168,7 @@ export function SettingsView({ user, appearance, setAppearance, choices, prefs, 
               <Stepper label={t("Copies")} decLabel={t("Fewer copies")} incLabel={t("More copies")} value={draft.copies} onChange={(v) => set("copies", v)} />
             </Row>
             <OptionRows settings={draft} set={set} choices={choices} idPrefix="def" />
+            <ExtraRows settings={draft} set={set} choices={choices} idPrefix="def" />
           </Section>
 
           <Section title={t("Printer")} i={2} tools={<IconKey label={t("Check now")} icon={RefreshCw} size="sm" onClick={printer.refresh} />}>

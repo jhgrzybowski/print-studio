@@ -3,7 +3,7 @@ import { api, setUnauthorizedHandler } from "../api/client.js";
 import { interpretStatus } from "../lib/printer.js";
 import { supportedChoices } from "../lib/settings.js";
 import { prefsQueue } from "../lib/prefsQueue.js";
-import { ACTIVE_STATUSES } from "../lib/format.js";
+import { ACTIVE_STATUSES, setPaperLabels } from "../lib/format.js";
 import { t, useLocale } from "../i18n/index.js";
 
 /* ---------- Session ---------- */
@@ -119,6 +119,7 @@ export function usePrinterOptions() {
     setError(null);
     Promise.all([api.options(), api.capabilities()])
       .then(([o, c]) => {
+        setPaperLabels(o.paper_sizes?.labels);
         setOptions(o);
         setCapabilities(c);
       })
@@ -203,7 +204,8 @@ export function useHistory(enabled) {
   useEffect(() => {
     if (enabled && hasActive) pollJobs();
   }, [enabled, hasActive, pollJobs]);
-  useInterval(pollJobs, enabled && hasActive ? 5000 : 0);
+  // The API reports sheets as they print, so active jobs are followed closely.
+  useInterval(pollJobs, enabled && hasActive ? 2500 : 0);
 
   const upsert = useCallback((entry) => {
     setItems((prev) => {

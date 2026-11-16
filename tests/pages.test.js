@@ -33,3 +33,13 @@ test("selectedPages treats an empty range as every page", () => {
   assert.deepEqual(selectedPages("9", 5), []);
   assert.deepEqual(selectedPages("", 0), []);
 });
+
+test("printOrder keeps the typed order, then picks odd or even pages", async () => {
+  const { printOrder } = await import("../src/lib/pages.js");
+  assert.deepEqual(printOrder("", 4), [1, 2, 3, 4]);
+  assert.deepEqual(printOrder("5,1-3", 6), [5, 1, 2, 3]);
+  assert.deepEqual(printOrder("1-6", 6, "even"), [2, 4, 6]);
+  assert.deepEqual(printOrder("", 5, "odd"), [1, 3, 5]);
+  assert.deepEqual(printOrder("2", 5, "odd"), []);
+  assert.deepEqual(printOrder("x", 5), []);
+});

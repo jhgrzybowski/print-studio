@@ -119,7 +119,9 @@ export const api = {
   upload: uploadFile,
   file: (id) => request("GET", `/files/${encodeURIComponent(id)}`),
   preview: (id) => request("GET", `/files/${encodeURIComponent(id)}/preview`),
-  previewPageUrl: (id, page) => apiUrl(`/files/${encodeURIComponent(id)}/preview/${page}`),
+  // size "thumb" is a 320-pixel render for strips and small cells. Rendered pages never change,
+  // and the API marks them immutable, so the browser keeps them.
+  previewPageUrl: (id, page, size) => apiUrl(`/files/${encodeURIComponent(id)}/preview/${page}${size === "thumb" ? "?size=thumb" : ""}`),
   pdfUrl: (id) => apiUrl(`/files/${encodeURIComponent(id)}/pdf`),
 
   // Print

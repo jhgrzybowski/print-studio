@@ -95,9 +95,16 @@ const PAPER_MM = {
 };
 const PAPER_COMMON = ["A4", "Letter", "A5", "A6", "Legal", "w288h432", "w360h504", "c8x10", "Postcard", "DL", "C5", "C6"];
 
+// The driver's own names for its paper sizes (GET /options), for sizes without a name above.
+let driverPaper = {};
+export function setPaperLabels(labels) {
+  driverPaper = labels || {};
+}
+
 export function paperName(v) {
   if (!v) return t("Printer default");
   if (PAPER_NAMES[v]) return t(PAPER_NAMES[v]);
+  if (driverPaper[v] && driverPaper[v] !== v) return driverPaper[v];
   const m = /^w(\d+)h(\d+)(J|_l)?$/.exec(v);
   if (m) {
     const w = Math.round((Number(m[1]) / 72) * 25.4);

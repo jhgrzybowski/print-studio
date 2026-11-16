@@ -93,3 +93,21 @@ test("label tables are translated", async () => {
   }
   assert.deepEqual(missing, []);
 });
+
+// Labels kept in maps and translated where shown aren't literal t() calls, so check them here.
+test("print-dialog label maps have Polish translations", () => {
+  const src = readFileSync("src/components/Options.jsx", "utf8");
+  const missing = [];
+  for (const name of ["NUP_ORDER", "BORDERS", "SCALING", "SOURCES"]) {
+    const block = new RegExp(`const ${name} = \\{(.*?)\\};|const ${name} = \\{([\\s\\S]*?)\\n\\};`).exec(src);
+    assert.ok(block, name);
+    for (const [, key] of (block[1] || block[2]).matchAll(/(?:label|sub|short)?:?\s*"([^"]+)"/g)) {
+      if (/^[a-z-]+$/.test(key) || !/[A-Za-z]/.test(key)) continue; // object keys, API values, numbers
+      if (!(key in pl)) missing.push(`${name}: ${key}`);
+    }
+  }
+  for (const key of ["{a} can't be combined with {b}", "Paper source", "Paper size", "Paper type", "Two-sided", "Borderless", "pages|odd", "pages|even"]) {
+    if (!(key in pl)) missing.push(key);
+  }
+  assert.deepEqual(missing, []);
+});

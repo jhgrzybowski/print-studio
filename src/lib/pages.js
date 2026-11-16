@@ -63,3 +63,30 @@ export function selectedPages(range, pageCount) {
     return [];
   }
 }
+
+/**
+ * The pages in the order they print, as the API selects them: the range as typed (repeats
+ * included), then odd or even page numbers. Empty when the range doesn't parse.
+ */
+export function printOrder(range, pageCount, pageSet = "all") {
+  if (!pageCount) return [];
+  let pages = [];
+  if (!range) pages = Array.from({ length: pageCount }, (_, i) => i + 1);
+  else {
+    try {
+      parseRange(range, pageCount);
+    } catch {
+      return [];
+    }
+    for (const part of normalizeDashes(range).replace(/\s+/g, "").split(",")) {
+      const m = /^(\d+)(?:-(\d+))?$/.exec(part);
+      if (!m) continue;
+      const a = Number(m[1]);
+      const b = m[2] ? Number(m[2]) : a;
+      for (let p = a; p <= b; p++) pages.push(p);
+    }
+  }
+  if (pageSet === "odd") return pages.filter((p) => p % 2 === 1);
+  if (pageSet === "even") return pages.filter((p) => p % 2 === 0);
+  return pages;
+}

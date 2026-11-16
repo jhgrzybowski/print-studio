@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError } from "../api/client.js";
 import { BASE_SETTINGS, fromRequested, meaningfulWarnings, reconcile, toPrintOptions } from "../lib/settings.js";
-import { parseRange } from "../lib/pages.js";
+import { parseRange, printOrder } from "../lib/pages.js";
+import { localPlan } from "../lib/plan.js";
 import { hasRotation, rotateImage, rotatePdf, turn, withFlip } from "../lib/rotate.js";
 import { fileKind, formatBytes } from "../lib/format.js";
 import { useDebounced } from "./data.js";
@@ -42,7 +43,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
 
   // Apply saved defaults whenever nothing is loaded yet.
   useEffect(() => {
-    if (!doc && hasChoices) setSettings(reconcile({ ...BASE_SETTINGS, ...(defaults || {}) }, choices));
+    if (!doc && hasChoices) setSettings(reconcile({ ...(defaults || {}) }, choices));
   }, [defaults, choices, hasChoices, doc]);
 
   const loadPreview = useCallback(async (file, token, text, source) => {
@@ -70,7 +71,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
       const count = file.page_count || pages?.length || 0;
       const turnable = !!pages?.length && count > 0 && (!!file.pdf_url || (!!source && /^image\/(png|jpeg)$/.test(file.detected_mime)));
       if (turnable) setFlip(true);
-      else if (!choices.orientation?.length || choices.orientation.includes(orientation)) setSettings((s) => ({ ...s, orientation }));
+      else if (!choices.orientationRaw?.length || choices.orientationRaw.includes(orientation)) setSettings((s) => ({ ...s, orientation }));
     },
     [choices],
   );
@@ -86,7 +87,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
       setValidation({ state: "idle" });
       setManual({});
       setFlip(false);
-      setSettings((s) => ({ ...s, pages: "" }));
+      setSettings((s) => ({ ...s, pages: "", page_set: "all" }));
 
       if (maxBytes && f.size > maxBytes) {
         setDoc({
@@ -101,7 +102,8 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
       const ext = f.name.split(".").pop()?.toLowerCase();
       const isOffice = OFFICE_EXT.includes(ext);
       setDoc({ phase: "uploading", name: f.name, size: f.size, kind, progress: 0, office: isOffice });
-      // The server has no preview for plain text, so the page shows the start of the file itself.
+      // Without a font to lay text out as a PDF, the server has no preview for it, so the page
+      // shows the start of the file itself.
       const text =
         f.type === "text/plain" || ext === "txt"
           ? await f
@@ -154,7 +156,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
       setManual({});
       setFlip(false);
       setDoc({ phase: "loading", name: entry.original_filename, kind: fileKind(entry.detected_mime, entry.original_filename) });
-      setSettings(reconcile({ ...BASE_SETTINGS, ...(defaults || {}), ...fromRequested(entry.requested_options) }, choices));
+      setSettings(reconcile({ ...(defaults || {}), ...fromRequested(entry.requested_options) }, choices));
       try {
         const file = await api.file(entry.file_id);
         const pages = await loadPreview(file, token);
@@ -183,7 +185,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     setValidation({ state: "idle" });
     setManual({});
     setFlip(false);
-    setSettings(reconcile({ ...BASE_SETTINGS, ...(defaults || {}) }, choices));
+    setSettings(reconcile({ ...(defaults || {}) }, choices));
   }, [choices, defaults]);
 
   const set = useCallback((key, value) => {
@@ -212,24 +214,32 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
   const rotations = useMemo(() => withFlip(manual, flip, pageCount), [manual, flip, pageCount]);
 
   const locale = useLocale();
+  const pageSet = (choices.page_set || []).includes(settings.page_set) ? settings.page_set : "all";
   const rangeError = useMemo(() => {
-    if (!settings.pages) return null;
-    try {
-      parseRange(settings.pages, pageCount);
-      return null;
-    } catch (e) {
-      return e.message;
+    if (settings.pages) {
+      try {
+        parseRange(settings.pages, pageCount);
+      } catch (e) {
+        return e.message;
+      }
     }
+    if (pageSet !== "all" && pageCount && !printOrder(settings.pages, pageCount, pageSet).length) {
+      return pageSet === "odd" ? t("No odd pages in this selection") : t("No even pages in this selection");
+    }
+    return null;
     // locale is a dependency so the message follows the language.
-  }, [settings.pages, pageCount, locale]);
+  }, [settings.pages, pageSet, pageCount, locale]);
 
+  const isPdf = doc?.phase === "ready" && (doc.file.printable_mime === "application/pdf" || !!doc.file.pdf_url);
   const payload = useMemo(() => {
     if (doc?.phase !== "ready" || rangeError) return null;
-    return { file_id: doc.file.file_id, options: toPrintOptions(settings, choices), strict_options: false };
-  }, [doc, settings, choices, rangeError]);
+    return { file_id: doc.file.file_id, options: toPrintOptions(settings, choices, { isPdf }), strict_options: false };
+  }, [doc, settings, choices, rangeError, isPdf]);
+  const payloadKey = useMemo(() => (payload ? JSON.stringify(payload) : null), [payload]);
 
-  // Dry-run every settled change so the pane can say exactly what will print.
-  const debounced = useDebounced(payload, 380);
+  // Dry-run every settled change so the pane can say exactly what will print. The sheets are
+  // planned here at once, so the wait only holds back the server's word on them.
+  const debounced = useDebounced(payloadKey, 250);
   useEffect(() => {
     if (!debounced) {
       setValidation({ state: "idle" });
@@ -238,13 +248,22 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     const ctl = new AbortController();
     setValidation((v) => ({ ...v, state: "checking" }));
     api
-      .validate(debounced, { signal: ctl.signal })
-      .then((r) => setValidation({ state: "done", result: r, warnings: meaningfulWarnings(r.warnings) }))
+      .validate(JSON.parse(debounced), { signal: ctl.signal })
+      .then((r) => setValidation({ state: "done", key: debounced, result: r, warnings: meaningfulWarnings(r.warnings, r.conflicts) }))
       .catch((e) => {
         if (e.name !== "AbortError") setValidation({ state: "error", error: e.message });
       });
     return () => ctl.abort();
   }, [debounced]);
+
+  // The sheets as they will print: the server's plan once it answers for these very settings,
+  // the local one meanwhile (and for an API that plans nothing).
+  const local = useMemo(
+    () => (doc?.phase === "ready" && doc.pages?.length && !rangeError ? localPlan(settings, choices, doc.pages, pageCount, { isPdf }) : null),
+    [doc, settings, choices, pageCount, isPdf, rangeError],
+  );
+  const served = validation.result?.layout && validation.key === payloadKey ? validation.result.layout : null;
+  const plan = served || local;
 
   const print = useCallback(async () => {
     if (!payload || printing.state === "sending") return;
@@ -270,15 +289,15 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     try {
       const r = await api.print(body);
       setPrinting({ state: "sent", result: r, warnings: meaningfulWarnings(r.warnings) });
-      onPrinted?.(r);
+      onPrinted?.(r, { sheets: plan?.total_sheets ?? null, sides: plan ? plan.impressions_per_copy * plan.copies : null });
     } catch (e) {
       setPrinting({ state: "error", error: printMessage(e) });
     }
-  }, [payload, printing.state, onPrinted, canRotate, rotations, doc]);
+  }, [payload, printing.state, onPrinted, canRotate, rotations, doc, plan]);
 
   /** Put the saved defaults back, keeping the page range and manual turns; only an upside-down default turns the pages. */
   const applyDefaults = useCallback(() => {
-    setSettings((s) => reconcile({ ...BASE_SETTINGS, ...(defaults || {}), pages: s.pages }, choices));
+    setSettings((s) => reconcile({ ...(defaults || {}), pages: s.pages, page_set: s.page_set }, choices));
     setFlip(false);
     if (doc?.phase === "ready") keepUpsideDown(defaults?.orientation, doc.file, doc.pages, doc.source);
   }, [defaults, choices, doc, keepUpsideDown]);
@@ -295,6 +314,9 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     pageCount,
     rangeError,
     validation,
+    plan,
+    planServed: !!served,
+    isPdf,
     printing,
     setPrinting,
     print,

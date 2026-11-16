@@ -25,16 +25,16 @@ It covers every endpoint that `local_printer_api` serves:
 | Auth | Sign in, create an account, session restore, sign out | `POST /auth/signup`, `/auth/login`, `/auth/logout`, `GET /auth/me` |
 | Printer | A status dot and one word in the sidebar (and the phone top bar), details in Settings | `GET /status`, `/health`, `/options`, `/capabilities` |
 | Upload | Drop, paste, or browse. Shows upload progress and the Office→PDF conversion wait, and retries automatically on 503 | `POST /files` |
-| Preview | Real page renders on a sheet sized to the chosen paper and orientation. A thumbnail rail lets you include or exclude pages, and B&W, copies and fit to page show on the sheet | `GET /files/{id}`, `/files/{id}/preview`, `/files/{id}/preview/{page}`, `/files/{id}/pdf` |
-| Options | Copies, pages, paper, orientation, color, two-sided, quality, paper type, and fit to page. The choices come from the printer at runtime | `GET /options` |
-| Check | A dry run on every change, showing sheet count, warnings, and unsupported options | `POST /print/validate` |
-| Print | Chrome Print key in the toolbar (also Ctrl/⌘+P or Ctrl/⌘+Enter; Ctrl/⌘+K searches history), or the Print button in the phone dock. Then a job chip with a progress track follows the job (Sent, Queued, Printing, Printed) and offers Cancel | `POST /print`, `GET /jobs/{id}` |
+| Preview | Each printed side drawn from the API's layout plan: pages per sheet, scaling (fit, fill, actual size, custom %), orientation, two-sided fronts and backs, borders and the driver's margins. The plan is computed in the browser at once (a port of the API's planner, kept in step by tests) and replaced by the server's when the dry run answers. The page rail loads 320 px thumbnails; the sheet uses them too until a page is large enough to need the full render. Plain text arrives laid out as a PDF, so it previews like one | `GET /files/{id}`, `/files/{id}/preview`, `/files/{id}/preview/{page}?size=thumb`, `/files/{id}/pdf` |
+| Options | Copies and collation, pages with odd/even, paper, paper type, orientation (auto, portrait, landscape), color, two-sided, quality, a Layout panel (pages per sheet, their order and borders, scaling) and a Paper handling panel (tray, borderless, reverse order, and every other driver option by the driver's own names). The choices, labels and the queue's defaults come from the printer at runtime. When the window is too narrow for the full row, the toolbar keeps copies, pages and paper and folds the rest into one Settings panel, so nothing ends up out of reach | `GET /options` |
+| Check | A dry run on every change, showing the real sheet count, warnings, unsupported options, and driver constraints that conflict, in words | `POST /print/validate` |
+| Print | Chrome Print key in the toolbar (also Ctrl/⌘+P or Ctrl/⌘+Enter; Ctrl/⌘+K searches history), or the Print button in the phone dock. Then a job chip with a progress track follows the job (Sent, Queued, Printing, Printed), counts sheets as they print, and offers Cancel | `POST /print`, `GET /jobs/{id}` |
 | Jobs | Cancel an active job, or clear a finished one from the queue | `DELETE /jobs/{id}`, `POST /jobs/{id}/forget`, `GET /jobs?scope=all` |
 | Home | The start screen, also reached from the wordmark (or the phone title). A drop area for a new file beside the four latest prints, each openable or printable again | `GET /history` |
 | Rotation | Turn every page from the options, or the page in view from the pager (or R, Shift+R), a quarter at a time. The turns are baked into a new upload when you print: PDFs and Office files with pdf-lib (loaded only when needed), PNG and JPEG on a canvas | `POST /files` |
 | History | Sidebar grouped by day, with search and infinite scroll. The detail view has a read-only preview and a "Print again" action | `GET /history`, `/history/{id}` |
 | Archive | Move a print out of the history list; the Archive view lists them, restores them, or deletes them for good. Both lists live in your preferences, because the backend has no delete for history | `GET/PUT /me/preferences`, `GET /history/{id}` |
-| Preferences | Saved print defaults, stored per user | `GET/PUT /me/preferences` |
+| Preferences | Saved print defaults, stored per user, including layout, scaling, tray and driver options. Without saved defaults the queue's own apply | `GET/PUT /me/preferences` |
 | Language | English or Polish, following the system by default. Change it in Settings → Appearance; the choice is stored per browser | — |
 
 ## Run it
@@ -86,7 +86,7 @@ The host also advertises `drukarka.local` over mDNS (an avahi alias), so on the 
 npm run check
 ```
 
-This runs the unit tests (`node --test`) for page ranges, the print-settings model and translations. The translation tests check Polish plurals and fail if any interface string lacks a Polish entry. The Docker build runs them too, before building.
+This runs the unit tests (`node --test`) for page ranges, the print-settings model, the sheet layout planner and translations. The layout tests replay plans made by the API's own `app/services/layout.py` (`tests/fixtures/layout-cases.json`); regenerate them when the API's planner changes. The translation tests check Polish plurals and fail if any interface string lacks a Polish entry. The Docker build runs them too, before building.
 
 ### Translations
 
@@ -107,7 +107,7 @@ src/
   api/client.js        fetch wrapper, XHR upload with progress, 401 handling
   i18n/                language preference, t()/tn() with plural rules, Polish strings
   hooks/               session, printer status, options, history + job polling, preferences, appearance, print flow
-  lib/                 page ranges, settings model, page rotation, printer status interpretation, formatting
+  lib/                 page ranges, settings model, sheet layout planner (layout.js, plan.js), page rotation, printer status interpretation, formatting
   components/          HomeView, Sidebar, Toolbar, DropZone, PreviewStage, Dock, PrintSheet, Options, HistoryDetail, ArchiveView, SettingsView, AuthScreen, PrinterStatus, controls, glyphs
   styles/              tokens (OKLCH palettes, elevation, metal), base, controls, shell, work, pages
 public/                favicon, home-screen icons, web app manifest

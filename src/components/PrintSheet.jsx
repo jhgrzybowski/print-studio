@@ -3,7 +3,7 @@ import { AnimatePresence, animate, motion, useDragControls, useMotionValue, useP
 import { Dialog } from "radix-ui";
 import { Printer, SlidersHorizontal, X } from "lucide-react";
 import { Button, IconKey, PrintButton, Row, Segmented, Stepper, glide } from "./controls.jsx";
-import { OptionRows } from "./Options.jsx";
+import { ExtraRows, layoutSummary, OptionRows } from "./Options.jsx";
 import { paperName } from "../lib/format.js";
 import { cleanRange } from "../lib/pages.js";
 import { t, tn } from "../i18n/index.js";
@@ -21,12 +21,13 @@ export function settingsSummary(settings, pageCount) {
     settings.paper_size && paperName(settings.paper_size),
     COLOR_WORD[settings.color_mode] && t(COLOR_WORD[settings.color_mode]),
     pageCount !== 1 && SIDES_WORD[settings.duplex] && t(SIDES_WORD[settings.duplex]),
+    (Number(settings.pages_per_sheet) > 1 || (settings.scaling && settings.scaling !== "auto")) && layoutSummary(settings),
   ]
     .filter(Boolean)
     .join(" · ");
 }
 
-function PagesRow({ value, onChange, pageCount, error }) {
+function PagesRow({ value, onChange, pageCount, error, pageSet, onPageSet, pageSets = [] }) {
   const [mode, setMode] = useState(value ? "range" : "all");
   const inputRef = useRef(null);
   const id = useId();
@@ -81,6 +82,15 @@ function PagesRow({ value, onChange, pageCount, error }) {
               </p>
             )}
           </>
+        )}
+        {pageSets.length > 1 && (
+          <Segmented
+            label={t("Odd or even pages")}
+            layoutKey="sheet-pageset"
+            value={pageSet}
+            onChange={onPageSet}
+            options={pageSets.map((v) => ({ value: v, label: v === "all" ? t("pages|Every page") : v === "odd" ? t("Odd pages") : t("Even pages") }))}
+          />
         )}
       </div>
     </Row>
@@ -145,8 +155,19 @@ export function PrintDock({ flow, choices, disabled, printDisabled, onPrint, onS
                       disabled={disabled}
                     />
                   </Row>
-                  {pageCount > 1 && <PagesRow value={settings.pages} onChange={(v) => set("pages", v)} pageCount={pageCount} error={rangeError} />}
+                  {pageCount > 1 && (
+                    <PagesRow
+                      value={settings.pages}
+                      onChange={(v) => set("pages", v)}
+                      pageCount={pageCount}
+                      error={rangeError}
+                      pageSet={settings.page_set}
+                      onPageSet={(v) => set("page_set", v)}
+                      pageSets={choices.page_set}
+                    />
+                  )}
                   <OptionRows settings={settings} set={set} choices={choices} disabled={disabled} idPrefix="sheet" rotation={rotation} />
+                  <ExtraRows settings={settings} set={set} choices={choices} disabled={disabled} isPdf={flow.isPdf} idPrefix="sheet" />
                 </div>
                 <div className="sheet-panel__defaults">
                   <Button variant="quiet" onClick={onResetDefaults}>
