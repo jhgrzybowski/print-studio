@@ -116,7 +116,7 @@ export function JobStrip({ entry, job, sheets, onCancel, onDismiss, onOpen, canc
 
 /** One status line for the loaded document: what is happening to it right now. */
 export function docLine({ flow, printer, canSend }) {
-  const { doc, printing, validation, rangeError, pageCount } = flow;
+  const { doc, printing, verdict, rangeError, pageCount } = flow;
   if (!doc) return null;
   if (printing.state === "sending") return { sub: t("Sending"), tone: "active", pulse: true };
   if (printing.state === "error") return { sub: printing.error, tone: "error" };
@@ -126,7 +126,7 @@ export function docLine({ flow, printer, canSend }) {
   if (doc.phase === "error") return { sub: doc.message, tone: "error" };
   if (rangeError) return { sub: rangeError, tone: "error" };
   if (!canSend) return { sub: printer.info.detail || printer.info.label, tone: "warn" };
-  if (validation.result && !validation.result.valid) return { sub: t("Settings won't print"), tone: "error" };
+  if (verdict && !verdict.valid) return { sub: t("Settings won't print"), tone: "error" };
   const meta = [pageCount && tn(pageCount, "{n} page", "{n} pages"), formatBytes(doc.file?.size_bytes), doc.file?.converted && doc.file.detected_mime !== "text/plain" && t("from Office")].filter(Boolean).join(" · ");
   return { sub: meta, tone: "ok", quiet: true };
 }

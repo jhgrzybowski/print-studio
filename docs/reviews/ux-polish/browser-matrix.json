@@ -1,0 +1,1044 @@
+{
+  "desktop": [
+    {
+      "locale": "en",
+      "theme": "light",
+      "width": 1920,
+      "scroll": 1422,
+      "available": 1422,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Pages: All 3",
+          "visibleValue": true
+        },
+        {
+          "name": "Paper size: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Color: Color",
+          "visibleValue": true
+        },
+        {
+          "name": "Sides: One-sided",
+          "visibleValue": true
+        },
+        {
+          "name": "Paper type: Plain paper",
+          "visibleValue": true
+        },
+        {
+          "name": "Orientation: Auto",
+          "visibleValue": true
+        },
+        {
+          "name": "Quality: Standard",
+          "visibleValue": true
+        },
+        {
+          "name": "Layout and scaling",
+          "visibleValue": null
+        },
+        {
+          "name": "Paper handling and driver",
+          "visibleValue": null
+        }
+      ]
+    },
+    {
+      "locale": "en",
+      "theme": "light",
+      "width": 1440,
+      "scroll": 942,
+      "available": 942,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Pages: All 3",
+          "visibleValue": true
+        },
+        {
+          "name": "Paper size: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Color: Color",
+          "visibleValue": true
+        },
+        {
+          "name": "Sides: One-sided",
+          "visibleValue": true
+        },
+        {
+          "name": "Paper type: Plain paper",
+          "visibleValue": false
+        },
+        {
+          "name": "Orientation: Auto",
+          "visibleValue": false
+        },
+        {
+          "name": "Quality: Standard",
+          "visibleValue": false
+        },
+        {
+          "name": "Layout and scaling",
+          "visibleValue": null
+        },
+        {
+          "name": "Paper handling and driver",
+          "visibleValue": null
+        }
+      ]
+    },
+    {
+      "locale": "en",
+      "theme": "light",
+      "width": 1280,
+      "scroll": 819,
+      "available": 819,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Pages: All 3",
+          "visibleValue": true
+        },
+        {
+          "name": "Paper size: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Color: Color",
+          "visibleValue": true
+        },
+        {
+          "name": "Sides: One-sided",
+          "visibleValue": true
+        },
+        {
+          "name": "More print settings: Settings",
+          "visibleValue": true
+        }
+      ]
+    },
+    {
+      "locale": "en",
+      "theme": "light",
+      "width": 1200,
+      "scroll": 739,
+      "available": 739,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Pages: All 3",
+          "visibleValue": true
+        },
+        {
+          "name": "Paper size: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Color: Color",
+          "visibleValue": false
+        },
+        {
+          "name": "Sides: One-sided",
+          "visibleValue": false
+        },
+        {
+          "name": "More print settings: Settings",
+          "visibleValue": true
+        }
+      ]
+    },
+    {
+      "locale": "en",
+      "theme": "light",
+      "width": 1100,
+      "scroll": 639,
+      "available": 639,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Pages: All 3",
+          "visibleValue": true
+        },
+        {
+          "name": "Paper size: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Color: Color",
+          "visibleValue": false
+        },
+        {
+          "name": "Sides: One-sided",
+          "visibleValue": false
+        },
+        {
+          "name": "More print settings: Settings",
+          "visibleValue": true
+        }
+      ]
+    },
+    {
+      "locale": "en",
+      "theme": "light",
+      "width": 900,
+      "scroll": 439,
+      "available": 439,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Pages: All 3",
+          "visibleValue": false
+        },
+        {
+          "name": "Paper size: US Letter",
+          "visibleValue": false
+        },
+        {
+          "name": "Color: Color",
+          "visibleValue": false
+        },
+        {
+          "name": "Sides: One-sided",
+          "visibleValue": false
+        },
+        {
+          "name": "More print settings: Settings",
+          "visibleValue": false
+        }
+      ]
+    },
+    {
+      "locale": "en",
+      "theme": "light",
+      "width": 861,
+      "scroll": 400,
+      "available": 400,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Pages: All 3",
+          "visibleValue": false
+        },
+        {
+          "name": "Paper size: US Letter",
+          "visibleValue": false
+        },
+        {
+          "name": "More print settings: Settings",
+          "visibleValue": false
+        }
+      ]
+    },
+    {
+      "locale": "en",
+      "theme": "dark",
+      "width": 1920,
+      "scroll": 1422,
+      "available": 1422,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Pages: All 3",
+          "visibleValue": true
+        },
+        {
+          "name": "Paper size: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Color: Color",
+          "visibleValue": true
+        },
+        {
+          "name": "Sides: One-sided",
+          "visibleValue": true
+        },
+        {
+          "name": "Paper type: Plain paper",
+          "visibleValue": true
+        },
+        {
+          "name": "Orientation: Auto",
+          "visibleValue": true
+        },
+        {
+          "name": "Quality: Standard",
+          "visibleValue": true
+        },
+        {
+          "name": "Layout and scaling",
+          "visibleValue": null
+        },
+        {
+          "name": "Paper handling and driver",
+          "visibleValue": null
+        }
+      ]
+    },
+    {
+      "locale": "en",
+      "theme": "dark",
+      "width": 1440,
+      "scroll": 942,
+      "available": 942,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Pages: All 3",
+          "visibleValue": true
+        },
+        {
+          "name": "Paper size: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Color: Color",
+          "visibleValue": true
+        },
+        {
+          "name": "Sides: One-sided",
+          "visibleValue": true
+        },
+        {
+          "name": "Paper type: Plain paper",
+          "visibleValue": false
+        },
+        {
+          "name": "Orientation: Auto",
+          "visibleValue": false
+        },
+        {
+          "name": "Quality: Standard",
+          "visibleValue": false
+        },
+        {
+          "name": "Layout and scaling",
+          "visibleValue": null
+        },
+        {
+          "name": "Paper handling and driver",
+          "visibleValue": null
+        }
+      ]
+    },
+    {
+      "locale": "en",
+      "theme": "dark",
+      "width": 1280,
+      "scroll": 819,
+      "available": 819,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Pages: All 3",
+          "visibleValue": true
+        },
+        {
+          "name": "Paper size: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Color: Color",
+          "visibleValue": true
+        },
+        {
+          "name": "Sides: One-sided",
+          "visibleValue": true
+        },
+        {
+          "name": "More print settings: Settings",
+          "visibleValue": true
+        }
+      ]
+    },
+    {
+      "locale": "en",
+      "theme": "dark",
+      "width": 1200,
+      "scroll": 739,
+      "available": 739,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Pages: All 3",
+          "visibleValue": true
+        },
+        {
+          "name": "Paper size: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Color: Color",
+          "visibleValue": false
+        },
+        {
+          "name": "Sides: One-sided",
+          "visibleValue": false
+        },
+        {
+          "name": "More print settings: Settings",
+          "visibleValue": true
+        }
+      ]
+    },
+    {
+      "locale": "en",
+      "theme": "dark",
+      "width": 1100,
+      "scroll": 639,
+      "available": 639,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Pages: All 3",
+          "visibleValue": true
+        },
+        {
+          "name": "Paper size: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Color: Color",
+          "visibleValue": false
+        },
+        {
+          "name": "Sides: One-sided",
+          "visibleValue": false
+        },
+        {
+          "name": "More print settings: Settings",
+          "visibleValue": true
+        }
+      ]
+    },
+    {
+      "locale": "en",
+      "theme": "dark",
+      "width": 900,
+      "scroll": 439,
+      "available": 439,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Pages: All 3",
+          "visibleValue": false
+        },
+        {
+          "name": "Paper size: US Letter",
+          "visibleValue": false
+        },
+        {
+          "name": "Color: Color",
+          "visibleValue": false
+        },
+        {
+          "name": "Sides: One-sided",
+          "visibleValue": false
+        },
+        {
+          "name": "More print settings: Settings",
+          "visibleValue": false
+        }
+      ]
+    },
+    {
+      "locale": "en",
+      "theme": "dark",
+      "width": 861,
+      "scroll": 400,
+      "available": 400,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Pages: All 3",
+          "visibleValue": false
+        },
+        {
+          "name": "Paper size: US Letter",
+          "visibleValue": false
+        },
+        {
+          "name": "More print settings: Settings",
+          "visibleValue": false
+        }
+      ]
+    },
+    {
+      "locale": "pl",
+      "theme": "light",
+      "width": 1920,
+      "scroll": 1410,
+      "available": 1410,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Strony: Wszystkie (3)",
+          "visibleValue": true
+        },
+        {
+          "name": "Rozmiar papieru: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Kolor: Kolor",
+          "visibleValue": true
+        },
+        {
+          "name": "Druk dwustronny: Jednostronnie",
+          "visibleValue": true
+        },
+        {
+          "name": "Typ nośnika: Papier zwykły",
+          "visibleValue": true
+        },
+        {
+          "name": "Orientacja: Automatyczna",
+          "visibleValue": true
+        },
+        {
+          "name": "Jakość wydruku: Standardowa",
+          "visibleValue": true
+        },
+        {
+          "name": "Układ i skalowanie",
+          "visibleValue": null
+        },
+        {
+          "name": "Obsługa papieru i sterownik",
+          "visibleValue": null
+        }
+      ]
+    },
+    {
+      "locale": "pl",
+      "theme": "light",
+      "width": 1440,
+      "scroll": 930,
+      "available": 930,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Strony: Wszystkie (3)",
+          "visibleValue": true
+        },
+        {
+          "name": "Rozmiar papieru: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Kolor: Kolor",
+          "visibleValue": true
+        },
+        {
+          "name": "Druk dwustronny: Jednostronnie",
+          "visibleValue": true
+        },
+        {
+          "name": "Więcej ustawień wydruku: Ustawienia",
+          "visibleValue": true
+        }
+      ]
+    },
+    {
+      "locale": "pl",
+      "theme": "light",
+      "width": 1280,
+      "scroll": 807,
+      "available": 807,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Strony: Wszystkie (3)",
+          "visibleValue": true
+        },
+        {
+          "name": "Rozmiar papieru: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Kolor: Kolor",
+          "visibleValue": false
+        },
+        {
+          "name": "Druk dwustronny: Jednostronnie",
+          "visibleValue": false
+        },
+        {
+          "name": "Więcej ustawień wydruku: Ustawienia",
+          "visibleValue": true
+        }
+      ]
+    },
+    {
+      "locale": "pl",
+      "theme": "light",
+      "width": 1200,
+      "scroll": 727,
+      "available": 727,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Strony: Wszystkie (3)",
+          "visibleValue": true
+        },
+        {
+          "name": "Rozmiar papieru: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Kolor: Kolor",
+          "visibleValue": false
+        },
+        {
+          "name": "Druk dwustronny: Jednostronnie",
+          "visibleValue": false
+        },
+        {
+          "name": "Więcej ustawień wydruku: Ustawienia",
+          "visibleValue": true
+        }
+      ]
+    },
+    {
+      "locale": "pl",
+      "theme": "light",
+      "width": 1100,
+      "scroll": 627,
+      "available": 627,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Strony: Wszystkie (3)",
+          "visibleValue": false
+        },
+        {
+          "name": "Rozmiar papieru: US Letter",
+          "visibleValue": false
+        },
+        {
+          "name": "Kolor: Kolor",
+          "visibleValue": false
+        },
+        {
+          "name": "Druk dwustronny: Jednostronnie",
+          "visibleValue": false
+        },
+        {
+          "name": "Więcej ustawień wydruku: Ustawienia",
+          "visibleValue": false
+        }
+      ]
+    },
+    {
+      "locale": "pl",
+      "theme": "light",
+      "width": 900,
+      "scroll": 427,
+      "available": 427,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Strony: Wszystkie (3)",
+          "visibleValue": false
+        },
+        {
+          "name": "Rozmiar papieru: US Letter",
+          "visibleValue": false
+        },
+        {
+          "name": "Więcej ustawień wydruku: Ustawienia",
+          "visibleValue": false
+        }
+      ]
+    },
+    {
+      "locale": "pl",
+      "theme": "light",
+      "width": 861,
+      "scroll": 388,
+      "available": 388,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Strony: Wszystkie (3)",
+          "visibleValue": false
+        },
+        {
+          "name": "Rozmiar papieru: US Letter",
+          "visibleValue": false
+        },
+        {
+          "name": "Więcej ustawień wydruku: Ustawienia",
+          "visibleValue": false
+        }
+      ]
+    },
+    {
+      "locale": "pl",
+      "theme": "dark",
+      "width": 1920,
+      "scroll": 1410,
+      "available": 1410,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Strony: Wszystkie (3)",
+          "visibleValue": true
+        },
+        {
+          "name": "Rozmiar papieru: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Kolor: Kolor",
+          "visibleValue": true
+        },
+        {
+          "name": "Druk dwustronny: Jednostronnie",
+          "visibleValue": true
+        },
+        {
+          "name": "Typ nośnika: Papier zwykły",
+          "visibleValue": true
+        },
+        {
+          "name": "Orientacja: Automatyczna",
+          "visibleValue": true
+        },
+        {
+          "name": "Jakość wydruku: Standardowa",
+          "visibleValue": true
+        },
+        {
+          "name": "Układ i skalowanie",
+          "visibleValue": null
+        },
+        {
+          "name": "Obsługa papieru i sterownik",
+          "visibleValue": null
+        }
+      ]
+    },
+    {
+      "locale": "pl",
+      "theme": "dark",
+      "width": 1440,
+      "scroll": 930,
+      "available": 930,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Strony: Wszystkie (3)",
+          "visibleValue": true
+        },
+        {
+          "name": "Rozmiar papieru: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Kolor: Kolor",
+          "visibleValue": true
+        },
+        {
+          "name": "Druk dwustronny: Jednostronnie",
+          "visibleValue": true
+        },
+        {
+          "name": "Więcej ustawień wydruku: Ustawienia",
+          "visibleValue": true
+        }
+      ]
+    },
+    {
+      "locale": "pl",
+      "theme": "dark",
+      "width": 1280,
+      "scroll": 807,
+      "available": 807,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Strony: Wszystkie (3)",
+          "visibleValue": true
+        },
+        {
+          "name": "Rozmiar papieru: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Kolor: Kolor",
+          "visibleValue": false
+        },
+        {
+          "name": "Druk dwustronny: Jednostronnie",
+          "visibleValue": false
+        },
+        {
+          "name": "Więcej ustawień wydruku: Ustawienia",
+          "visibleValue": true
+        }
+      ]
+    },
+    {
+      "locale": "pl",
+      "theme": "dark",
+      "width": 1200,
+      "scroll": 727,
+      "available": 727,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Strony: Wszystkie (3)",
+          "visibleValue": true
+        },
+        {
+          "name": "Rozmiar papieru: US Letter",
+          "visibleValue": true
+        },
+        {
+          "name": "Kolor: Kolor",
+          "visibleValue": false
+        },
+        {
+          "name": "Druk dwustronny: Jednostronnie",
+          "visibleValue": false
+        },
+        {
+          "name": "Więcej ustawień wydruku: Ustawienia",
+          "visibleValue": true
+        }
+      ]
+    },
+    {
+      "locale": "pl",
+      "theme": "dark",
+      "width": 1100,
+      "scroll": 627,
+      "available": 627,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Strony: Wszystkie (3)",
+          "visibleValue": false
+        },
+        {
+          "name": "Rozmiar papieru: US Letter",
+          "visibleValue": false
+        },
+        {
+          "name": "Kolor: Kolor",
+          "visibleValue": false
+        },
+        {
+          "name": "Druk dwustronny: Jednostronnie",
+          "visibleValue": false
+        },
+        {
+          "name": "Więcej ustawień wydruku: Ustawienia",
+          "visibleValue": false
+        }
+      ]
+    },
+    {
+      "locale": "pl",
+      "theme": "dark",
+      "width": 900,
+      "scroll": 427,
+      "available": 427,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Strony: Wszystkie (3)",
+          "visibleValue": false
+        },
+        {
+          "name": "Rozmiar papieru: US Letter",
+          "visibleValue": false
+        },
+        {
+          "name": "Więcej ustawień wydruku: Ustawienia",
+          "visibleValue": false
+        }
+      ]
+    },
+    {
+      "locale": "pl",
+      "theme": "dark",
+      "width": 861,
+      "scroll": 388,
+      "available": 388,
+      "pageOverflow": false,
+      "misses": [],
+      "values": [
+        {
+          "name": "Strony: Wszystkie (3)",
+          "visibleValue": false
+        },
+        {
+          "name": "Rozmiar papieru: US Letter",
+          "visibleValue": false
+        },
+        {
+          "name": "Więcej ustawień wydruku: Ustawienia",
+          "visibleValue": false
+        }
+      ]
+    }
+  ],
+  "mobile": [
+    {
+      "locale": "en",
+      "theme": "light",
+      "width": 390,
+      "panelWidth": 390,
+      "pageOverflow": false,
+      "unnamed": 0
+    },
+    {
+      "locale": "en",
+      "theme": "light",
+      "width": 360,
+      "panelWidth": 360,
+      "pageOverflow": false,
+      "unnamed": 0
+    },
+    {
+      "locale": "en",
+      "theme": "dark",
+      "width": 390,
+      "panelWidth": 390,
+      "pageOverflow": false,
+      "unnamed": 0
+    },
+    {
+      "locale": "en",
+      "theme": "dark",
+      "width": 360,
+      "panelWidth": 360,
+      "pageOverflow": false,
+      "unnamed": 0
+    },
+    {
+      "locale": "pl",
+      "theme": "light",
+      "width": 390,
+      "panelWidth": 390,
+      "pageOverflow": false,
+      "unnamed": 0
+    },
+    {
+      "locale": "pl",
+      "theme": "light",
+      "width": 360,
+      "panelWidth": 360,
+      "pageOverflow": false,
+      "unnamed": 0
+    },
+    {
+      "locale": "pl",
+      "theme": "dark",
+      "width": 390,
+      "panelWidth": 390,
+      "pageOverflow": false,
+      "unnamed": 0
+    },
+    {
+      "locale": "pl",
+      "theme": "dark",
+      "width": 360,
+      "panelWidth": 360,
+      "pageOverflow": false,
+      "unnamed": 0
+    }
+  ],
+  "motion": [
+    {
+      "locale": "en",
+      "theme": "light",
+      "keyboard": {
+        "chevron": "0s",
+        "menu": "0s"
+      },
+      "reduced": {
+        "chevron": "0s",
+        "menuTransform": "none",
+        "menuAnimation": "fade"
+      }
+    },
+    {
+      "locale": "en",
+      "theme": "dark",
+      "keyboard": {
+        "chevron": "0s",
+        "menu": "0s"
+      },
+      "reduced": {
+        "chevron": "0s",
+        "menuTransform": "none",
+        "menuAnimation": "fade"
+      }
+    },
+    {
+      "locale": "pl",
+      "theme": "light",
+      "keyboard": {
+        "chevron": "0s",
+        "menu": "0s"
+      },
+      "reduced": {
+        "chevron": "0s",
+        "menuTransform": "none",
+        "menuAnimation": "fade"
+      }
+    },
+    {
+      "locale": "pl",
+      "theme": "dark",
+      "keyboard": {
+        "chevron": "0s",
+        "menu": "0s"
+      },
+      "reduced": {
+        "chevron": "0s",
+        "menuTransform": "none",
+        "menuAnimation": "fade"
+      }
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "failures": [],
+  "motionRecheck": "After reduced-motion selector specificity fix"
+}

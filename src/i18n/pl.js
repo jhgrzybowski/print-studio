@@ -365,6 +365,7 @@ export default {
   "Tap to choose a file": "Stuknij, aby wybrać plik",
   "Drag it in, or click to browse": "Przeciągnij plik tutaj lub kliknij, aby go wybrać",
   "Continue with {name}": "Wróć do pliku {name}",
+  "Back to {name}": "Wróć do pliku {name}",
   "Supported files": "Obsługiwane pliki",
   "up to {size}": "do {size}",
   "Recent prints": "Ostatnie wydruki",

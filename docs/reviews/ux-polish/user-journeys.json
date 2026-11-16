@@ -1,0 +1,30 @@
+{
+  "checks": [
+    {
+      "name": "Complete continuity, hidden R and new-file reset",
+      "locale": "en",
+      "status": "PASS"
+    },
+    {
+      "name": "Complete continuity, hidden R and new-file reset",
+      "locale": "pl",
+      "status": "PASS"
+    },
+    {
+      "name": "A4 labels, Escape focus/Tab, open-panel resize, reduced-motion pointer selection",
+      "locale": "en",
+      "status": "PASS"
+    },
+    {
+      "name": "Selected-value tooltip, adjacent instant tooltip and nested-select rapid Escape",
+      "locale": "en",
+      "status": "PASS"
+    },
+    {
+      "name": "360 touch paper dropdown, driver expansion, overflow and resume",
+      "locale": "en",
+      "status": "PASS"
+    }
+  ],
+  "errors": []
+}

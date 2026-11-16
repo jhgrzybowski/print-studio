@@ -35,7 +35,9 @@
   animation: tip-in 140ms var(--ease);
   user-select: none;
 }
-.tip[data-state="instant-open"] {
+.tip[data-state="closed"],
+.tip[data-state="instant-open"],
+.tip[data-instant] {
   animation: none;
 }
 @keyframes tip-in {
@@ -69,6 +71,10 @@
     background: var(--hover);
     color: var(--text);
   }
+}
+.ikey[aria-expanded="true"] {
+  background: var(--hover);
+  color: var(--text);
 }
 .ikey:active:not(:disabled) {
   transform: scale(0.94);
@@ -201,7 +207,7 @@
 .field:active:not(:disabled) {
   transform: scale(0.97);
 }
-.field[data-state="open"] {
+.field[aria-expanded="true"] {
   background: var(--field-hover);
 }
 .field:disabled {
@@ -226,7 +232,7 @@
   color: var(--text-3);
   transition: transform var(--t-mid) var(--ease);
 }
-.field[data-state="open"] .field__chev {
+.field[aria-expanded="true"] .field__chev {
   transform: rotate(180deg);
 }
 /* Chosen values carry their glyph in the accent, so the toolbar reads at a glance. */
@@ -240,24 +246,16 @@
 .field--pages .field__val {
   flex: 1;
 }
-@media (max-width: 1680px) {
-  .field--compact .field__val {
-    display: none;
-  }
-  .field--compact {
-    gap: 4px;
-    padding: 0 7px 0 9px;
-  }
+/* The toolbar measures its row and compacts fields one step at a time, in any language. */
+.field--compact .field__val {
+  display: none;
 }
-/* Polish values run about a third longer ("Jednostronnie", "Standardowa"), so they fold sooner. */
-@media (max-width: 1760px) {
-  :lang(pl) .field--compact .field__val {
-    display: none;
-  }
-  :lang(pl) .field--compact {
-    gap: 4px;
-    padding: 0 7px 0 9px;
-  }
+.field--compact {
+  gap: 4px;
+  padding: 0 7px 0 9px;
+}
+.field--pages.field--compact {
+  min-width: 0;
 }
 
 /* ---------- Inset wells: segments and steppers ---------- */
@@ -592,6 +590,18 @@
 }
 .pop .seg__opt {
   flex: 1;
+}
+/* Full odd/even labels and the input must fit the panel, including in Polish. */
+.pop--pages {
+  width: min(400px, calc(100vw - 24px));
+  grid-template-columns: minmax(0, 1fr);
+}
+.pop--pages .input {
+  min-width: 0;
+}
+.pop--pages .seg__opt {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 /* A panel of setting rows under a toolbar field. */
 .pop--rows {

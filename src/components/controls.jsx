@@ -58,13 +58,72 @@ export function useLiquidMetal() {
 }
 
 /* ---------- Tooltip ---------- */
-export function Tip({ label, side = "bottom", children, disabled }) {
+/**
+ * `expanded` is the open state of a menu or panel on the same trigger: the tip steps aside while
+ * it is open, and stays away as focus returns to the trigger on close.
+ */
+export function Tip({ label, side = "bottom", children, disabled, expanded }) {
   if (disabled || !label) return children;
   return (
-    <RTooltip.Root>
-      <RTooltip.Trigger asChild>{children}</RTooltip.Trigger>
+    <TipRoot label={label} side={side} expanded={expanded}>
+      {children}
+    </TipRoot>
+  );
+}
+
+let quietUntil = 0;
+let activeTip = null;
+/** Keeps every tip shut for a moment, while focus goes back to a trigger that may be a new one. */
+export function quietTips(ms = 250) {
+  quietUntil = performance.now() + ms;
+}
+
+function TipRoot({ label, side, expanded, children }) {
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  const [instant, setInstant] = useState(false);
+  const wasExpanded = useRef(expanded);
+  useEffect(() => {
+    if (!open || expanded) return;
+    activeTip = {
+      id,
+      close: () => {
+        setInstant(false);
+        setOpen(false);
+      },
+    };
+    return () => {
+      if (activeTip?.id === id) activeTip = null;
+    };
+  }, [open, expanded, id]);
+  useEffect(() => {
+    if (expanded) setOpen(false);
+    else if (wasExpanded.current) quietTips();
+    wasExpanded.current = expanded;
+  }, [expanded]);
+  const onOpenChange = (next) => {
+    if (next && (expanded || performance.now() < quietUntil)) return;
+    if (!next) setInstant(false);
+    setOpen(next);
+  };
+  return (
+    <RTooltip.Root open={open && !expanded} onOpenChange={onOpenChange}>
+      <RTooltip.Trigger
+        asChild
+        onPointerEnter={(event) => {
+          // A sibling trigger takes priority over the old tip's pointer-transit grace area.
+          // The first tip still uses Radix's delay, and its content stays hoverable.
+          if (event.pointerType !== "touch" && activeTip && activeTip.id !== id) {
+            activeTip.close();
+            setInstant(true);
+            onOpenChange(true);
+          }
+        }}
+      >
+        {children}
+      </RTooltip.Trigger>
       <RTooltip.Portal>
-        <RTooltip.Content className="tip" side={side} sideOffset={8} collisionPadding={10}>
+        <RTooltip.Content className="tip" data-instant={instant || undefined} side={side} sideOffset={8} collisionPadding={10}>
           {label}
         </RTooltip.Content>
       </RTooltip.Portal>
@@ -219,13 +278,19 @@ export function Stepper({ value, onChange, min = 1, max = 99, step = 1, suffix, 
 }
 
 /* ---------- Select: a raised field that opens a dark menu ---------- */
-export function Select({ value, onChange, groups, label, disabled, placeholder, icon, collapse, className = "" }) {
+export function Select({ value, onChange, groups, label, disabled, placeholder, icon, compact, onOpenChange, onCloseAutoFocus, className = "" }) {
   // groups: [{ label?, items: [{ value, label, sub?, icon? }] }]
+  const [open, setOpenState] = useState(false);
+  const setOpen = (o) => {
+    setOpenState(o);
+    onOpenChange?.(o);
+  };
   const current = groups.flatMap((g) => g.items).find((i) => i.value === value);
   // Items that carry their own glyph lend it to the trigger, so the field shows what is chosen.
   const Icon = current?.icon || icon;
+  const named = current ? `${label}: ${current.label}` : label;
   const trigger = (
-    <RSelect.Trigger className={`field ${collapse ? `field--${collapse === true ? "collapse" : collapse}` : ""} ${className}`} aria-label={label}>
+    <RSelect.Trigger className={`field ${compact ? "field--compact" : ""} ${className}`} data-field-label={label} aria-label={named}>
       {Icon && <Icon className="field__lead" size={17} strokeWidth={1.5} aria-hidden />}
       <span className="field__val">
         <RSelect.Value placeholder={placeholder ?? t("Choose")}>{current?.label}</RSelect.Value>
@@ -236,10 +301,16 @@ export function Select({ value, onChange, groups, label, disabled, placeholder, 
     </RSelect.Trigger>
   );
   return (
-    <RSelect.Root value={value ?? undefined} onValueChange={onChange} disabled={disabled}>
-      {Icon ? <Tip label={label}>{trigger}</Tip> : trigger}
+    <RSelect.Root value={value ?? undefined} onValueChange={onChange} disabled={disabled} open={open} onOpenChange={setOpen}>
+      {Icon ? (
+        <Tip label={compact ? named : label} expanded={open}>
+          {trigger}
+        </Tip>
+      ) : (
+        trigger
+      )}
       <RSelect.Portal>
-        <RSelect.Content className="menu" position="popper" sideOffset={6} align="start" collisionPadding={12}>
+        <RSelect.Content className="menu" position="popper" sideOffset={6} align="start" collisionPadding={12} onCloseAutoFocus={onCloseAutoFocus}>
           <RSelect.Viewport className="menu__viewport">
             {groups.map((g, gi) => (
               <RSelect.Group key={gi}>

@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "motion/react";
 import { DropdownMenu } from "radix-ui";
 import { Archive, ArchiveRestore, CircleAlert, Ellipsis, Eraser, ExternalLink, RotateCw, Trash2 } from "lucide-react";
 import { api } from "../api/client.js";
 import { PreviewStage } from "./PreviewStage.jsx";
 import { jobProgress, jobTone } from "./Dock.jsx";
 import { layoutSummary, SCALING, sourceLabel } from "./Options.jsx";
-import { Button, Dot, PrintButton, Tip, ease } from "./controls.jsx";
+import { Button, Dot, PrintButton, Tip } from "./controls.jsx";
 import { FileGlyph } from "./FileGlyph.jsx";
 import { BASE_SETTINGS, fromRequested } from "../lib/settings.js";
 import { planFromOptions } from "../lib/plan.js";
@@ -36,6 +35,7 @@ export function HistoryDetail({ id, history, choices, onReprint, onOpenCompose, 
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const [confirming, setConfirming] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Keep the list and the detail in step with polling.
   useEffect(() => {
@@ -169,7 +169,7 @@ export function HistoryDetail({ id, history, choices, onReprint, onOpenCompose, 
   const forgettable = terminal && entry.cups_job_id;
 
   return (
-    <motion.div className="page page--detail" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.14, ease }}>
+    <div className="page page--detail view-in">
       <div className="bar">
         {lead}
         <span className={`bar__glyph kind-${kind}`}>
@@ -200,8 +200,14 @@ export function HistoryDetail({ id, history, choices, onReprint, onOpenCompose, 
             </Button>
           )}
           {(pdf || forgettable || !active) && (
-            <DropdownMenu.Root onOpenChange={(open) => !open && setConfirming(false)}>
-              <Tip label={t("More")}>
+            <DropdownMenu.Root
+              open={menuOpen}
+              onOpenChange={(open) => {
+                setMenuOpen(open);
+                if (!open) setConfirming(false);
+              }}
+            >
+              <Tip label={t("More")} expanded={menuOpen}>
                 <DropdownMenu.Trigger asChild>
                   <button type="button" className="ikey ikey--plain ikey--md" aria-label={t("More")}>
                     <Ellipsis size={18} strokeWidth={1.5} aria-hidden />
@@ -296,7 +302,7 @@ export function HistoryDetail({ id, history, choices, onReprint, onOpenCompose, 
           )}
         </aside>
       </div>
-    </motion.div>
+    </div>
   );
 }
 

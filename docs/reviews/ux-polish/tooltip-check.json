@@ -1,0 +1,78 @@
+[
+  {
+    "locale": "en",
+    "expected": "Paper size: US Letter",
+    "layers": [
+      {
+        "text": "Paper size: US Letter",
+        "state": "delayed-open",
+        "animation": "tip-in"
+      }
+    ],
+    "visibleLayers": 1
+  },
+  {
+    "locale": "en",
+    "expected": "Pages: All 3",
+    "layers": [
+      {
+        "text": "Pages: All 3",
+        "state": "instant-open",
+        "animation": "none",
+        "instant": "true"
+      }
+    ],
+    "visibleLayers": 1
+  },
+  {
+    "locale": "en",
+    "expected": "Paper size: US Letter",
+    "layers": [
+      {
+        "text": "Paper size: US Letter",
+        "state": "delayed-open",
+        "animation": "none",
+        "instant": "true"
+      }
+    ],
+    "visibleLayers": 1
+  },
+  {
+    "locale": "pl",
+    "expected": "Rozmiar papieru: US Letter",
+    "layers": [
+      {
+        "text": "Rozmiar papieru: US Letter",
+        "state": "delayed-open",
+        "animation": "tip-in"
+      }
+    ],
+    "visibleLayers": 1
+  },
+  {
+    "locale": "pl",
+    "expected": "Strony: Wszystkie (3)",
+    "layers": [
+      {
+        "text": "Strony: Wszystkie (3)",
+        "state": "instant-open",
+        "animation": "none",
+        "instant": "true"
+      }
+    ],
+    "visibleLayers": 1
+  },
+  {
+    "locale": "pl",
+    "expected": "Rozmiar papieru: US Letter",
+    "layers": [
+      {
+        "text": "Rozmiar papieru: US Letter",
+        "state": "delayed-open",
+        "animation": "none",
+        "instant": "true"
+      }
+    ],
+    "visibleLayers": 1
+  }
+]

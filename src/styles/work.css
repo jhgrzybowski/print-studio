@@ -47,13 +47,10 @@
   gap: 6px;
   padding-left: 4px;
 }
-@media (max-width: 1480px) {
-  .field--collapse .field__val,
-  .field--collapse .field__chev {
+/* On small desktops the print choices need the room more than the shortcut hint does. */
+@media (max-width: 1280px) {
+  .toolbar__print .print__kbd {
     display: none;
-  }
-  .field--collapse {
-    padding: 0 9px;
   }
 }
 @media (max-width: 1240px) {
@@ -228,6 +225,7 @@
 }
 .stage__main {
   position: relative;
+  container: preview-stage / inline-size;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -647,8 +645,8 @@
   padding-inline: 8px 4px;
   transition: opacity var(--t-mid) ease;
 }
-.verdict.is-stale {
-  opacity: 0.6;
+.verdict.is-stale .verdict__title {
+  color: var(--text-2);
 }
 .verdict__title {
   display: flex;
@@ -661,6 +659,36 @@
   margin-left: -4px;
   color: var(--text-2);
   font-weight: 400;
+}
+/* The status shares the stage with fixed-size paging and zoom keys. When the stage narrows,
+   use two quiet lines and let the optional summary truncate before any action is pushed away. */
+@container preview-stage (max-width: 760px) {
+  .stage-bar .verdict {
+    flex: 1;
+    min-width: 0;
+  }
+  .stage-bar .verdict__title {
+    display: block;
+    overflow: hidden;
+    font-size: var(--fs-12);
+    line-height: 1.35;
+    text-overflow: ellipsis;
+  }
+  .stage-bar .verdict__title > .dot {
+    display: inline-block;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .stage-bar .verdict__opts {
+    display: block;
+    overflow: hidden;
+    margin-left: 0;
+    text-overflow: ellipsis;
+  }
+  .stage-bar .pager,
+  .stage-bar .zoom {
+    flex: none;
+  }
 }
 .verdict__notes {
   position: absolute;

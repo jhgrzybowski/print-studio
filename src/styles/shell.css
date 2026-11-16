@@ -437,7 +437,7 @@
     background-color var(--t-fast) ease,
     transform var(--t-press) var(--ease);
 }
-.profile[data-state="open"],
+.profile[aria-expanded="true"],
 .profile.is-on {
   background: var(--hover);
 }
@@ -575,6 +575,17 @@
   flex: 1;
   min-height: 0;
   min-width: 0;
+}
+.page[hidden] {
+  display: none;
+}
+/* Views swap like a native sidebar app: a short fade on pointer navigation, none from the keyboard.
+   Showing a kept view replays it, since display: none ends its animation. */
+.view-in {
+  animation: fade 140ms var(--ease);
+}
+[data-kbd] .view-in {
+  animation-duration: 0s;
 }
 
 /* The page bar: title, context, and the commit on the right. */

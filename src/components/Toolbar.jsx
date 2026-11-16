@@ -1,18 +1,19 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { DropdownMenu, Popover } from "radix-ui";
 import { BookmarkCheck, BookmarkPlus, ChevronDown, Copy, Ellipsis, File, Files, Layers, Printer, RotateCcw, RotateCcwSquare, RotateCwSquare, SlidersHorizontal, Undo2 } from "lucide-react";
-import { Dot, IconKey, MOD, PrintButton, Segmented, Select, Stepper, Tip } from "./controls.jsx";
+import { Dot, IconKey, MOD, PrintButton, quietTips, Segmented, Select, Stepper, Tip } from "./controls.jsx";
 import { AdvancedRows, asGroups, ExtraRows, HandlingRows, LayoutRows, layoutSummary, mediaGroups, OptionRows, optionModel, paperSelectGroups, RowGroup } from "./Options.jsx";
 import { SheetGridGlyph, TrayGlyph } from "./glyphs.jsx";
 import { changedCount, conflictText } from "../lib/settings.js";
 import { printerDot } from "./PrinterStatus.jsx";
 import { COLOR_LABELS, label as labelOf } from "../lib/format.js";
 import { cleanRange } from "../lib/pages.js";
-import { t, tn } from "../i18n/index.js";
+import { nextFold } from "../lib/fold.js";
+import { getLocale, t, tn } from "../i18n/index.js";
 
 const PAGE_SET = { odd: "Odd pages", even: "Even pages" };
 
-function PagesField({ value, onChange, pageCount, error, disabled, pageSet = "all", onPageSet, pageSets = [] }) {
+function PagesField({ value, onChange, pageCount, error, disabled, pageSet = "all", onPageSet, pageSets = [], compact, onOpenChange, onCloseAutoFocus }) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState(value ? "range" : "all");
   const inputRef = useRef(null);
@@ -28,9 +29,15 @@ function PagesField({ value, onChange, pageCount, error, disabled, pageSet = "al
   const label = pageSet !== "all" && PAGE_SET[pageSet] ? `${range} · ${t(pageSet === "odd" ? "pages|odd" : "pages|even")}` : range;
 
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
-      <Tip label={t("Pages")}>
-        <Popover.Trigger className={`field field--pages ${error ? "is-invalid" : ""}`} aria-label={t("Pages: {value}", { value: label })} disabled={disabled || (single && pageSet === "all")}>
+    <Popover.Root
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        onOpenChange?.(o);
+      }}
+    >
+      <Tip label={compact ? t("Pages: {value}", { value: label }) : t("Pages")} expanded={open}>
+        <Popover.Trigger className={`field field--pages ${compact ? "field--compact" : ""} ${error ? "is-invalid" : ""}`} data-field-label={t("Pages")} aria-label={t("Pages: {value}", { value: label })} disabled={disabled || (single && pageSet === "all")}>
           <Files className="field__lead" size={17} strokeWidth={1.5} aria-hidden />
           <span className="field__val">{label}</span>
           <ChevronDown className="field__chev" size={14} strokeWidth={1.6} aria-hidden />
@@ -38,11 +45,12 @@ function PagesField({ value, onChange, pageCount, error, disabled, pageSet = "al
       </Tip>
       <Popover.Portal>
         <Popover.Content
-          className="menu pop"
+          className="menu pop pop--pages"
           side="bottom"
           align="start"
           sideOffset={6}
           collisionPadding={12}
+          onCloseAutoFocus={onCloseAutoFocus}
           onOpenAutoFocus={(e) => {
             if (mode === "range") {
               e.preventDefault();
@@ -108,9 +116,10 @@ function PagesField({ value, onChange, pageCount, error, disabled, pageSet = "al
 
 function DefaultsMenu({ rotation, onSaveDefaults, onResetDefaults, defaultsState }) {
   const saved = defaultsState === "saved";
+  const [open, setOpen] = useState(false);
   return (
-    <DropdownMenu.Root>
-      <Tip label={t("More options")}>
+    <DropdownMenu.Root open={open} onOpenChange={setOpen}>
+      <Tip label={t("More options")} expanded={open}>
         <DropdownMenu.Trigger asChild>
           <button type="button" className={`ikey ikey--plain ikey--md ${saved ? "is-confirmed" : ""}`} aria-label={t("More options")}>
             {saved ? <BookmarkCheck size={18} strokeWidth={1.5} aria-hidden /> : <Ellipsis size={18} strokeWidth={1.5} aria-hidden />}
@@ -154,19 +163,27 @@ function DefaultsMenu({ rotation, onSaveDefaults, onResetDefaults, defaultsState
 }
 
 /** A toolbar field that opens a panel of rows: layout, or paper handling and driver options. */
-function PanelField({ label, icon: Icon, value, changed, children, wide, keepValue }) {
+function PanelField({ label, icon: Icon, value, changed, children, wide, compact, keepValue, onOpenChange, onCloseAutoFocus }) {
+  const [open, setOpen] = useState(false);
+  const named = value ? `${label}: ${value}` : label;
   return (
-    <Popover.Root>
-      <Tip label={label}>
-        <Popover.Trigger className={`field ${keepValue ? "" : "field--compact"} ${changed ? "is-changed" : ""}`} aria-label={value ? `${label}: ${value}` : label}>
+    <Popover.Root
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        onOpenChange?.(o);
+      }}
+    >
+      <Tip label={compact ? named : label} expanded={open}>
+        <Popover.Trigger className={`field ${compact ? "field--compact" : ""} ${changed ? "is-changed" : ""}`} data-field-label={label} aria-label={named}>
           <Icon className="field__lead" size={17} strokeWidth={1.5} aria-hidden />
           {value && <span className="field__val">{value}</span>}
-          {changed > 0 && (!value || keepValue) && <span className="field__badge">{changed}</span>}
+          {changed > 0 && (!value || compact || keepValue) && <span className="field__badge">{changed}</span>}
           <ChevronDown className="field__chev" size={14} strokeWidth={1.6} aria-hidden />
         </Popover.Trigger>
       </Tip>
       <Popover.Portal>
-        <Popover.Content className={`menu pop pop--rows ${wide ? "pop--wide" : ""}`} side="bottom" align="start" sideOffset={6} collisionPadding={12}>
+        <Popover.Content className={`menu pop pop--rows ${wide ? "pop--wide" : ""}`} side="bottom" align="start" sideOffset={6} collisionPadding={12} onCloseAutoFocus={onCloseAutoFocus}>
           {children}
         </Popover.Content>
       </Popover.Portal>
@@ -175,33 +192,93 @@ function PanelField({ label, icon: Icon, value, changed, children, wide, keepVal
 }
 
 const HANDLING_KEYS = ["borderless", "reverse_order", "advanced"];
-const COMPACT_KEYS = ["media_type", "color_mode", "duplex", "orientation", "quality", "pages_per_sheet", "scaling", ...HANDLING_KEYS];
+const SECONDARY_KEYS = ["media_type", "orientation", "quality", "pages_per_sheet", "scaling", ...HANDLING_KEYS];
+const COMPACT_KEYS = ["color_mode", "duplex", ...SECONDARY_KEYS];
 
 /**
- * Whether the full row of settings fits. When it doesn't, the toolbar keeps copies, pages and
- * paper and folds the rest into one panel, so no setting ends up out of reach to the right.
- * The full row's width is remembered, so the toolbar opens up again once there is room for it.
+ * How far the toolbar folds to fit, one step at a time:
+ * 1 drops the values of the secondary fields, 2 moves them into one panel, 3 drops the values of
+ * color and sides, 4 those of pages, paper and the panel, 5 moves color and sides into the panel.
+ * The common choices stay in reach longest; copies, pages and paper always stay. Each step remembers
+ * how wide the row was before it, so the row unfolds once there is room for exactly that. Changed
+ * labels and loaded fonts forget those widths, and the row tries each wider step again before paint.
  */
-function useFits(ref) {
-  const [compact, setCompact] = useState(false);
-  const full = useRef(0);
+function useFold(ref, measureKey, held) {
+  const [fold, setFold] = useState(0);
+  const need = useRef([]);
+  const measured = useRef(measureKey);
+  const refocus = useRef(null);
+  const check = useRef(null);
+  check.current = () => {
+    const el = ref.current;
+    // Hidden, or a panel is open: folding now would pull the panel out from under the pointer.
+    if (!el || !el.clientWidth || held) return;
+    if (measured.current !== measureKey) {
+      measured.current = measureKey;
+      need.current = [];
+    }
+    const overflow = el.scrollWidth > el.clientWidth + 1;
+    if (overflow) need.current[fold] = el.scrollWidth;
+    const next = nextFold(fold, { overflow, width: el.clientWidth, need: need.current });
+    const active = document.activeElement;
+    if (next !== fold) {
+      // Each step settles before paint, but it may swap out the focused field for another.
+      const field = el.contains(active) && active.closest("[data-field-label]");
+      if (field) refocus.current = field.dataset.fieldLabel;
+      setFold(next);
+    } else if (refocus.current) {
+      const label = refocus.current;
+      refocus.current = null;
+      if (active && active !== document.body) return;
+      const fields = [...el.querySelectorAll("[data-field-label]")];
+      const target = fields.find((e) => e.dataset.fieldLabel === label) || fields.find((e) => e.dataset.fieldLabel === t("More print settings"));
+      quietTips();
+      target?.focus({ preventScroll: true });
+    }
+  };
+  // After every render, since a longer value can push the row over without a resize.
+  useLayoutEffect(() => check.current());
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const check = () => {
-      if (!compact) {
-        if (el.scrollWidth > el.clientWidth + 1) {
-          full.current = el.scrollWidth;
-          setCompact(true);
-        }
-      } else if (el.clientWidth >= full.current) setCompact(false);
-    };
-    check();
-    const ro = new ResizeObserver(check);
+    const ro = new ResizeObserver(() => check.current());
     ro.observe(el);
     return () => ro.disconnect();
-  }, [ref, compact]);
-  return compact;
+  }, [ref]);
+  useEffect(() => {
+    let live = true;
+    const remeasure = () => {
+      if (!live) return;
+      need.current = [];
+      check.current();
+    };
+    document.fonts.ready.then(remeasure);
+    document.fonts.addEventListener("loadingdone", remeasure);
+    return () => {
+      live = false;
+      document.fonts.removeEventListener("loadingdone", remeasure);
+    };
+  }, []);
+  return fold;
+}
+
+/**
+ * Which floating layers hold the toolbar still, by name. A layer holds from opening until focus
+ * is back on its trigger, so a fold never cuts a closing panel short or removes its trigger first.
+ */
+function useHeld() {
+  const [held, setHeld] = useState(() => new Set());
+  const hold = useCallback((name) => {
+    const set = (on) =>
+      setHeld((s) => {
+        if (on === s.has(name)) return s;
+        const next = new Set(s);
+        on ? next.add(name) : next.delete(name);
+        return next;
+      });
+    return { onOpenChange: (open) => open && set(true), onCloseAutoFocus: () => set(false) };
+  }, []);
+  return [held.size > 0, hold];
 }
 
 /** The phone bar: menu, the document in hand, and the printer's state. Settings live in the dock below. */
@@ -229,10 +306,22 @@ export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSav
   const { settings, set, pageCount, rangeError, printing } = flow;
   const m = optionModel(settings, set, choices);
   const scrollRef = useRef(null);
-  const compact = useFits(scrollRef);
+  const [held, hold] = useHeld();
+  const fold = useFold(scrollRef, JSON.stringify([getLocale(), choices, settings, pageCount]), held);
+  const secondaryFolded = fold >= 2;
+  const baseCompact = fold >= 4;
+  const primaryFolded = fold >= 5;
 
   // The document chip on the stage carries the file name, so the bar names the place.
   if (narrow) return <PhoneBar lead={lead} printer={printer} onPrinter={onPrinter} onHome={onHome} />;
+
+  const laidOut = Number(settings.pages_per_sheet) > 1 || (settings.scaling && settings.scaling !== "auto");
+  const folded = secondaryFolded && {
+    ...choices,
+    paper_size: [],
+    color_mode: primaryFolded ? choices.color_mode : [],
+    duplex: primaryFolded ? choices.duplex : [],
+  };
 
   return (
     <div className="toolbar" role="toolbar" aria-label={t("Print settings")}>
@@ -249,48 +338,60 @@ export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSav
             pageSet={settings.page_set}
             onPageSet={(v) => set("page_set", v)}
             pageSets={choices.page_set}
+            compact={baseCompact}
+            {...hold("pages")}
           />
           {choices.paper_size?.length > 0 && (
-            <Select label={t("Paper size")} icon={File} value={settings.paper_size} onChange={(v) => set("paper_size", v)} groups={paperSelectGroups(choices.paper_size)} disabled={disabled} />
-          )}
-          {choices.media_type?.length > 0 && (
-            <Select
-              label={t("Paper type")}
-              icon={Layers}
-              collapse
-              value={settings.media_type}
-              onChange={(v) => set("media_type", v)}
-              groups={mediaGroups(choices.media_type, choices.media_type_labels)}
-              disabled={disabled}
-            />
+            <Select label={t("Paper size")} icon={File} value={settings.paper_size} onChange={(v) => set("paper_size", v)} groups={paperSelectGroups(choices.paper_size)} disabled={disabled} compact={baseCompact} {...hold("paper")} />
           )}
         </div>
 
         <span className="toolbar__sep" role="separator" aria-orientation="vertical" />
 
-        {compact ? (
-          <div className="toolbar__group">
-            <PanelField label={t("More print settings")} icon={SlidersHorizontal} value={t("Settings")} changed={changedCount(settings, COMPACT_KEYS)} wide keepValue>
+        <div className="toolbar__group">
+          {!primaryFolded && m.color && <Select label={t("Color")} compact={fold >= 3} disabled={disabled} value={m.color.value} onChange={m.color.onChange} groups={asGroups(m.color)} {...hold("color")} />}
+          {!primaryFolded && m.duplex && <Select label={t("Sides")} compact={fold >= 3} disabled={disabled} value={m.duplex.value} onChange={m.duplex.onChange} groups={asGroups(m.duplex)} {...hold("duplex")} />}
+          {secondaryFolded ? (
+            <PanelField
+              label={t("More print settings")}
+              icon={SlidersHorizontal}
+              value={t("Settings")}
+              changed={changedCount(settings, primaryFolded ? COMPACT_KEYS : SECONDARY_KEYS)}
+              wide
+              keepValue
+              compact={baseCompact}
+              {...hold("more")}
+            >
               <div className="rows">
-                <OptionRows settings={settings} set={set} choices={{ ...choices, paper_size: [] }} disabled={disabled} idPrefix="tb-all" rotation={rotation} />
+                <OptionRows settings={settings} set={set} choices={folded} disabled={disabled} idPrefix="tb-all" rotation={rotation} />
               </div>
               <ExtraRows settings={settings} set={set} choices={choices} disabled={disabled} isPdf={flow.isPdf} idPrefix="tb-all" />
             </PanelField>
-          </div>
-        ) : (
-          <>
-            <div className="toolbar__group">
-              {m.color && <Select label={t("Color")} collapse="compact" disabled={disabled} value={m.color.value} onChange={m.color.onChange} groups={asGroups(m.color)} />}
-              {m.duplex && <Select label={t("Sides")} collapse="compact" disabled={disabled} value={m.duplex.value} onChange={m.duplex.onChange} groups={asGroups(m.duplex)} />}
-              {m.orientation && <Select label={t("Orientation")} collapse="compact" disabled={disabled} value={m.orientation.value} onChange={m.orientation.onChange} groups={asGroups(m.orientation)} />}
-              {m.quality && <Select label={t("Quality")} collapse="compact" disabled={disabled} value={m.quality.value} onChange={m.quality.onChange} groups={asGroups(m.quality)} />}
+          ) : (
+            <>
+              {choices.media_type?.length > 0 && (
+                <Select
+                  label={t("Paper type")}
+                  icon={Layers}
+                  compact={fold >= 1}
+                  value={settings.media_type}
+                  onChange={(v) => set("media_type", v)}
+                  groups={mediaGroups(choices.media_type, choices.media_type_labels)}
+                  disabled={disabled}
+                  {...hold("media")}
+                />
+              )}
+              {m.orientation && <Select label={t("Orientation")} compact={fold >= 1} disabled={disabled} value={m.orientation.value} onChange={m.orientation.onChange} groups={asGroups(m.orientation)} {...hold("orientation")} />}
+              {m.quality && <Select label={t("Quality")} compact={fold >= 1} disabled={disabled} value={m.quality.value} onChange={m.quality.onChange} groups={asGroups(m.quality)} {...hold("quality")} />}
               {((choices.pages_per_sheet || []).length > 1 || (choices.scaling || []).length > 1) && (
                 <PanelField
                   label={t("Layout and scaling")}
                   icon={SheetGridGlyph}
                   // The field names the layout only once it differs from one page per sheet at its own size.
-                  value={Number(settings.pages_per_sheet) > 1 || (settings.scaling && settings.scaling !== "auto") ? layoutSummary(settings) : null}
-                  changed={Number(settings.pages_per_sheet) > 1 || (settings.scaling && settings.scaling !== "auto") ? 1 : 0}
+                  value={laidOut ? layoutSummary(settings) : null}
+                  changed={laidOut ? 1 : 0}
+                  compact={fold >= 1}
+                  {...hold("layout")}
                 >
                   <p className="menu__label">{t("group|Layout")}</p>
                   <div className="rows">
@@ -299,7 +400,7 @@ export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSav
                 </PanelField>
               )}
               {((choices.media_source || []).length > 1 || choices.borderless || choices.reverse_order || choices.collate || (choices.advanced || []).length > 0) && (
-                <PanelField label={t("Paper handling and driver")} icon={TrayGlyph} changed={changedCount(settings, HANDLING_KEYS)} wide>
+                <PanelField label={t("Paper handling and driver")} icon={TrayGlyph} changed={changedCount(settings, HANDLING_KEYS)} wide compact {...hold("handling")}>
                   <div className="rows">
                     <HandlingRows settings={settings} set={set} choices={choices} disabled={disabled} />
                   </div>
@@ -310,9 +411,9 @@ export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSav
                   )}
                 </PanelField>
               )}
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
 
         <span className="toolbar__spacer" />
       </div>
@@ -331,9 +432,14 @@ export function sheetsFor(pages, copies, duplex) {
 }
 
 /** The dry-run result, as a count of sheets with any notes above it. */
-export function Verdict({ validation, settings, rangeError, printerReady, plan, choices = {} }) {
+export function Verdict({ validation, current, settings, rangeError, printerReady, plan, choices = {} }) {
   if (rangeError) return null;
-  const { state, result, warnings = [], error } = validation;
+  const { state, warnings: lastWarnings = [], error } = validation;
+  // Until the printer answers for these very settings, its last answer is about old ones: the
+  // local plan still counts what prints, but no old verdict or note stands in for the new one.
+  const checking = state === "checking" || (state === "done" && !current);
+  const result = current;
+  const warnings = current ? lastWarnings : [];
   let tone = "muted";
   let title = t("Checking");
   let notes = [];
@@ -367,10 +473,11 @@ export function Verdict({ validation, settings, rangeError, printerReady, plan, 
       unsupported.length > 0 && t("Not supported: {options}", { options: unsupported.join(", ") }),
       ...warnings,
     ].filter(Boolean);
-  } else if (state !== "checking") return null;
+  } else if (!checking) return null;
+  if (checking && plan) opts = t("Checking");
 
   return (
-    <div className={`verdict ${state === "checking" ? "is-stale" : ""}`} aria-live="polite">
+    <div className={`verdict ${checking ? "is-stale" : ""}`} aria-live="polite">
       {notes.length > 0 && (
         <div className="verdict__notes">
           {notes.map((w) => (
@@ -381,7 +488,7 @@ export function Verdict({ validation, settings, rangeError, printerReady, plan, 
         </div>
       )}
       <p className="verdict__title">
-        <Dot tone={tone} pulse={state === "checking" && !result} />
+        <Dot tone={tone} pulse={checking} />
         {title}
         {opts && <span className="verdict__opts">· {opts}</span>}
       </p>
