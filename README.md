@@ -47,7 +47,7 @@ The backend must already be running at `http://192.168.100.99:8000`.
 docker compose up -d --build
 ```
 
-This serves the app at http://drukarka.local/ (or http://192.168.100.99/). nginx in the container serves the static build and proxies `/api/` to the backend. That keeps the session cookie same-origin, so no CORS setup is needed. To point at a different backend, set `PRINTER_API_UPSTREAM` (for example `http://local-printer-api:8000` on a shared Docker network).
+This serves the app at http://drukarka.local/ (or http://192.168.100.99/). The container publishes no port itself: port 80 on the LAN IP belongs to the name-routing nginx in the hola-mexico repo (`deploy/`, running from `~/hola-mexico-deploy-https`), which sends `hola-mexico.local` to that app and every other name to this container over the `print-studio_default` network. Bring this project up first, since that network is created here. nginx in the container serves the static build and proxies `/api/` to the backend. That keeps the session cookie same-origin, so no CORS setup is needed. To point at a different backend, set `PRINTER_API_UPSTREAM` (for example `http://local-printer-api:8000` on a shared Docker network).
 
 The port binds to the LAN address only. Don't expose it, or the API, to the internet.
 
