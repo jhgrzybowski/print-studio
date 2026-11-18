@@ -203,7 +203,7 @@ const COMPACT_KEYS = ["color_mode", "duplex", ...SECONDARY_KEYS];
  * how wide the row was before it, so the row unfolds once there is room for exactly that. Changed
  * labels and loaded fonts forget those widths, and the row tries each wider step again before paint.
  */
-function useFold(ref, measureKey, held) {
+function useFold(ref, measureKey, held, narrow) {
   const [fold, setFold] = useState(0);
   const need = useRef([]);
   const measured = useRef(measureKey);
@@ -244,7 +244,8 @@ function useFold(ref, measureKey, held) {
     const ro = new ResizeObserver(() => check.current());
     ro.observe(el);
     return () => ro.disconnect();
-  }, [ref]);
+    // The phone bar swaps the row out, so watch the new row each time it comes back.
+  }, [ref, narrow]);
   useEffect(() => {
     let live = true;
     const remeasure = () => {
@@ -307,7 +308,7 @@ export function Toolbar({ flow, choices, disabled, printDisabled, onPrint, onSav
   const m = optionModel(settings, set, choices);
   const scrollRef = useRef(null);
   const [held, hold] = useHeld();
-  const fold = useFold(scrollRef, JSON.stringify([getLocale(), choices, settings, pageCount]), held);
+  const fold = useFold(scrollRef, JSON.stringify([getLocale(), choices, settings, pageCount]), held, narrow);
   const secondaryFolded = fold >= 2;
   const baseCompact = fold >= 4;
   const primaryFolded = fold >= 5;
