@@ -262,7 +262,9 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     () => (doc?.phase === "ready" && doc.pages?.length && !rangeError ? localPlan(settings, choices, doc.pages, pageCount, { isPdf }) : null),
     [doc, settings, choices, pageCount, isPdf, rangeError],
   );
-  const served = validation.result?.layout && validation.key === payloadKey ? validation.result.layout : null;
+  // The printer's answer counts only for the settings it was asked about; any change makes it old.
+  const verdict = validation.state === "done" && validation.key === payloadKey ? validation.result : null;
+  const served = verdict?.layout || null;
   const plan = served || local;
 
   const print = useCallback(async () => {
@@ -314,6 +316,7 @@ export function usePrintFlow({ choices, defaults, maxBytes, onPrinted }) {
     pageCount,
     rangeError,
     validation,
+    verdict,
     plan,
     planServed: !!served,
     isPdf,

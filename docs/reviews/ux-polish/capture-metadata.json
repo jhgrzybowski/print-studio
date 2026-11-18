@@ -1,0 +1,382 @@
+{
+  "baseline": "8faf674",
+  "fixture": true,
+  "captures": [
+    {
+      "version": "before",
+      "locale": "pl",
+      "width": 1440,
+      "height": 900,
+      "path": "docs/reviews/ux-polish/before-toolbar-pl.png",
+      "fonts": 4,
+      "fields": [
+        {
+          "label": "Strony: Wszystkie (3)",
+          "text": "Wszystkie (3)",
+          "box": {
+            "x": 429.359375,
+            "y": 12,
+            "width": 149.328125,
+            "height": 36
+          },
+          "valueVisible": true
+        },
+        {
+          "label": "Rozmiar papieru",
+          "text": "A4",
+          "box": {
+            "x": 584.6875,
+            "y": 12,
+            "width": 84.78125,
+            "height": 36
+          },
+          "valueVisible": true
+        },
+        {
+          "label": "Typ nośnika",
+          "text": "Papier zwykły",
+          "box": {
+            "x": 675.46875,
+            "y": 12,
+            "width": 35,
+            "height": 36
+          },
+          "valueVisible": false
+        },
+        {
+          "label": "Kolor",
+          "text": "Czarno-biały",
+          "box": {
+            "x": 735.46875,
+            "y": 12,
+            "width": 51,
+            "height": 36
+          },
+          "valueVisible": false
+        },
+        {
+          "label": "Druk dwustronny",
+          "text": "Jednostronnie",
+          "box": {
+            "x": 792.46875,
+            "y": 12,
+            "width": 51,
+            "height": 36
+          },
+          "valueVisible": false
+        },
+        {
+          "label": "Orientacja",
+          "text": "Pionowa",
+          "box": {
+            "x": 849.46875,
+            "y": 12,
+            "width": 51,
+            "height": 36
+          },
+          "valueVisible": false
+        },
+        {
+          "label": "Jakość wydruku",
+          "text": "Standardowa",
+          "box": {
+            "x": 906.46875,
+            "y": 12,
+            "width": 51,
+            "height": 36
+          },
+          "valueVisible": false
+        },
+        {
+          "label": "Układ i skalowanie",
+          "text": "",
+          "box": {
+            "x": 963.46875,
+            "y": 12,
+            "width": 51,
+            "height": 36
+          },
+          "valueVisible": null
+        },
+        {
+          "label": "Obsługa papieru i sterownik",
+          "text": "",
+          "box": {
+            "x": 1020.46875,
+            "y": 12,
+            "width": 51,
+            "height": 36
+          },
+          "valueVisible": null
+        }
+      ]
+    },
+    {
+      "version": "before",
+      "locale": "pl",
+      "kind": "continuity",
+      "path": "docs/reviews/ux-polish/before-continuity-pl.png",
+      "page": "1",
+      "zoom": "",
+      "box": {
+        "x": 602.625,
+        "y": 836,
+        "width": 638.75,
+        "height": 44
+      }
+    },
+    {
+      "version": "after",
+      "locale": "pl",
+      "width": 1440,
+      "height": 900,
+      "path": "docs/reviews/ux-polish/after-toolbar-pl.png",
+      "fonts": 4,
+      "fields": [
+        {
+          "label": "Strony: Wszystkie (3)",
+          "text": "Wszystkie (3)",
+          "box": {
+            "x": 429.359375,
+            "y": 12,
+            "width": 149.328125,
+            "height": 36
+          },
+          "valueVisible": true
+        },
+        {
+          "label": "Rozmiar papieru: A4",
+          "text": "A4",
+          "box": {
+            "x": 584.6875,
+            "y": 12,
+            "width": 84.78125,
+            "height": 36
+          },
+          "valueVisible": true
+        },
+        {
+          "label": "Kolor: Czarno-biały",
+          "text": "Czarno-biały",
+          "box": {
+            "x": 694.46875,
+            "y": 12,
+            "width": 147.578125,
+            "height": 36
+          },
+          "valueVisible": true
+        },
+        {
+          "label": "Druk dwustronny: Jednostronnie",
+          "text": "Jednostronnie",
+          "box": {
+            "x": 848.046875,
+            "y": 12,
+            "width": 157.328125,
+            "height": 36
+          },
+          "valueVisible": true
+        },
+        {
+          "label": "Więcej ustawień wydruku: Ustawienia",
+          "text": "Ustawienia1",
+          "box": {
+            "x": 1011.375,
+            "y": 12,
+            "width": 161.53125,
+            "height": 36
+          },
+          "valueVisible": true
+        }
+      ]
+    },
+    {
+      "version": "after",
+      "locale": "pl",
+      "kind": "continuity",
+      "path": "docs/reviews/ux-polish/after-continuity-pl.png",
+      "page": "2",
+      "zoom": "125%",
+      "box": {
+        "x": 602.625,
+        "y": 836,
+        "width": 638.75,
+        "height": 44
+      }
+    },
+    {
+      "version": "before",
+      "locale": "en",
+      "width": 1280,
+      "height": 900,
+      "path": "docs/reviews/ux-polish/before-toolbar-en.png",
+      "fonts": 2,
+      "fields": [
+        {
+          "label": "Pages: All 3",
+          "text": "All 3",
+          "box": {
+            "x": 429.359375,
+            "y": 12,
+            "width": 108,
+            "height": 36
+          },
+          "valueVisible": true
+        },
+        {
+          "label": "Paper size",
+          "text": "A4",
+          "box": {
+            "x": 543.359375,
+            "y": 12,
+            "width": 84.78125,
+            "height": 36
+          },
+          "valueVisible": true
+        },
+        {
+          "label": "Paper type",
+          "text": "Plain paper",
+          "box": {
+            "x": 634.140625,
+            "y": 12,
+            "width": 35,
+            "height": 36
+          },
+          "valueVisible": false
+        },
+        {
+          "label": "Color",
+          "text": "Black & white",
+          "box": {
+            "x": 694.140625,
+            "y": 12,
+            "width": 51,
+            "height": 36
+          },
+          "valueVisible": false
+        },
+        {
+          "label": "Sides",
+          "text": "One-sided",
+          "box": {
+            "x": 751.140625,
+            "y": 12,
+            "width": 51,
+            "height": 36
+          },
+          "valueVisible": false
+        },
+        {
+          "label": "Orientation",
+          "text": "Portrait",
+          "box": {
+            "x": 808.140625,
+            "y": 12,
+            "width": 51,
+            "height": 36
+          },
+          "valueVisible": false
+        },
+        {
+          "label": "Quality",
+          "text": "Standard",
+          "box": {
+            "x": 865.140625,
+            "y": 12,
+            "width": 51,
+            "height": 36
+          },
+          "valueVisible": false
+        },
+        {
+          "label": "Layout and scaling",
+          "text": "",
+          "box": {
+            "x": 922.140625,
+            "y": 12,
+            "width": 51,
+            "height": 36
+          },
+          "valueVisible": null
+        },
+        {
+          "label": "Paper handling and driver",
+          "text": "",
+          "box": {
+            "x": 979.140625,
+            "y": 12,
+            "width": 51,
+            "height": 36
+          },
+          "valueVisible": null
+        }
+      ]
+    },
+    {
+      "version": "after",
+      "locale": "en",
+      "width": 1280,
+      "height": 900,
+      "path": "docs/reviews/ux-polish/after-toolbar-en.png",
+      "fonts": 2,
+      "fields": [
+        {
+          "label": "Pages: All 3",
+          "text": "All 3",
+          "box": {
+            "x": 429.359375,
+            "y": 12,
+            "width": 108,
+            "height": 36
+          },
+          "valueVisible": true
+        },
+        {
+          "label": "Paper size: A4",
+          "text": "A4",
+          "box": {
+            "x": 543.359375,
+            "y": 12,
+            "width": 84.78125,
+            "height": 36
+          },
+          "valueVisible": true
+        },
+        {
+          "label": "Color: Black & white",
+          "text": "Black & white",
+          "box": {
+            "x": 653.140625,
+            "y": 12,
+            "width": 153.921875,
+            "height": 36
+          },
+          "valueVisible": true
+        },
+        {
+          "label": "Sides: One-sided",
+          "text": "One-sided",
+          "box": {
+            "x": 813.0625,
+            "y": 12,
+            "width": 132.40625,
+            "height": 36
+          },
+          "valueVisible": true
+        },
+        {
+          "label": "More print settings: Settings",
+          "text": "Settings1",
+          "box": {
+            "x": 951.46875,
+            "y": 12,
+            "width": 144.484375,
+            "height": 36
+          },
+          "valueVisible": true
+        }
+      ]
+    }
+  ]
+}

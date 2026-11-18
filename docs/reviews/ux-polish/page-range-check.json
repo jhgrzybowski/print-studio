@@ -1,0 +1,746 @@
+[
+  {
+    "locale": "en",
+    "width": 1440,
+    "touch": false,
+    "status": "PASS",
+    "panel": {
+      "left": 429,
+      "right": 829,
+      "width": 400
+    },
+    "overflow": false,
+    "children": [
+      {
+        "text": "All 3Range",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "All 3",
+        "left": 518.015625,
+        "right": 545.28125,
+        "inside": true
+      },
+      {
+        "text": "Range",
+        "left": 699.34375,
+        "right": 739.96875,
+        "inside": true
+      },
+      {
+        "text": "",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "AllOdd pagesEven pages",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "All",
+        "left": 477.671875,
+        "right": 493.84375,
+        "inside": true
+      },
+      {
+        "text": "Odd pages",
+        "left": 567.1875,
+        "right": 634.890625,
+        "inside": true
+      },
+      {
+        "text": "Even pages",
+        "left": 708.234375,
+        "right": 780.328125,
+        "inside": true
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "width": 1440,
+    "touch": true,
+    "status": "PASS",
+    "panel": {
+      "left": 441,
+      "right": 841,
+      "width": 400
+    },
+    "overflow": false,
+    "children": [
+      {
+        "text": "All 3Range",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "All 3",
+        "left": 530.015625,
+        "right": 557.28125,
+        "inside": true
+      },
+      {
+        "text": "Range",
+        "left": 711.34375,
+        "right": 751.96875,
+        "inside": true
+      },
+      {
+        "text": "",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "AllOdd pagesEven pages",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "All",
+        "left": 489.671875,
+        "right": 505.84375,
+        "inside": true
+      },
+      {
+        "text": "Odd pages",
+        "left": 579.1875,
+        "right": 646.890625,
+        "inside": true
+      },
+      {
+        "text": "Even pages",
+        "left": 720.234375,
+        "right": 792.328125,
+        "inside": true
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "width": 900,
+    "touch": false,
+    "status": "PASS",
+    "panel": {
+      "left": 429,
+      "right": 829,
+      "width": 400
+    },
+    "overflow": false,
+    "children": [
+      {
+        "text": "All 3Range",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "All 3",
+        "left": 518.015625,
+        "right": 545.28125,
+        "inside": true
+      },
+      {
+        "text": "Range",
+        "left": 699.34375,
+        "right": 739.96875,
+        "inside": true
+      },
+      {
+        "text": "",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "AllOdd pagesEven pages",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "All",
+        "left": 477.671875,
+        "right": 493.84375,
+        "inside": true
+      },
+      {
+        "text": "Odd pages",
+        "left": 567.1875,
+        "right": 634.890625,
+        "inside": true
+      },
+      {
+        "text": "Even pages",
+        "left": 708.234375,
+        "right": 780.328125,
+        "inside": true
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "width": 900,
+    "touch": true,
+    "status": "PASS",
+    "panel": {
+      "left": 441,
+      "right": 841,
+      "width": 400
+    },
+    "overflow": false,
+    "children": [
+      {
+        "text": "All 3Range",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "All 3",
+        "left": 530.015625,
+        "right": 557.28125,
+        "inside": true
+      },
+      {
+        "text": "Range",
+        "left": 711.34375,
+        "right": 751.96875,
+        "inside": true
+      },
+      {
+        "text": "",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "AllOdd pagesEven pages",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "All",
+        "left": 489.671875,
+        "right": 505.84375,
+        "inside": true
+      },
+      {
+        "text": "Odd pages",
+        "left": 579.1875,
+        "right": 646.890625,
+        "inside": true
+      },
+      {
+        "text": "Even pages",
+        "left": 720.234375,
+        "right": 792.328125,
+        "inside": true
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "width": 861,
+    "touch": false,
+    "status": "PASS",
+    "panel": {
+      "left": 429,
+      "right": 829,
+      "width": 400
+    },
+    "overflow": false,
+    "children": [
+      {
+        "text": "All 3Range",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "All 3",
+        "left": 518.015625,
+        "right": 545.28125,
+        "inside": true
+      },
+      {
+        "text": "Range",
+        "left": 699.34375,
+        "right": 739.96875,
+        "inside": true
+      },
+      {
+        "text": "",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "AllOdd pagesEven pages",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "All",
+        "left": 477.671875,
+        "right": 493.84375,
+        "inside": true
+      },
+      {
+        "text": "Odd pages",
+        "left": 567.1875,
+        "right": 634.890625,
+        "inside": true
+      },
+      {
+        "text": "Even pages",
+        "left": 708.234375,
+        "right": 780.328125,
+        "inside": true
+      }
+    ]
+  },
+  {
+    "locale": "en",
+    "width": 861,
+    "touch": true,
+    "status": "PASS",
+    "panel": {
+      "left": 441,
+      "right": 841,
+      "width": 400
+    },
+    "overflow": false,
+    "children": [
+      {
+        "text": "All 3Range",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "All 3",
+        "left": 530.015625,
+        "right": 557.28125,
+        "inside": true
+      },
+      {
+        "text": "Range",
+        "left": 711.34375,
+        "right": 751.96875,
+        "inside": true
+      },
+      {
+        "text": "",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "AllOdd pagesEven pages",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "All",
+        "left": 489.671875,
+        "right": 505.84375,
+        "inside": true
+      },
+      {
+        "text": "Odd pages",
+        "left": 579.1875,
+        "right": 646.890625,
+        "inside": true
+      },
+      {
+        "text": "Even pages",
+        "left": 720.234375,
+        "right": 792.328125,
+        "inside": true
+      }
+    ]
+  },
+  {
+    "locale": "pl",
+    "width": 1440,
+    "touch": false,
+    "status": "PASS",
+    "panel": {
+      "left": 429,
+      "right": 829,
+      "width": 400
+    },
+    "overflow": false,
+    "children": [
+      {
+        "text": "Wszystkie (3)Zakres",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "Wszystkie (3)",
+        "left": 504.140625,
+        "right": 585.46875,
+        "inside": true
+      },
+      {
+        "text": "Zakres",
+        "left": 711.78125,
+        "right": 753.84375,
+        "inside": true
+      },
+      {
+        "text": "",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "WszystkieStrony nieparzysteStrony parzyste",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "Wszystkie",
+        "left": 457.328125,
+        "right": 519.21875,
+        "inside": true
+      },
+      {
+        "text": "Strony nieparzyste",
+        "left": 551.90625,
+        "right": 669.578125,
+        "inside": true
+      },
+      {
+        "text": "Strony parzyste",
+        "left": 702.265625,
+        "right": 800.65625,
+        "inside": true
+      }
+    ]
+  },
+  {
+    "locale": "pl",
+    "width": 1440,
+    "touch": true,
+    "status": "PASS",
+    "panel": {
+      "left": 441,
+      "right": 841,
+      "width": 400
+    },
+    "overflow": false,
+    "children": [
+      {
+        "text": "Wszystkie (3)Zakres",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "Wszystkie (3)",
+        "left": 516.140625,
+        "right": 597.46875,
+        "inside": true
+      },
+      {
+        "text": "Zakres",
+        "left": 723.78125,
+        "right": 765.84375,
+        "inside": true
+      },
+      {
+        "text": "",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "WszystkieStrony nieparzysteStrony parzyste",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "Wszystkie",
+        "left": 469.328125,
+        "right": 531.21875,
+        "inside": true
+      },
+      {
+        "text": "Strony nieparzyste",
+        "left": 563.90625,
+        "right": 681.578125,
+        "inside": true
+      },
+      {
+        "text": "Strony parzyste",
+        "left": 714.265625,
+        "right": 812.65625,
+        "inside": true
+      }
+    ]
+  },
+  {
+    "locale": "pl",
+    "width": 900,
+    "touch": false,
+    "status": "PASS",
+    "panel": {
+      "left": 429,
+      "right": 829,
+      "width": 400
+    },
+    "overflow": false,
+    "children": [
+      {
+        "text": "Wszystkie (3)Zakres",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "Wszystkie (3)",
+        "left": 504.140625,
+        "right": 585.46875,
+        "inside": true
+      },
+      {
+        "text": "Zakres",
+        "left": 711.78125,
+        "right": 753.84375,
+        "inside": true
+      },
+      {
+        "text": "",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "WszystkieStrony nieparzysteStrony parzyste",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "Wszystkie",
+        "left": 457.328125,
+        "right": 519.21875,
+        "inside": true
+      },
+      {
+        "text": "Strony nieparzyste",
+        "left": 551.90625,
+        "right": 669.578125,
+        "inside": true
+      },
+      {
+        "text": "Strony parzyste",
+        "left": 702.265625,
+        "right": 800.65625,
+        "inside": true
+      }
+    ]
+  },
+  {
+    "locale": "pl",
+    "width": 900,
+    "touch": true,
+    "status": "PASS",
+    "panel": {
+      "left": 441,
+      "right": 841,
+      "width": 400
+    },
+    "overflow": false,
+    "children": [
+      {
+        "text": "Wszystkie (3)Zakres",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "Wszystkie (3)",
+        "left": 516.140625,
+        "right": 597.46875,
+        "inside": true
+      },
+      {
+        "text": "Zakres",
+        "left": 723.78125,
+        "right": 765.84375,
+        "inside": true
+      },
+      {
+        "text": "",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "WszystkieStrony nieparzysteStrony parzyste",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "Wszystkie",
+        "left": 469.328125,
+        "right": 531.21875,
+        "inside": true
+      },
+      {
+        "text": "Strony nieparzyste",
+        "left": 563.90625,
+        "right": 681.578125,
+        "inside": true
+      },
+      {
+        "text": "Strony parzyste",
+        "left": 714.265625,
+        "right": 812.65625,
+        "inside": true
+      }
+    ]
+  },
+  {
+    "locale": "pl",
+    "width": 861,
+    "touch": false,
+    "status": "PASS",
+    "panel": {
+      "left": 429,
+      "right": 829,
+      "width": 400
+    },
+    "overflow": false,
+    "children": [
+      {
+        "text": "Wszystkie (3)Zakres",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "Wszystkie (3)",
+        "left": 504.140625,
+        "right": 585.46875,
+        "inside": true
+      },
+      {
+        "text": "Zakres",
+        "left": 711.78125,
+        "right": 753.84375,
+        "inside": true
+      },
+      {
+        "text": "",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "WszystkieStrony nieparzysteStrony parzyste",
+        "left": 439,
+        "right": 819,
+        "inside": true
+      },
+      {
+        "text": "Wszystkie",
+        "left": 457.328125,
+        "right": 519.21875,
+        "inside": true
+      },
+      {
+        "text": "Strony nieparzyste",
+        "left": 551.90625,
+        "right": 669.578125,
+        "inside": true
+      },
+      {
+        "text": "Strony parzyste",
+        "left": 702.265625,
+        "right": 800.65625,
+        "inside": true
+      }
+    ]
+  },
+  {
+    "locale": "pl",
+    "width": 861,
+    "touch": true,
+    "status": "PASS",
+    "panel": {
+      "left": 441,
+      "right": 841,
+      "width": 400
+    },
+    "overflow": false,
+    "children": [
+      {
+        "text": "Wszystkie (3)Zakres",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "Wszystkie (3)",
+        "left": 516.140625,
+        "right": 597.46875,
+        "inside": true
+      },
+      {
+        "text": "Zakres",
+        "left": 723.78125,
+        "right": 765.84375,
+        "inside": true
+      },
+      {
+        "text": "",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "WszystkieStrony nieparzysteStrony parzyste",
+        "left": 451,
+        "right": 831,
+        "inside": true
+      },
+      {
+        "text": "Wszystkie",
+        "left": 469.328125,
+        "right": 531.21875,
+        "inside": true
+      },
+      {
+        "text": "Strony nieparzyste",
+        "left": 563.90625,
+        "right": 681.578125,
+        "inside": true
+      },
+      {
+        "text": "Strony parzyste",
+        "left": 714.265625,
+        "right": 812.65625,
+        "inside": true
+      }
+    ]
+  }
+]

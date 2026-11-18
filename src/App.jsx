@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, animate, motion, useIsPresent, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { Tooltip } from "radix-ui";
-import { Menu, RefreshCw, WifiOff, X } from "lucide-react";
+import { ArrowLeft, Menu, RefreshCw, WifiOff, X } from "lucide-react";
 import { api } from "./api/client.js";
 import { useAppearance } from "./hooks/appearance.js";
 import { useArchive, useHistory, useMedia, usePreferences, usePrinter, usePrinterOptions, useSession } from "./hooks/data.js";
@@ -401,11 +401,21 @@ function Shell({ session, printer, appearance, setAppearance }) {
   );
 
   const loaded = flow.doc?.phase === "ready";
-  const printDisabled = !loaded || !flow.canPrint || !canSend || flow.printing.state === "sending" || (flow.validation.result && !flow.validation.result.valid);
+  const printDisabled = !loaded || !flow.canPrint || !canSend || flow.printing.state === "sending" || (flow.verdict && !flow.verdict.valid);
   const line = docLine({ flow, printer, canSend });
-  const verdict = <Verdict validation={flow.validation} settings={flow.settings} rangeError={flow.rangeError} printerReady={canSend} plan={flow.plan} choices={choices} />;
+  const verdict = <Verdict validation={flow.validation} current={flow.verdict} settings={flow.settings} rangeError={flow.rangeError} printerReady={canSend} plan={flow.plan} choices={choices} />;
 
   const drawerKey = narrow ? <IconKey label={t("Open sidebar")} icon={Menu} onClick={() => setDrawer(true)} className="bar__menu" /> : null;
+  const composing = view.kind === "compose";
+  // History, the archive and Settings keep a way straight back to the document in hand.
+  const backKey = !composing && loaded && <IconKey label={t("Back to {name}", { name: flow.doc.name })} icon={ArrowLeft} onClick={goCompose} className="bar__back" />;
+  const viewLead =
+    drawerKey || backKey ? (
+      <>
+        {drawerKey}
+        {backKey}
+      </>
+    ) : null;
 
   const sidebar = (
     <Sidebar
@@ -493,7 +503,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
         />
 
         {view.kind === "home" && (
-          <motion.div key="home" className="view" {...fadeIn}>
+          <div key="home" className="view view-in">
             <HomeView
               narrow={narrow}
               lead={drawerKey}
@@ -510,26 +520,30 @@ function Shell({ session, printer, appearance, setAppearance }) {
               onReprint={reprint}
               onOpenArchive={openArchive}
             />
-          </motion.div>
+          </div>
         )}
-        {view.kind === "compose" && (
-          <motion.div key="compose" className="page" {...fadeIn}>
-            <Toolbar
-              lead={drawerKey}
-              narrow={narrow}
-              printer={printer}
-              onPrinter={openSettings}
-              onHome={goHome}
-              flow={flow}
-              choices={choices}
-              disabled={!hasChoices}
-              printDisabled={printDisabled}
-              onPrint={print}
-              onSaveDefaults={saveDefaults}
-              onResetDefaults={resetToDefaults}
-              defaultsState={defaultsState}
-              rotation={rotation}
-            />
+        {/* With a document loaded, Compose stays mounted under other views, so its page and zoom
+            are where they were on return. Hidden, it is inert and its shortcuts are off. */}
+        {(composing || loaded) && (
+          <div className="page view-in" hidden={!composing} inert={!composing}>
+            {composing && (
+              <Toolbar
+                lead={drawerKey}
+                narrow={narrow}
+                printer={printer}
+                onPrinter={openSettings}
+                onHome={goHome}
+                flow={flow}
+                choices={choices}
+                disabled={!hasChoices}
+                printDisabled={printDisabled}
+                onPrint={print}
+                onSaveDefaults={saveDefaults}
+                onResetDefaults={resetToDefaults}
+                defaultsState={defaultsState}
+                rotation={rotation}
+              />
+            )}
             <div className="compose">
               <motion.div key={loaded ? "loaded" : "empty"} className="compose__body" {...fadeIn}>
                 {loaded ? (
@@ -544,6 +558,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
                     status={narrow ? null : verdict}
                     rotations={flow.rotations}
                     onRotate={canRotate ? rotate : undefined}
+                    active={composing}
                   />
                 ) : (
                   <DropZone dragging={dragging} onBrowse={browse} doc={flow.doc} capabilities={capabilities} touch={narrow} />
@@ -566,7 +581,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
                 </AnimatePresence>
               </div>
             </div>
-            {narrow && loaded && (
+            {narrow && loaded && composing && (
               <PrintDock
                 flow={flow}
                 choices={choices}
@@ -580,7 +595,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
                 rotation={rotation}
               />
             )}
-          </motion.div>
+          </div>
         )}
         {view.kind === "history" && (
           <div key={`h-${view.id}`} className="view">
@@ -591,7 +606,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
               onReprint={reprint}
               onOpenCompose={newPrint}
               onStatusLine={flash}
-              lead={drawerKey}
+              lead={viewLead}
               archived={archive.archived.has(view.id)}
               onArchive={archiveEntry}
               onRestore={restoreEntry}
@@ -600,9 +615,9 @@ function Shell({ session, printer, appearance, setAppearance }) {
           </div>
         )}
         {view.kind === "archive" && (
-          <motion.div key="archive" className="view" {...fadeIn}>
+          <div key="archive" className="view view-in">
             <ArchiveView
-              lead={drawerKey}
+              lead={viewLead}
               archive={archive}
               history={history}
               onOpen={selectHistory}
@@ -610,12 +625,12 @@ function Shell({ session, printer, appearance, setAppearance }) {
               onRestore={restoreEntry}
               onRemove={removeEntries}
             />
-          </motion.div>
+          </div>
         )}
         {view.kind === "settings" && (
-          <motion.div key="settings" className="view" {...fadeIn}>
+          <div key="settings" className="view view-in">
             <SettingsView
-              lead={drawerKey}
+              lead={viewLead}
               user={session.user}
               appearance={appearance}
               setAppearance={setAppearance}
@@ -625,7 +640,7 @@ function Shell({ session, printer, appearance, setAppearance }) {
               capabilities={capabilities}
               onLogout={session.logout}
             />
-          </motion.div>
+          </div>
         )}
       </main>
     </div>

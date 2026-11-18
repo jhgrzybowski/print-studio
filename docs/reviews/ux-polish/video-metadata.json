@@ -1,0 +1,43 @@
+{
+  "fixture": true,
+  "locale": "pl",
+  "theme": "dark",
+  "normalSpeed": true,
+  "annotations": "Cursor and caption overlays only; application interaction is unchanged",
+  "width": 1440,
+  "height": 900,
+  "duration": 16.64,
+  "bytes": 1376329,
+  "chapters": [
+    {
+      "at": 1.183,
+      "text": "Polski · czytelne najważniejsze ustawienia"
+    },
+    {
+      "at": 3.429,
+      "text": "Panel ustawień otwiera się od swojego przycisku"
+    },
+    {
+      "at": 6.737,
+      "text": "Błąd zakresu i sprawdzanie aktualnych ustawień"
+    },
+    {
+      "at": 9.964,
+      "text": "Strona 2 i powiększenie 125%"
+    },
+    {
+      "at": 11.453,
+      "text": "Przejdź do historii i wróć bez utraty miejsca"
+    },
+    {
+      "at": 14.189,
+      "text": "To samo miejsce. Te same ustawienia."
+    }
+  ],
+  "finalState": {
+    "page": "2",
+    "zoom": "125%"
+  },
+  "actualPrinterSubmissions": 0,
+  "errors": []
+}

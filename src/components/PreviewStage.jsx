@@ -122,7 +122,8 @@ function useSize(ref) {
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const ro = new ResizeObserver(([e]) => setSize({ width: e.contentRect.width, height: e.contentRect.height }));
+    // A hidden stage measures nothing; it keeps the size it had, so it returns as it was.
+    const ro = new ResizeObserver(([e]) => e.contentRect.width && setSize({ width: e.contentRect.width, height: e.contentRect.height }));
     ro.observe(el);
     return () => ro.disconnect();
   }, [ref]);
@@ -179,7 +180,7 @@ function soloSide(page, paper) {
  * white desaturates it and extra copies stack behind it. `head` sits at the top left, `corner` at
  * the top right, and `status` in the floating bar.
  */
-export function PreviewStage({ doc, settings, plan, pageCount, onPagesChange, readOnly, head, corner, status, feedKey, rotations = NO_TURNS, onRotate }) {
+export function PreviewStage({ doc, settings, plan, pageCount, onPagesChange, readOnly, head, corner, status, feedKey, rotations = NO_TURNS, onRotate, active = true }) {
   const pages = doc.pages || [];
   const count = pageCount || pages.length;
   const [at, setAt] = useState({ side: 0, page: 1 });
@@ -280,6 +281,7 @@ export function PreviewStage({ doc, settings, plan, pageCount, onPagesChange, re
   const turnRef = useRef(null);
   turnRef.current = canTurn ? (delta) => onRotate([at.page], delta) : null;
   useEffect(() => {
+    if (!active) return;
     function onKey(e) {
       if (e.defaultPrevented || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key !== "r" && e.key !== "R") return;
@@ -291,7 +293,7 @@ export function PreviewStage({ doc, settings, plan, pageCount, onPagesChange, re
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [active]);
 
   // The sheet's size on screen decides which render each cell needs.
   const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;

@@ -6,6 +6,8 @@ The look is a liquid-metal studio: a graphite (or cool steel) desk with one lit 
 
 ## Screenshots
 
+The [printing UX review](docs/reviews/ux-polish/README.md) includes matched English and Polish before/after captures, annotated changes, and a short interaction recording.
+
 ![The studio in dark mode: history sidebar, preferences toolbar, page rail and a three-page PDF on the lit stage](docs/screenshots/studio-dark.png)
 
 | Light theme, page 2 skipped | History detail |
@@ -124,7 +126,7 @@ The screens:
 - **Home:** the start screen. The mark, the name and a one-line slogan above two panels: on the left a drop area with the accepted formats and a Choose file button, on the right the four latest prints with Print again keys and a link to the archive. While a file is loaded, a "Continue with …" link leads back to it. The panels stack on a phone.
 - **Studio (desktop):** print history in the sidebar; the preview in the main pane; a toolbar of print preferences above it. Pages can be skipped by clicking their thumbnails. A job chip tracks the running print and has a Cancel button.
 - **Studio (phone and narrow tablet, up to 860 px):** a slim top bar showing printer status. A bottom print dock pairs a settings summary with a large Print button. The summary opens a settings sheet that can be dismissed by dragging down its handle, its header, or its content when the content is scrolled to the top. The sheet has a page-range field that is checked against the page count.
-- **History detail:** the preview, a list of facts about the print, Print again, and a More menu with Open PDF, Clear from printer queue, and Move to archive (or, for an archived print, Restore to history and a two-step Delete permanently).
+- **History detail:** the preview, a list of facts about the print, Print again, and a More menu with Open PDF, Clear from printer queue, and Move to archive (or, for an archived print, Restore to history and a two-step Delete permanently). With a document in progress, a back key returns to it from history, Archive or Settings. Its page, zoom and preferences are preserved; Home keeps its Continue action.
 - **Archive:** reached from the key beside New print in the sidebar, which shows a count. Each row opens the print, prints it again, restores it, or deletes it after a second confirming press; Delete all works the same way.
 - **Settings, sign-in and registration:** a single column with an account avatar.
 - **Home screen:** added to a phone's home screen, the app opens in its own window, without browser bars, under the chrome-drop icon.

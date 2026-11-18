@@ -273,10 +273,18 @@ input {
 }
 
 /* Reduced motion keeps fades and state, drops movement and loops. */
-/* Keyboard-opened menus and tips appear without motion. */
+/* Keyboard-opened menus and tips appear without motion. The animation keeps its name and only loses
+   its duration, so a closing layer still ends its animation and unmounts when a key lands mid-exit. */
 [data-kbd] .menu,
 [data-kbd] .tip {
-  animation: none !important;
+  animation-duration: 0s !important;
+}
+[data-kbd] .field__chev,
+[data-kbd] .rowgroup__chev {
+  transition-duration: 0s;
+}
+[data-kbd] button:active:not(:disabled) {
+  transform: none;
 }
 
 /* Reduced motion: no movement, fades stay. */
@@ -291,6 +299,10 @@ input {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  :root .field__chev,
+  :root .rowgroup__chev {
+    transition-duration: 0s;
+  }
   .menu,
   .tip {
     animation-name: fade !important;
@@ -298,7 +310,8 @@ input {
   .menu[data-state="closed"] {
     animation-name: fade-out !important;
   }
-  :active {
+  button:active,
+  a:active {
     transform: none !important;
     scale: none !important;
   }
